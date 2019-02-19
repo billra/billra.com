@@ -1,6 +1,7 @@
 // animate.js
 
 var draw_corners = false;
+var wrap_edge = false; // wrap or bounce
 
 var canvas;
 var circles;
@@ -32,16 +33,45 @@ function animate() {
         ctx.arc(circles[i].x, circles[i].y, circles[i].r, 0, Math.PI * 2, true);
         ctx.fill()
 
-        if (circles[i].x - circles[i].r + circles[i].vx < 0 || circles[i].x + circles[i].r + circles[i].vx > canvas.width - 1) {
-            circles[i].vx *= -1;
-        }
-
-        if (circles[i].y - circles[i].r + circles[i].vy < 0 || circles[i].y + circles[i].r + circles[i].vy > canvas.height - 1) {
-            circles[i].vy *= -1;
-        }
-
         circles[i].x += circles[i].vx
         circles[i].y += circles[i].vy
+
+        if (circles[i].x - circles[i].r < 0) {
+            if (wrap_edge) {
+                circles[i].x = canvas.width - 1 - circles[i].r; // todo: this 'sticks' value to edge, may want 'fold' value across edge
+            }
+            else {
+                circles[i].x = circles[i].r; // todo: this 'sticks' value to edge, may want 'fold' value across edge
+                circles[i].vx *= -1; // reverse direction, 'bounce'
+            }
+        }
+        else if (circles[i].x + circles[i].r > canvas.width - 1) {
+            if (wrap_edge) {
+                circles[i].x = circles[i].r;
+            }
+            else {
+                circles[i].x = canvas.width - 1 - circles[i].r;
+                circles[i].vx *= -1;
+            }
+        }
+        if (circles[i].y - circles[i].r < 0) {
+            if (wrap_edge) {
+                circles[i].y = canvas.height - 1 - circles[i].r;
+            }
+            else {
+                circles[i].y = circles[i].r;
+                circles[i].vy *= -1;
+            }
+        }
+        else if (circles[i].y + circles[i].r > canvas.height - 1) {
+            if (wrap_edge) {
+                circles[i].y = circles[i].r;
+            }
+            else {
+                circles[i].y = canvas.height - 1 - circles[i].r;
+                circles[i].vy *= -1;
+            }
+        }
     }
     if (draw_corners) {
         ctx.strokeStyle = "#FF0000"; // red
@@ -58,6 +88,9 @@ window.onkeypress = function (event) {
     console.log(event.key);
     if ('k' == event.key) {
         draw_corners = !draw_corners;
+    }
+    else if ('w' == event.key) {
+        wrap_edge = !wrap_edge;
     }
 }
 
