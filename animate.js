@@ -92,6 +92,14 @@ window.onkeypress = function (event) {
     else if ('w' == event.key) {
         wrap_edge = !wrap_edge;
     }
+    else if (' ' == event.key) {
+        if (request) {
+            cancelAnimationFrame(request);
+            request = undefined;
+        } else {
+            request = requestAnimationFrame(animate);
+        }
+    }
 }
 
 window.onresize = function () {
