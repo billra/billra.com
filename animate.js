@@ -1,5 +1,7 @@
 // animate.js
 
+var draw_corners = false;
+
 var canvas;
 var circles;
 
@@ -41,16 +43,22 @@ function animate() {
         circles[i].x += circles[i].vx
         circles[i].y += circles[i].vy
     }
-
-    // testing, remove later
-    ctx.strokeStyle = "#FF0000"; // red
-    ctx.lineWidth = 1;
-    ctx.strokeRect(0, 0, 2, 2);
-    ctx.strokeRect(0, canvas.height - 3, 2, 2);
-    ctx.strokeRect(canvas.width - 3, 0, 2, 2);
-    ctx.strokeRect(canvas.width - 3, canvas.height - 3, 2, 2); // drawable pixels are [0 to canvas.width-1] and [0 to canvas.height-1] (after ctx.translate)
-
+    if (draw_corners) {
+        ctx.strokeStyle = "#FF0000"; // red
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, 0, 2, 2);
+        ctx.strokeRect(0, canvas.height - 3, 2, 2);
+        ctx.strokeRect(canvas.width - 3, 0, 2, 2);
+        ctx.strokeRect(canvas.width - 3, canvas.height - 3, 2, 2); // drawable pixels are [0 to canvas.width-1] and [0 to canvas.height-1] (after ctx.translate)
+    }
     request = requestAnimationFrame(animate);
+}
+
+window.onkeypress = function (event) {
+    console.log(event.key);
+    if ('k' == event.key) {
+        draw_corners = !draw_corners;
+    }
 }
 
 window.onresize = function () {
