@@ -1,14 +1,14 @@
 // animate.js
 
+var canvas;
 var circles;
-var width;
-var height;
 
 function populate() {
+    circles = [];
     for (var i = 0; i < 1000; ++i) {
         var _r = 5 + Math.random() * 10;
-        var _x = _r + Math.random() * (width - 2 * _r);
-        var _y = _r + Math.random() * (height - 2 * _r);
+        var _x = _r + Math.random() * (canvas.width - 2 * _r);
+        var _y = _r + Math.random() * (canvas.height - 2 * _r);
         // console.log((_x - _r) + " " + (_y - _r) + ", " + (_x + _r) + " " + (_y + _r));
         var _vx = (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
         var _vy = (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
@@ -22,7 +22,7 @@ var request;
 
 function animate() {
     ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     for (var i = 0; i < circles.length; i++) {
         // draw
         ctx.fillStyle = 'hsl(' + circles[i].color++ + ', 100%, 60%)';
@@ -30,11 +30,11 @@ function animate() {
         ctx.arc(circles[i].x, circles[i].y, circles[i].r, 0, Math.PI * 2, true);
         ctx.fill()
 
-        if (circles[i].x - circles[i].r + circles[i].vx < 0 || circles[i].x + circles[i].r + circles[i].vx > width - 1) {
+        if (circles[i].x - circles[i].r + circles[i].vx < 0 || circles[i].x + circles[i].r + circles[i].vx > canvas.width - 1) {
             circles[i].vx *= -1;
         }
 
-        if (circles[i].y - circles[i].r + circles[i].vy < 0 || circles[i].y + circles[i].r + circles[i].vy > height - 1) {
+        if (circles[i].y - circles[i].r + circles[i].vy < 0 || circles[i].y + circles[i].r + circles[i].vy > canvas.height - 1) {
             circles[i].vy *= -1;
         }
 
@@ -46,9 +46,9 @@ function animate() {
     ctx.strokeStyle = "#FF0000"; // red
     ctx.lineWidth = 1;
     ctx.strokeRect(0, 0, 2, 2);
-    ctx.strokeRect(0, height - 3, 2, 2);
-    ctx.strokeRect(width - 3, 0, 2, 2);
-    ctx.strokeRect(width - 3, height - 3, 2, 2); // drawable pixels are [0 to width-1] and [0 to height-1] (after ctx.translate)
+    ctx.strokeRect(0, canvas.height - 3, 2, 2);
+    ctx.strokeRect(canvas.width - 3, 0, 2, 2);
+    ctx.strokeRect(canvas.width - 3, canvas.height - 3, 2, 2); // drawable pixels are [0 to canvas.width-1] and [0 to canvas.height-1] (after ctx.translate)
 
     request = requestAnimationFrame(animate);
 }
@@ -58,16 +58,9 @@ window.onresize = function () {
         cancelAnimationFrame(request);
         request = undefined;
     }
-    var canvas = document.getElementById("my_canvas");
-    console.log("window.innerWH: " + window.innerWidth + " " + window.innerHeight);
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     console.log("canvas.width: " + canvas.width + " " + canvas.height);
-    width = canvas.clientWidth;
-    height = canvas.clientHeight;
-    console.log("canvas.clientWidth: " + canvas.clientWidth + " " + canvas.clientHeight);
-    console.log(width + " " + height);
-    circles = [];
     populate();
     ctx = canvas.getContext("2d");
     ctx.translate(.5, .5);
@@ -75,6 +68,7 @@ window.onresize = function () {
 }
 
 window.onload = function () {
+    canvas = document.getElementById("my_canvas");
     window.onresize();
 }
 
@@ -82,9 +76,10 @@ window.onload = function () {
 //  x fit screen
 //  x verify corners
 //  x auto fit screen on window size change -> cancelAnimationFrame if request in progress
-//  - make repo
-//  - simplify canvas size code
+//  x make repo
+//  x simplify canvas size code
+//  - keyboard toggles
+//  -   spacebar pause
 //  - modulate ball size
 //  - movement based on time since last 
 //  -   fps display
-//  - spacebar pause
