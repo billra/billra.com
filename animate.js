@@ -6,17 +6,22 @@ var wrap_edge = false; // wrap or bounce
 var canvas;
 var circles;
 
+function rnd_velocity(){
+    return (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
+}
+
 function populate() {
     circles = [];
     for (var i = 0; i < 1000; ++i) {
-        var _r = 5 + Math.random() * 10;
-        var _x = _r + Math.random() * (canvas.width - 2 * _r);
-        var _y = _r + Math.random() * (canvas.height - 2 * _r);
-        // console.log((_x - _r) + " " + (_y - _r) + ", " + (_x + _r) + " " + (_y + _r));
-        var _vx = (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
-        var _vy = (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
-        var _hue = Math.floor(Math.random() * 256);
-        circles.push({ x: _x, y: _y, r: _r, vx: _vx, vy: _vy, color: _hue });
+        var r = 5 + Math.random() * 10;
+        circles.push({
+            r: r,
+            x: r + Math.random() * (canvas.width - 2 * r),
+            y: r + Math.random() * (canvas.height - 2 * r),
+            vx: rnd_velocity(),
+            vy: rnd_velocity(),
+            hue: Math.floor(Math.random() * 256)
+        });
     }
 }
 
@@ -28,7 +33,7 @@ function animate() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     for (var i = 0; i < circles.length; i++) {
         // draw
-        ctx.fillStyle = 'hsl(' + circles[i].color++ + ', 100%, 60%)';
+        ctx.fillStyle = 'hsl(' + circles[i].hue++ + ', 100%, 60%)';
         ctx.beginPath();
         ctx.arc(circles[i].x, circles[i].y, circles[i].r, 0, Math.PI * 2, true);
         ctx.fill()
@@ -127,8 +132,8 @@ window.onload = function () {
 //  x auto fit screen on window size change -> cancelAnimationFrame if request in progress
 //  x make repo
 //  x simplify canvas size code
-//  - keyboard toggles
-//  -   spacebar pause
+//  x keyboard toggles
+//  x   spacebar pause
 //  - modulate ball size
 //  - movement based on time since last 
 //  -   fps display
