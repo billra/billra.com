@@ -7,17 +7,17 @@ var canvas;
 
 var updateCount = 0;
 var count = 1000;
-var circles; // circles of balls
+var balls;
 
 function rnd_velocity() {
     return (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
 }
 
 function populate() {
-    circles = [];
+    balls = [];
     for (var i = 0; i < count; ++i) {
         var r = 5 + Math.random() * 10;
-        circles.push({
+        balls.push({
             r: r,
             x: r + Math.random() * (canvas.width - 2 * r),
             y: r + Math.random() * (canvas.height - 2 * r),
@@ -42,50 +42,50 @@ function cancelAnimation() {
 function animate() {
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    for (var i = 0; i < circles.length; i++) {
+    for (var i = 0; i < balls.length; i++) {
         // draw
-        ctx.fillStyle = 'hsl(' + circles[i].hue++ + ', 100%, 60%)';
+        ctx.fillStyle = 'hsl(' + balls[i].hue++ + ', 100%, 60%)';
         ctx.beginPath();
-        ctx.arc(circles[i].x, circles[i].y, circles[i].r, 0, Math.PI * 2, true);
+        ctx.arc(balls[i].x, balls[i].y, balls[i].r, 0, Math.PI * 2, true);
         ctx.fill()
 
-        circles[i].x += circles[i].vx
-        circles[i].y += circles[i].vy
+        balls[i].x += balls[i].vx
+        balls[i].y += balls[i].vy
 
-        if (circles[i].x - circles[i].r < 0) {
+        if (balls[i].x - balls[i].r < 0) {
             if (wrap_edge) {
-                circles[i].x = canvas.width - 1 - circles[i].r; // todo: this 'sticks' value to edge, may want 'fold' value across edge
+                balls[i].x = canvas.width - 1 - balls[i].r; // todo: this 'sticks' value to edge, may want 'fold' value across edge
             }
             else {
-                circles[i].x = circles[i].r; // todo: this 'sticks' value to edge, may want 'fold' value across edge
-                circles[i].vx *= -1; // reverse direction, 'bounce'
+                balls[i].x = balls[i].r; // todo: this 'sticks' value to edge, may want 'fold' value across edge
+                balls[i].vx *= -1; // reverse direction, 'bounce'
             }
         }
-        else if (circles[i].x + circles[i].r > canvas.width - 1) {
+        else if (balls[i].x + balls[i].r > canvas.width - 1) {
             if (wrap_edge) {
-                circles[i].x = circles[i].r;
+                balls[i].x = balls[i].r;
             }
             else {
-                circles[i].x = canvas.width - 1 - circles[i].r;
-                circles[i].vx *= -1;
+                balls[i].x = canvas.width - 1 - balls[i].r;
+                balls[i].vx *= -1;
             }
         }
-        if (circles[i].y - circles[i].r < 0) {
+        if (balls[i].y - balls[i].r < 0) {
             if (wrap_edge) {
-                circles[i].y = canvas.height - 1 - circles[i].r;
+                balls[i].y = canvas.height - 1 - balls[i].r;
             }
             else {
-                circles[i].y = circles[i].r;
-                circles[i].vy *= -1;
+                balls[i].y = balls[i].r;
+                balls[i].vy *= -1;
             }
         }
-        else if (circles[i].y + circles[i].r > canvas.height - 1) {
+        else if (balls[i].y + balls[i].r > canvas.height - 1) {
             if (wrap_edge) {
-                circles[i].y = circles[i].r;
+                balls[i].y = balls[i].r;
             }
             else {
-                circles[i].y = canvas.height - 1 - circles[i].r;
-                circles[i].vy *= -1;
+                balls[i].y = canvas.height - 1 - balls[i].r;
+                balls[i].vy *= -1;
             }
         }
     }
