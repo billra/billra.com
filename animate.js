@@ -3,6 +3,9 @@
 var draw_corners = false;
 var wrap_edge = false; // wrap or bounce
 
+var erase_canvas = true;
+var erase_canvas_once; // after resize or other change
+
 var canvas;
 
 var updateCount = 0;
@@ -41,7 +44,12 @@ function cancelAnimation() {
 
 function animate() {
     ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (erase_canvas || erase_canvas_once) {
+        // take into account the original translate, otherwise we get a grey outline in corner
+        ctx.fillRect(-0.5, -0.5, canvas.width, canvas.height);
+    }
+    erase_canvas_once = false;
+
     for (var i = 0; i < balls.length; i++) {
         // draw
         ctx.fillStyle = 'hsl(' + balls[i].hue++ + ', 100%, 60%)';
@@ -104,9 +112,13 @@ window.onkeypress = function (event) {
     console.log(event.key);
     if ('k' == event.key) { // draw corner markers (debugging canvas size)
         draw_corners = !draw_corners;
+        erase_canvas_once = true;
     }
     else if ('w' == event.key) { // balls bounce or wrap around edge
         wrap_edge = !wrap_edge;
+    }
+    else if ('e' == event.key) { // erase canvas or leave ball trails
+        erase_canvas = !erase_canvas;
     }
     else if (' ' == event.key) { // pause/resume animation
         if (!cancelAnimation()) {
@@ -125,6 +137,7 @@ window.onkeypress = function (event) {
         count = updateCount;
         updateCount = 0;
         populate();
+        erase_canvas_once = true;
         request = requestAnimationFrame(animate);
     }
 }
@@ -137,6 +150,7 @@ window.onresize = function () {
     populate();
     ctx = canvas.getContext("2d");
     ctx.translate(.5, .5);
+    erase_canvas_once = true;
     request = requestAnimationFrame(animate);
 }
 
