@@ -30,6 +30,14 @@ function populate() {
 
 var ctx;
 var request;
+function cancelAnimation() {
+    if (!request) {
+        return false;
+    }
+    cancelAnimationFrame(request);
+    request = undefined;
+    return true;
+}
 
 function animate() {
     ctx.fillStyle = "#000000";
@@ -101,10 +109,7 @@ window.onkeypress = function (event) {
         wrap_edge = !wrap_edge;
     }
     else if (' ' == event.key) { // pause/resume animation
-        if (request) {
-            cancelAnimationFrame(request);
-            request = undefined;
-        } else {
+        if (!cancelAnimation()) {
             request = requestAnimationFrame(animate);
         }
     }
@@ -116,10 +121,7 @@ window.onkeypress = function (event) {
         if (0 == updateCount) {
             return; // protect against double enter
         }
-        if (request) {
-            cancelAnimationFrame(request);
-            request = undefined;
-        }
+        cancelAnimation();
         count = updateCount;
         updateCount = 0;
         populate();
@@ -128,10 +130,7 @@ window.onkeypress = function (event) {
 }
 
 window.onresize = function () {
-    if (request) {
-        cancelAnimationFrame(request);
-        request = undefined;
-    }
+    cancelAnimation();
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     console.log("canvas.width: " + canvas.width + " " + canvas.height);
