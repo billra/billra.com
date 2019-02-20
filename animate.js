@@ -4,15 +4,18 @@ var draw_corners = false;
 var wrap_edge = false; // wrap or bounce
 
 var canvas;
-var circles;
 
-function rnd_velocity(){
+var updateCount = 0;
+var count = 1000;
+var circles; // circles of balls
+
+function rnd_velocity() {
     return (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
 }
 
 function populate() {
     circles = [];
-    for (var i = 0; i < 1000; ++i) {
+    for (var i = 0; i < count; ++i) {
         var r = 5 + Math.random() * 10;
         circles.push({
             r: r,
@@ -91,19 +94,36 @@ function animate() {
 
 window.onkeypress = function (event) {
     console.log(event.key);
-    if ('k' == event.key) {
+    if ('k' == event.key) { // draw corner markers (debugging canvas size)
         draw_corners = !draw_corners;
     }
-    else if ('w' == event.key) {
+    else if ('w' == event.key) { // balls bounce or wrap around edge
         wrap_edge = !wrap_edge;
     }
-    else if (' ' == event.key) {
+    else if (' ' == event.key) { // pause/resume animation
         if (request) {
             cancelAnimationFrame(request);
             request = undefined;
         } else {
             request = requestAnimationFrame(animate);
         }
+    }
+    else if ('0' <= event.key && '9' >= event.key) { // specify number of balls
+        updateCount *= 10;
+        updateCount += parseInt(event.key);
+    }
+    else if (13 == event.keyCode) { // change number of balls
+        if (0 == updateCount) {
+            return; // protect against double enter
+        }
+        if (request) {
+            cancelAnimationFrame(request);
+            request = undefined;
+        }
+        count = updateCount;
+        updateCount = 0;
+        populate();
+        request = requestAnimationFrame(animate);
     }
 }
 
@@ -134,6 +154,7 @@ window.onload = function () {
 //  x simplify canvas size code
 //  x keyboard toggles
 //  x   spacebar pause
+//  x specify number of balls
 //  - modulate ball size
 //  - movement based on time since last 
 //  -   fps display
