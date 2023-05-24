@@ -1,1 +1,1 @@
-readme for www.billra.com site
+readme for https://www.billra.com/ site
