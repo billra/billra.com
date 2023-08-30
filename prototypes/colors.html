@@ -10,16 +10,18 @@
             text-align: center;
         }
 
-        .color-box {
+        .color-box-with-value {
             display: inline-block;
             width: 100px;
-            height: 100px;
             margin: 10px;
-            border: 1px solid white;
+            text-align: center;
         }
 
-        .color-value {
-            margin-top: 5px;
+        .color-box {
+            width: 100px;
+            height: 100px;
+            border: 1px solid white;
+            margin-bottom: 5px;
         }
     </style>
 </head>
@@ -37,16 +39,19 @@
             for (let red of redValues) {
                 for (let green of greenValues) {
                     for (let blue of blueValues) {
+                        const colorBoxWithValue = document.createElement('div');
+                        colorBoxWithValue.classList.add('color-box-with-value');
+
                         const colorBox = document.createElement('div');
                         colorBox.style.backgroundColor = `#${red}${green}${blue}`;
                         colorBox.classList.add('color-box');
+                        colorBoxWithValue.appendChild(colorBox);
 
                         const colorValue = document.createElement('div');
                         colorValue.innerText = `#${red}${green}${blue}`;
-                        colorValue.classList.add('color-value');
+                        colorBoxWithValue.appendChild(colorValue);
 
-                        colorBox.appendChild(colorValue);
-                        container.appendChild(colorBox);
+                        container.appendChild(colorBoxWithValue);
                     }
                 }
             }
