@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Color Permutations</title>
+    <style>
+        body {
+            background-color: black;
+            font-family: Arial, sans-serif;
+            color: white;
+            text-align: center;
+        }
+
+        .color-box {
+            display: inline-block;
+            width: 100px;
+            height: 100px;
+            margin: 10px;
+            border: 1px solid white;
+        }
+
+        .color-value {
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Color Permutations</h1>
+    <div id="color-container"></div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('color-container');
+            const redValues = ['00', '7F', 'FF'];
+            const greenValues = ['00', '7F', 'FF'];
+            const blueValues = ['00', '7F', 'FF'];
+
+            for (let red of redValues) {
+                for (let green of greenValues) {
+                    for (let blue of blueValues) {
+                        const colorBox = document.createElement('div');
+                        colorBox.style.backgroundColor = `#${red}${green}${blue}`;
+                        colorBox.classList.add('color-box');
+
+                        const colorValue = document.createElement('div');
+                        colorValue.innerText = `#${red}${green}${blue}`;
+                        colorValue.classList.add('color-value');
+
+                        colorBox.appendChild(colorValue);
+                        container.appendChild(colorBox);
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
