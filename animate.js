@@ -149,6 +149,11 @@ window.addEventListener("keydown", function (event) {
             modal.style.display = "block";
         }
     }
+    else if (event.key === "Escape") { // hide modal on escape key press
+        event.preventDefault();
+        var modal = document.getElementById("documentation-modal");
+        modal.style.display = "none";
+    }
 });
 
 window.onresize = function () {
