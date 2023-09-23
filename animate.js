@@ -108,7 +108,7 @@ function animate() {
     request = requestAnimationFrame(animate);
 }
 
-window.onkeypress = function (event) {
+window.addEventListener("keydown", function (event) {
     console.log(event.key);
     if ('k' == event.key) { // draw corner markers (debugging canvas size)
         draw_corners = !draw_corners;
@@ -129,7 +129,7 @@ window.onkeypress = function (event) {
         updateCount *= 10;
         updateCount += parseInt(event.key);
     }
-    else if (13 == event.keyCode) { // change number of balls
+    else if (event.key === "Enter") { // change number of balls
         if (0 == updateCount) {
             return; // protect against double enter
         }
@@ -140,7 +140,16 @@ window.onkeypress = function (event) {
         erase_canvas_once = true;
         request = requestAnimationFrame(animate);
     }
-}
+    else if (event.key === "F1") { // show documentation
+        event.preventDefault();
+        var modal = document.getElementById("documentation-modal");
+        if (modal.style.display === "block") {
+            modal.style.display = "none";
+        } else {
+            modal.style.display = "block";
+        }
+    }
+});
 
 window.onresize = function () {
     cancelAnimation();
@@ -158,30 +167,3 @@ window.onload = function () {
     canvas = document.getElementById("my_canvas");
     window.onresize();
 }
-
-
-function showDocumentation() {
-    var modal = document.getElementById("documentation-modal");
-    modal.style.display = "block";
-}
-
-function hideDocumentation() {
-    var modal = document.getElementById("documentation-modal");
-    modal.style.display = "none";
-}
-
-// Add event listener for keydown event
-window.addEventListener("keydown", function (event) {
-    if (event.keyCode === 112) { // F1 key
-        event.preventDefault();
-        showDocumentation();
-    }
-});
-
-// Close documentation modal when clicking outside the modal content
-window.addEventListener("click", function (event) {
-    var modal = document.getElementById("documentation-content");
-    if (event.target === modal) {
-        hideDocumentation();
-    }
-});
