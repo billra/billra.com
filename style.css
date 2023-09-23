@@ -15,23 +15,18 @@
     transform: translate(-50%, -50%);
     width: 80%;
     max-width: 600px;
-    background-color: rgba(0, 0, 0, 0.5);
     z-index: 999;
-}
-
-#documentation-content {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 5px;
-}
-
-#documentation-content h1 {
-    text-align: center;
-    margin-bottom: 10px;
-}
-
-#documentation-content pre {
+    border: 2px solid white; /* Add 2px white border */
+    border-radius: 8px; /* Add 8px corner radius */
+    background-color: black;
+    color: white;
     font-family: monospace;
-    white-space: pre-wrap;
-    margin: 0;
+}
+
+#documentation-modal h1 {
+    text-align: center;
+}
+
+#documentation-modal pre {
+    margin: 4px 15px; /* t b, l r */
 }
