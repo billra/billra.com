@@ -18,7 +18,7 @@
     z-index: 999;
     border: 2px solid white; /* Add 2px white border */
     border-radius: 8px; /* Add 8px corner radius */
-    background-color: black;
+    background-color: rgba(0, 0, 0, 0.8);
     color: white;
     font-family: monospace;
 }
