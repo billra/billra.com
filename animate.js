@@ -158,3 +158,30 @@ window.onload = function () {
     canvas = document.getElementById("my_canvas");
     window.onresize();
 }
+
+
+function showDocumentation() {
+    var modal = document.getElementById("documentation-modal");
+    modal.style.display = "block";
+}
+
+function hideDocumentation() {
+    var modal = document.getElementById("documentation-modal");
+    modal.style.display = "none";
+}
+
+// Add event listener for keydown event
+window.addEventListener("keydown", function (event) {
+    if (event.keyCode === 112) { // F1 key
+        event.preventDefault();
+        showDocumentation();
+    }
+});
+
+// Close documentation modal when clicking outside the modal content
+window.addEventListener("click", function (event) {
+    var modal = document.getElementById("documentation-content");
+    if (event.target === modal) {
+        hideDocumentation();
+    }
+});

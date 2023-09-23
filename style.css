@@ -3,3 +3,34 @@
     padding: 0;
     overflow: hidden;
 }
+
+#documentation-modal {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+#documentation-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+#documentation-content h1 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#documentation-content pre {
+    font-family: monospace;
+    white-space: pre-wrap;
+    margin: 0;
+}
