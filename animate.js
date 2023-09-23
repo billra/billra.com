@@ -158,16 +158,3 @@ window.onload = function () {
     canvas = document.getElementById("my_canvas");
     window.onresize();
 }
-
-// todo:
-//  x fit screen
-//  x verify corners
-//  x auto fit screen on window size change -> cancelAnimationFrame if request in progress
-//  x make repo
-//  x simplify canvas size code
-//  x keyboard toggles
-//  x   spacebar pause
-//  x specify number of balls
-//  - modulate ball size
-//  - movement based on time since last 
-//  -   fps display
