@@ -1,10 +1,10 @@
 // animate.js
 
-let draw_corners = false;
-let wrap_edge = false; // wrap or bounce
+let drawCorners = false;
+let wrapEdge = false; // wrap or bounce
 
-let erase_canvas = true;
-let erase_canvas_once; // after resize or other change
+let eraseCanvas = true;
+let eraseCanvasOnce; // after resize or other change
 
 let canvas;
 let ctx;
@@ -13,7 +13,7 @@ let balls;
 let updateCount = 0;
 let count = 1000;
 
-function rnd_velocity() {
+function rndVelocity() {
     return (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
 }
 
@@ -24,8 +24,8 @@ function populate() {
             r,
             x: r + Math.random() * (canvas.width - 2 * r),
             y: r + Math.random() * (canvas.height - 2 * r),
-            vx: rnd_velocity(),
-            vy: rnd_velocity(),
+            vx: rndVelocity(),
+            vy: rndVelocity(),
             hue: Math.floor(Math.random() * 256)
         };
     });
@@ -42,11 +42,11 @@ function cancelAnimation() {
 
 function animate() {
     ctx.fillStyle = "#000000";
-    if (erase_canvas || erase_canvas_once) {
+    if (eraseCanvas || eraseCanvasOnce) {
         // take into account the original translate, otherwise we get a grey outline in corner
         ctx.fillRect(-0.5, -0.5, canvas.width, canvas.height);
     }
-    erase_canvas_once = false;
+    eraseCanvasOnce = false;
 
     balls.forEach(ball => {
         // draw
@@ -59,14 +59,14 @@ function animate() {
         ball.y += ball.vy;
 
         if (ball.x - ball.r < 0) {
-            if (wrap_edge) {
+            if (wrapEdge) {
                 ball.x = canvas.width - 1 - ball.r; // todo: this 'sticks' value to edge, may want 'fold' value across edge
             } else {
                 ball.x = ball.r; // todo: this 'sticks' value to edge, may want 'fold' value across edge
                 ball.vx *= -1; // reverse direction, 'bounce'
             }
         } else if (ball.x + ball.r > canvas.width - 1) {
-            if (wrap_edge) {
+            if (wrapEdge) {
                 ball.x = ball.r;
             } else {
                 ball.x = canvas.width - 1 - ball.r;
@@ -74,14 +74,14 @@ function animate() {
             }
         }
         if (ball.y - ball.r < 0) {
-            if (wrap_edge) {
+            if (wrapEdge) {
                 ball.y = canvas.height - 1 - ball.r;
             } else {
                 ball.y = ball.r;
                 ball.vy *= -1;
             }
         } else if (ball.y + ball.r > canvas.height - 1) {
-            if (wrap_edge) {
+            if (wrapEdge) {
                 ball.y = ball.r;
             } else {
                 ball.y = canvas.height - 1 - ball.r;
@@ -89,7 +89,7 @@ function animate() {
             }
         }
     });
-    if (draw_corners) {
+    if (drawCorners) {
         ctx.strokeStyle = "#FF0000"; // red
         ctx.lineWidth = 1;
         ctx.strokeRect(0, 0, 2, 2);
@@ -103,12 +103,12 @@ function animate() {
 window.addEventListener("keydown", event => {
     console.log(event.key);
     if (event.key === 'k') { // draw corner markers (debugging canvas size)
-        draw_corners = !draw_corners;
-        erase_canvas_once = true;
+        drawCorners = !drawCorners;
+        eraseCanvasOnce = true;
     } else if (event.key === 'w') { // balls bounce or wrap around edge
-        wrap_edge = !wrap_edge;
+        wrapEdge = !wrapEdge;
     } else if (event.key === 'e') { // erase canvas or leave ball trails
-        erase_canvas = !erase_canvas;
+        eraseCanvas = !eraseCanvas;
     } else if (event.key === ' ') { // pause/resume animation
         if (!cancelAnimation()) {
             request = requestAnimationFrame(animate);
@@ -123,7 +123,7 @@ window.addEventListener("keydown", event => {
         count = updateCount;
         updateCount = 0;
         populate();
-        erase_canvas_once = true;
+        eraseCanvasOnce = true;
         request = requestAnimationFrame(animate);
     } else if (event.key === 'F1') { // show documentation
         event.preventDefault();
@@ -144,7 +144,7 @@ window.onresize = () => {
     populate();
     ctx = canvas.getContext("2d");
     ctx.translate(.5, .5);
-    erase_canvas_once = true;
+    eraseCanvasOnce = true;
     request = requestAnimationFrame(animate);
 };
 
