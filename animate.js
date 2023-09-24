@@ -48,7 +48,7 @@ function animate() {
     }
     eraseCanvasOnce = false;
 
-    balls.forEach(ball => {
+    for (let ball of balls) {
         // draw
         ctx.fillStyle = `hsl(${ball.hue++}, 100%, 60%)`;
         ctx.beginPath();
@@ -73,7 +73,7 @@ function animate() {
             ball.y = wrapEdge ? ball.r : canvas.height - 1 - ball.r;
             ball.vy *= wrapEdge ? 1 : -1;
         }
-    });
+    }
     if (drawCorners) {
         ctx.strokeStyle = "#FF0000"; // red
         ctx.lineWidth = 1;
