@@ -59,34 +59,19 @@ function animate() {
         ball.y += ball.vy;
 
         if (ball.x - ball.r < 0) {
-            if (wrapEdge) {
-                ball.x = canvas.width - 1 - ball.r; // todo: this 'sticks' value to edge, may want 'fold' value across edge
-            } else {
-                ball.x = ball.r; // todo: this 'sticks' value to edge, may want 'fold' value across edge
-                ball.vx *= -1; // reverse direction, 'bounce'
-            }
+            // todo: this 'sticks' value to edge, may want 'fold' value across edge
+            ball.x = wrapEdge ? canvas.width - 1 - ball.r : ball.r;
+            ball.vx *= wrapEdge ? 1 : -1;
         } else if (ball.x + ball.r > canvas.width - 1) {
-            if (wrapEdge) {
-                ball.x = ball.r;
-            } else {
-                ball.x = canvas.width - 1 - ball.r;
-                ball.vx *= -1;
-            }
+            ball.x = wrapEdge ? ball.r : canvas.width - 1 - ball.r;
+            ball.vx *= wrapEdge ? 1 : -1;
         }
         if (ball.y - ball.r < 0) {
-            if (wrapEdge) {
-                ball.y = canvas.height - 1 - ball.r;
-            } else {
-                ball.y = ball.r;
-                ball.vy *= -1;
-            }
+            ball.y = wrapEdge ? canvas.height - 1 - ball.r : ball.r;
+            ball.vy *= wrapEdge ? 1 : -1;
         } else if (ball.y + ball.r > canvas.height - 1) {
-            if (wrapEdge) {
-                ball.y = ball.r;
-            } else {
-                ball.y = canvas.height - 1 - ball.r;
-                ball.vy *= -1;
-            }
+            ball.y = wrapEdge ? ball.r : canvas.height - 1 - ball.r;
+            ball.vy *= wrapEdge ? 1 : -1;
         }
     });
     if (drawCorners) {
