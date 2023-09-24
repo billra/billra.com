@@ -18,18 +18,17 @@ function rnd_velocity() {
 }
 
 function populate() {
-    balls = [];
-    for (let i = 0; i < count; ++i) {
+    balls = Array.from({length: count}, () => {
         const r = 5 + Math.random() * 10;
-        balls.push({
-            r: r,
+        return {
+            r,
             x: r + Math.random() * (canvas.width - 2 * r),
             y: r + Math.random() * (canvas.height - 2 * r),
             vx: rnd_velocity(),
             vy: rnd_velocity(),
             hue: Math.floor(Math.random() * 256)
-        });
-    }
+        };
+    });
 }
 
 function cancelAnimation() {
@@ -49,47 +48,47 @@ function animate() {
     }
     erase_canvas_once = false;
 
-    for (let i = 0; i < balls.length; i++) {
+    balls.forEach(ball => {
         // draw
-        ctx.fillStyle = `hsl(${balls[i].hue++}, 100%, 60%)`;
+        ctx.fillStyle = `hsl(${ball.hue++}, 100%, 60%)`;
         ctx.beginPath();
-        ctx.arc(balls[i].x, balls[i].y, balls[i].r, 0, Math.PI * 2, true);
+        ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2, true);
         ctx.fill();
 
-        balls[i].x += balls[i].vx;
-        balls[i].y += balls[i].vy;
+        ball.x += ball.vx;
+        ball.y += ball.vy;
 
-        if (balls[i].x - balls[i].r < 0) {
+        if (ball.x - ball.r < 0) {
             if (wrap_edge) {
-                balls[i].x = canvas.width - 1 - balls[i].r; // todo: this 'sticks' value to edge, may want 'fold' value across edge
+                ball.x = canvas.width - 1 - ball.r; // todo: this 'sticks' value to edge, may want 'fold' value across edge
             } else {
-                balls[i].x = balls[i].r; // todo: this 'sticks' value to edge, may want 'fold' value across edge
-                balls[i].vx *= -1; // reverse direction, 'bounce'
+                ball.x = ball.r; // todo: this 'sticks' value to edge, may want 'fold' value across edge
+                ball.vx *= -1; // reverse direction, 'bounce'
             }
-        } else if (balls[i].x + balls[i].r > canvas.width - 1) {
+        } else if (ball.x + ball.r > canvas.width - 1) {
             if (wrap_edge) {
-                balls[i].x = balls[i].r;
+                ball.x = ball.r;
             } else {
-                balls[i].x = canvas.width - 1 - balls[i].r;
-                balls[i].vx *= -1;
-            }
-        }
-        if (balls[i].y - balls[i].r < 0) {
-            if (wrap_edge) {
-                balls[i].y = canvas.height - 1 - balls[i].r;
-            } else {
-                balls[i].y = balls[i].r;
-                balls[i].vy *= -1;
-            }
-        } else if (balls[i].y + balls[i].r > canvas.height - 1) {
-            if (wrap_edge) {
-                balls[i].y = balls[i].r;
-            } else {
-                balls[i].y = canvas.height - 1 - balls[i].r;
-                balls[i].vy *= -1;
+                ball.x = canvas.width - 1 - ball.r;
+                ball.vx *= -1;
             }
         }
-    }
+        if (ball.y - ball.r < 0) {
+            if (wrap_edge) {
+                ball.y = canvas.height - 1 - ball.r;
+            } else {
+                ball.y = ball.r;
+                ball.vy *= -1;
+            }
+        } else if (ball.y + ball.r > canvas.height - 1) {
+            if (wrap_edge) {
+                ball.y = ball.r;
+            } else {
+                ball.y = canvas.height - 1 - ball.r;
+                ball.vy *= -1;
+            }
+        }
+    });
     if (draw_corners) {
         ctx.strokeStyle = "#FF0000"; // red
         ctx.lineWidth = 1;
@@ -101,7 +100,7 @@ function animate() {
     request = requestAnimationFrame(animate);
 }
 
-window.addEventListener("keydown", function (event) {
+window.addEventListener("keydown", event => {
     console.log(event.key);
     if (event.key === 'k') { // draw corner markers (debugging canvas size)
         draw_corners = !draw_corners;
@@ -115,8 +114,7 @@ window.addEventListener("keydown", function (event) {
             request = requestAnimationFrame(animate);
         }
     } else if (/^[0-9]$/.test(event.key)) { // specify number of balls
-        updateCount *= 10;
-        updateCount += parseInt(event.key);
+        updateCount = updateCount * 10 + parseInt(event.key);
     } else if (event.key === 'Enter') { // change number of balls
         if (updateCount === 0) {
             return; // protect against double enter
@@ -130,11 +128,7 @@ window.addEventListener("keydown", function (event) {
     } else if (event.key === 'F1') { // show documentation
         event.preventDefault();
         const modal = document.getElementById("documentation-modal");
-        if (modal.style.display === "block") {
-            modal.style.display = "none";
-        } else {
-            modal.style.display = "block";
-        }
+        modal.style.display = modal.style.display === "block" ? "none" : "block";
     } else if (event.key === 'Escape') { // hide modal on escape key press
         event.preventDefault();
         const modal = document.getElementById("documentation-modal");
@@ -142,7 +136,7 @@ window.addEventListener("keydown", function (event) {
     }
 });
 
-window.onresize = function () {
+window.onresize = () => {
     cancelAnimation();
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -154,7 +148,7 @@ window.onresize = function () {
     request = requestAnimationFrame(animate);
 };
 
-window.onload = function () {
+window.onload = () => {
     canvas = document.getElementById("my_canvas");
     window.onresize();
 };
