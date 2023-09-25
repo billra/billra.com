@@ -14,6 +14,7 @@ let updateCount = 0;
 let count = 1000;
 let frameCount = 0;
 let startTime = performance.now();
+let intervalId = 0;
 
 function rndVelocity() {
     return (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
@@ -120,14 +121,40 @@ window.addEventListener("keydown", event => {
         request = requestAnimationFrame(animate);
     } else if (event.key === 'F1') { // show documentation
         event.preventDefault();
-        const modal = document.getElementById("documentation-modal");
-        modal.style.display = modal.style.display === "block" ? "none" : "block";
+        handleInterval(true);
     } else if (event.key === 'Escape') { // hide modal on escape key press
         event.preventDefault();
-        const modal = document.getElementById("documentation-modal");
-        modal.style.display = "none";
+        handleInterval(false);
     }
 });
+
+function handleInterval(flip){
+    const modal = document.getElementById("documentation-modal");
+    const from = modal.style.display;
+    const to = flip ? ( from === "none" ? "block" : "none" ) : "none";
+    console.log(`from: ${from}, to: ${to}, flip: ${flip}`)
+    if ( from === to ){
+        return;
+    }
+    const fpsDisplay = document.getElementById("fps-display");
+    if ( to === 'none'){
+        modal.style.display = "none";
+        clearInterval(intervalId);
+        intervalId = 0;
+        fpsDisplay.innerHTML='';
+        return;
+    }
+    modal.style.display = "block";
+    // fps display
+    intervalId = setInterval(() => {
+        const currentTime = performance.now();
+        const elapsedTime = currentTime - startTime;
+        const fps = 1000 * frameCount / elapsedTime;
+        frameCount = 0;
+        startTime = performance.now();
+        fpsDisplay.innerHTML = `${fps.toFixed(2)}`;
+    }, 1000);
+}
 
 window.onresize = () => {
     cancelAnimation();
@@ -142,16 +169,6 @@ window.onresize = () => {
 };
 
 window.onload = () => {
-    fpsDisplay = document.getElementById("fps-display");
     canvas = document.getElementById("my_canvas");
     window.onresize();
-    // fps display
-    setInterval(() => {
-        const currentTime = performance.now();
-        const elapsedTime = currentTime - startTime;
-        const fps = 1000 * frameCount / elapsedTime;
-        frameCount = 0;
-        startTime = performance.now();
-        fpsDisplay.innerHTML = `${fps.toFixed(2)}`;
-    }, 1000);
 };
