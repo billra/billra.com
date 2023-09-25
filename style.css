@@ -12,17 +12,13 @@ body {
     transform: translate(-50%, -50%);
     z-index: 999;
     border: 2px solid white; /* Add 2px white border */
-    border-radius: 8px; /* Add 8px corner radius */
+    border-radius: 11px; /* Add 8px corner radius */
     background-color: rgba(0, 0, 0, 0.8);
     color: white;
     font-family: monospace;
+    padding: 5px 25px 0px 25px; /* top | right | bottom | left */
 }
 
 #documentation-modal h1 {
-    margin: 10px;
     text-align: center;
-}
-
-#documentation-modal pre {
-    margin: 4px 15px; /* t b, l r */
 }
