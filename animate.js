@@ -142,6 +142,7 @@ window.onresize = () => {
 };
 
 window.onload = () => {
+    fpsDisplay = document.getElementById("fps-display");
     canvas = document.getElementById("my_canvas");
     window.onresize();
     // fps display
@@ -151,6 +152,6 @@ window.onload = () => {
         const fps = 1000 * frameCount / elapsedTime;
         frameCount = 0;
         startTime = performance.now();
-        console.log(`FPS: ${fps}`);
+        fpsDisplay.innerHTML = `${fps.toFixed(2)}`;
     }, 1000);
 };
