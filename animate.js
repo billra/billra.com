@@ -131,7 +131,7 @@ window.addEventListener("keydown", event => {
 function handleInterval(flip){
     const modal = document.getElementById("documentation-modal");
     const from = modal.style.display;
-    const to = flip ? ( from === "none" ? "block" : "none" ) : "none";
+    const to = flip ? ( from === "block" ? "none" : "block" ) : "none";
     console.log(`from: ${from}, to: ${to}, flip: ${flip}`)
     if ( from === to ){
         return;
