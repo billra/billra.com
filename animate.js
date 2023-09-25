@@ -159,7 +159,7 @@ window.onresize = () => {
     cancelAnimation();
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    console.log(`canvas.width: ${canvas.width} ${canvas.height}`);
+    // console.log(`canvas size: ${canvas.width} ${canvas.height}`);
     populate();
     ctx = canvas.getContext("2d");
     ctx.translate(.5, .5);
