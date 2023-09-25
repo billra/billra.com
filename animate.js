@@ -95,7 +95,7 @@ function animate() {
 }
 
 window.addEventListener("keydown", event => {
-    console.log(event.key);
+    // console.log(event.key);
     if (event.key === 'k') { // draw corner markers (debugging canvas size)
         drawCorners = !drawCorners;
         eraseCanvasOnce = true;
