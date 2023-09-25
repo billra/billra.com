@@ -11,7 +11,7 @@ let ctx;
 let request;
 let balls;
 let updateCount = 0;
-let count = 1000;
+let ballCount = 20;
 let frameCount = 0;
 let startTime = performance.now();
 let intervalId = 0;
@@ -21,7 +21,7 @@ function rndVelocity() {
 }
 
 function populate() {
-    balls = Array.from({length: count}, () => {
+    balls = Array.from({length: ballCount}, () => {
         const r = 5 + Math.random() * 10;
         return {
             r,
@@ -114,7 +114,7 @@ window.addEventListener("keydown", event => {
             return; // protect against double enter
         }
         cancelAnimation();
-        count = updateCount;
+        ballCount = updateCount;
         updateCount = 0;
         populate();
         eraseCanvasOnce = true;
