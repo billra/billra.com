@@ -12,6 +12,8 @@ let request;
 let balls;
 let updateCount = 0;
 let count = 1000;
+let frameCount = 0;
+let startTime = performance.now();
 
 function rndVelocity() {
     return (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
@@ -68,6 +70,7 @@ function updateBall(ball){
 }
 
 function animate() {
+    frameCount++;
     ctx.fillStyle = "#000000";
     if (eraseCanvas || eraseCanvasOnce) {
         // take into account the original translate, otherwise we get a grey outline in corner
@@ -141,4 +144,13 @@ window.onresize = () => {
 window.onload = () => {
     canvas = document.getElementById("my_canvas");
     window.onresize();
+    // fps display
+    setInterval(() => {
+        const currentTime = performance.now();
+        const elapsedTime = currentTime - startTime;
+        const fps = 1000 * frameCount / elapsedTime;
+        frameCount = 0;
+        startTime = performance.now();
+        console.log(`FPS: ${fps}`);
+    }, 1000);
 };
