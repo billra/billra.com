@@ -16,22 +16,22 @@ let frameCount = 0;
 let startTime = performance.now();
 let intervalId = 0;
 
-function rndVelocity() {
-    return (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
-}
+class Ball {
+    constructor(canvas) {
+      this.r = 5 + Math.random() * 10;
+      this.x = this.r + Math.random() * (canvas.width - 2 * this.r);
+      this.y = this.r + Math.random() * (canvas.height - 2 * this.r);
+      this.vx = this.rndVelocity();
+      this.vy = this.rndVelocity();
+      this.hue = Math.floor(Math.random() * 256);
+    }
+    rndVelocity() {
+      return (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
+    }
+  }
 
 function populate() {
-    balls = Array.from({length: ballCount}, () => {
-        const r = 5 + Math.random() * 10;
-        return {
-            r,
-            x: r + Math.random() * (canvas.width - 2 * r),
-            y: r + Math.random() * (canvas.height - 2 * r),
-            vx: rndVelocity(),
-            vy: rndVelocity(),
-            hue: Math.floor(Math.random() * 256)
-        };
-    });
+    balls = Array.from({length: ballCount}, () => new Ball(canvas));
 }
 
 function cancelAnimation() {
