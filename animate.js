@@ -129,7 +129,7 @@ window.addEventListener("keydown", event => {
 });
 
 function handleInterval(flip){
-    const modal = document.getElementById("documentation-modal");
+    const modal = document.getElementById("popup");
     const from = getComputedStyle(modal).display;
     const to = flip ? ( from === "none" ? "block" : "none" ) : "none";
     if ( from === to ){

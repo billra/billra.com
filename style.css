@@ -4,7 +4,7 @@ body {
     overflow: hidden;
 }
 
-#documentation-modal {
+#popup {
     display: none;
     position: fixed;
     top: 50%;
@@ -19,6 +19,6 @@ body {
     padding: 5px 25px 0px 25px; /* top right bottom left */
 }
 
-#documentation-modal h1 {
+#popup h1 {
     text-align: center;
 }
