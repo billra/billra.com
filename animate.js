@@ -28,6 +28,12 @@ class Ball {
     rndVelocity() {
       return (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
     }
+    draw(ctx){
+        ctx.fillStyle = `hsl(${this.hue++}, 100%, 60%)`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2, true);
+        ctx.fill();
+    }
     step(canvas) {
         this.x += this.vx;
         this.y += this.vy;
@@ -62,13 +68,6 @@ function cancelAnimation() {
     return true;
 }
 
-function drawBall(ball){
-    ctx.fillStyle = `hsl(${ball.hue++}, 100%, 60%)`;
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2, true);
-    ctx.fill();
-}
-
 function animate() {
     frameCount++;
     ctx.fillStyle = "#000000";
@@ -79,7 +78,7 @@ function animate() {
     eraseCanvasOnce = false;
 
     for (let ball of balls) {
-        drawBall(ball);
+        ball.draw(ctx);
         ball.step(canvas);
     }
     if (drawCorners) {
