@@ -34,23 +34,23 @@ class Ball {
         ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2, true);
         ctx.fill();
     }
-    step(canvas) {
+    step(canvas,wrapEdge) {
         this.x += this.vx;
         this.y += this.vy;
         if (this.x - this.r < 0) {
             // todo: this 'sticks' value to edge, may want 'fold' value across edge
-            this.x = gWrapEdge ? canvas.width - 1 - this.r : this.r;
-            this.vx *= gWrapEdge ? 1 : -1;
+            this.x = wrapEdge ? canvas.width - 1 - this.r : this.r;
+            this.vx *= wrapEdge ? 1 : -1;
         } else if (this.x + this.r > canvas.width - 1) {
-            this.x = gWrapEdge ? this.r : canvas.width - 1 - this.r;
-            this.vx *= gWrapEdge ? 1 : -1;
+            this.x = wrapEdge ? this.r : canvas.width - 1 - this.r;
+            this.vx *= wrapEdge ? 1 : -1;
         }
         if (this.y - this.r < 0) {
-            this.y = gWrapEdge ? canvas.height - 1 - this.r : this.r;
-            this.vy *= gWrapEdge ? 1 : -1;
+            this.y = wrapEdge ? canvas.height - 1 - this.r : this.r;
+            this.vy *= wrapEdge ? 1 : -1;
         } else if (this.y + this.r > canvas.height - 1) {
-            this.y = gWrapEdge ? this.r : canvas.height - 1 - this.r;
-            this.vy *= gWrapEdge ? 1 : -1;
+            this.y = wrapEdge ? this.r : canvas.height - 1 - this.r;
+            this.vy *= wrapEdge ? 1 : -1;
         }
     }
 }
@@ -79,7 +79,7 @@ function animate() {
 
     for (let ball of gBalls) {
         ball.draw(gCtx);
-        ball.step(gCanvas);
+        ball.step(gCanvas,gWrapEdge);
     }
     if (gDrawCorners) {
         gCtx.strokeStyle = "#FF0000"; // red
