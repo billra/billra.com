@@ -55,10 +55,6 @@ class Ball {
     }
 }
 
-function populate() {
-    gBalls = Array.from({length: gBallCount}, () => new Ball(gCanvas));
-}
-
 function cancelAnimation() {
     if (!gRequest) {
         return false;
@@ -92,6 +88,12 @@ function animate() {
     gRequest = requestAnimationFrame(animate);
 }
 
+function startAnimation() {
+    gBalls = Array.from({length: gBallCount}, () => new Ball(gCanvas));
+    gEraseCanvasOnce = true;
+    gRequest = requestAnimationFrame(animate);
+}
+
 window.addEventListener("keydown", event => {
     // console.log(event.key);
     if (event.key === 'k') { // draw corner markers (debugging canvas size)
@@ -114,9 +116,7 @@ window.addEventListener("keydown", event => {
         cancelAnimation();
         gBallCount = gUpdateCount;
         gUpdateCount = 0;
-        populate();
-        gEraseCanvasOnce = true;
-        gRequest = requestAnimationFrame(animate);
+        startAnimation();
     } else if (event.key === 'F1') { // show documentation
         event.preventDefault();
         handleInterval(true);
@@ -158,11 +158,9 @@ window.onresize = () => {
     gCanvas.width = window.innerWidth;
     gCanvas.height = window.innerHeight;
     // console.log(`canvas size: ${canvas.width} ${canvas.height}`);
-    populate();
     gCtx = gCanvas.getContext("2d");
     gCtx.translate(.5, .5);
-    gEraseCanvasOnce = true;
-    gRequest = requestAnimationFrame(animate);
+    startAnimation();
 };
 
 window.onload = () => {
