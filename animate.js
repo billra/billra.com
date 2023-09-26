@@ -18,17 +18,17 @@ let intervalId = 0;
 
 class Ball {
     constructor(canvas) {
-      this.r = 5 + Math.random() * 10;
-      this.x = this.r + Math.random() * (canvas.width - 2 * this.r);
-      this.y = this.r + Math.random() * (canvas.height - 2 * this.r);
-      this.vx = this.rndVelocity();
-      this.vy = this.rndVelocity();
-      this.hue = Math.floor(Math.random() * 256);
+        this.r = 5 + Math.random() * 10;
+        this.x = this.r + Math.random() * (canvas.width - 2 * this.r);
+        this.y = this.r + Math.random() * (canvas.height - 2 * this.r);
+        this.vx = this.rndVelocity();
+        this.vy = this.rndVelocity();
+        this.hue = Math.floor(Math.random() * 256);
     }
     rndVelocity() {
-      return (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
+        return (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
     }
-    draw(ctx){
+    draw(ctx) {
         ctx.fillStyle = `hsl(${this.hue++}, 100%, 60%)`;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2, true);
