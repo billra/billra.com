@@ -28,7 +28,26 @@ class Ball {
     rndVelocity() {
       return (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
     }
-  }
+    update(canvas) {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x - this.r < 0) {
+            // todo: this 'sticks' value to edge, may want 'fold' value across edge
+            this.x = wrapEdge ? canvas.width - 1 - this.r : this.r;
+            this.vx *= wrapEdge ? 1 : -1;
+        } else if (this.x + this.r > canvas.width - 1) {
+            this.x = wrapEdge ? this.r : canvas.width - 1 - this.r;
+            this.vx *= wrapEdge ? 1 : -1;
+        }
+        if (this.y - this.r < 0) {
+            this.y = wrapEdge ? canvas.height - 1 - this.r : this.r;
+            this.vy *= wrapEdge ? 1 : -1;
+        } else if (this.y + this.r > canvas.height - 1) {
+            this.y = wrapEdge ? this.r : canvas.height - 1 - this.r;
+            this.vy *= wrapEdge ? 1 : -1;
+        }
+    }
+}
 
 function populate() {
     balls = Array.from({length: ballCount}, () => new Ball(canvas));
@@ -50,26 +69,6 @@ function drawBall(ball){
     ctx.fill();
 }
 
-function updateBall(ball){
-    ball.x += ball.vx;
-    ball.y += ball.vy;
-    if (ball.x - ball.r < 0) {
-        // todo: this 'sticks' value to edge, may want 'fold' value across edge
-        ball.x = wrapEdge ? canvas.width - 1 - ball.r : ball.r;
-        ball.vx *= wrapEdge ? 1 : -1;
-    } else if (ball.x + ball.r > canvas.width - 1) {
-        ball.x = wrapEdge ? ball.r : canvas.width - 1 - ball.r;
-        ball.vx *= wrapEdge ? 1 : -1;
-    }
-    if (ball.y - ball.r < 0) {
-        ball.y = wrapEdge ? canvas.height - 1 - ball.r : ball.r;
-        ball.vy *= wrapEdge ? 1 : -1;
-    } else if (ball.y + ball.r > canvas.height - 1) {
-        ball.y = wrapEdge ? ball.r : canvas.height - 1 - ball.r;
-        ball.vy *= wrapEdge ? 1 : -1;
-    }
-}
-
 function animate() {
     frameCount++;
     ctx.fillStyle = "#000000";
@@ -81,7 +80,7 @@ function animate() {
 
     for (let ball of balls) {
         drawBall(ball);
-        updateBall(ball);
+        ball.update(canvas);
     }
     if (drawCorners) {
         ctx.strokeStyle = "#FF0000"; // red
