@@ -55,14 +55,7 @@ class Ball {
     }
 }
 
-function cancelAnimation() {
-    if (!gRequest) {
-        return false;
-    }
-    cancelAnimationFrame(gRequest);
-    gRequest = undefined;
-    return true;
-}
+// -------
 
 function animate() {
     gFrameCount++;
@@ -94,6 +87,17 @@ function startAnimation() {
     gRequest = requestAnimationFrame(animate);
 }
 
+function stopAnimation() {
+    if (!gRequest) {
+        return false;
+    }
+    cancelAnimationFrame(gRequest);
+    gRequest = undefined;
+    return true;
+}
+
+// -------
+
 window.addEventListener("keydown", event => {
     // console.log(event.key);
     if (event.key === 'k') { // draw corner markers (debugging canvas size)
@@ -103,8 +107,8 @@ window.addEventListener("keydown", event => {
         gWrapEdge = !gWrapEdge;
     } else if (event.key === 'e') { // erase canvas or leave ball trails
         gEraseCanvas = !gEraseCanvas;
-    } else if (event.key === ' ') { // pause/resume animation
-        if (!cancelAnimation()) {
+    } else if (event.key === ' ') { // pause/resume animation  todo: toggleAnimation function
+        if (!stopAnimation()) {
             gRequest = requestAnimationFrame(animate);
         }
     } else if (/^[0-9]$/.test(event.key)) { // specify number of balls
@@ -113,7 +117,7 @@ window.addEventListener("keydown", event => {
         if (gUpdateCount === 0) {
             return; // protect against double enter
         }
-        cancelAnimation();
+        stopAnimation();
         gBallCount = gUpdateCount;
         gUpdateCount = 0;
         startAnimation();
@@ -153,8 +157,8 @@ function handleInterval(flip){
     }, 1000);
 }
 
-window.onresize = () => {
-    cancelAnimation();
+window.onresize = () => { // todo: non-continuous
+    stopAnimation();
     gCanvas.width = window.innerWidth;
     gCanvas.height = window.innerHeight;
     // console.log(`canvas size: ${canvas.width} ${canvas.height}`);
