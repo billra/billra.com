@@ -1,20 +1,20 @@
 // animate.js
 
-let drawCorners = false;
-let wrapEdge = false; // wrap or bounce
+let gDrawCorners = false;
+let gWrapEdge = false; // wrap or bounce
 
-let eraseCanvas = true;
-let eraseCanvasOnce; // after resize or other change
+let gEraseCanvas = true;
+let gEraseCanvasOnce; // after resize or other change
 
-let canvas;
-let ctx;
-let request;
-let balls;
-let updateCount = 0;
-let ballCount = 20;
-let frameCount = 0;
-let startTime = performance.now();
-let intervalId = 0;
+let gCanvas;
+let gCtx;
+let gRequest;
+let gBalls;
+let gUpdateCount = 0;
+let gBallCount = 20;
+let gFrameCount = 0;
+let gStartTime = performance.now();
+let gIntervalId = 0;
 
 class Ball {
     constructor(canvas) {
@@ -39,84 +39,84 @@ class Ball {
         this.y += this.vy;
         if (this.x - this.r < 0) {
             // todo: this 'sticks' value to edge, may want 'fold' value across edge
-            this.x = wrapEdge ? canvas.width - 1 - this.r : this.r;
-            this.vx *= wrapEdge ? 1 : -1;
+            this.x = gWrapEdge ? canvas.width - 1 - this.r : this.r;
+            this.vx *= gWrapEdge ? 1 : -1;
         } else if (this.x + this.r > canvas.width - 1) {
-            this.x = wrapEdge ? this.r : canvas.width - 1 - this.r;
-            this.vx *= wrapEdge ? 1 : -1;
+            this.x = gWrapEdge ? this.r : canvas.width - 1 - this.r;
+            this.vx *= gWrapEdge ? 1 : -1;
         }
         if (this.y - this.r < 0) {
-            this.y = wrapEdge ? canvas.height - 1 - this.r : this.r;
-            this.vy *= wrapEdge ? 1 : -1;
+            this.y = gWrapEdge ? canvas.height - 1 - this.r : this.r;
+            this.vy *= gWrapEdge ? 1 : -1;
         } else if (this.y + this.r > canvas.height - 1) {
-            this.y = wrapEdge ? this.r : canvas.height - 1 - this.r;
-            this.vy *= wrapEdge ? 1 : -1;
+            this.y = gWrapEdge ? this.r : canvas.height - 1 - this.r;
+            this.vy *= gWrapEdge ? 1 : -1;
         }
     }
 }
 
 function populate() {
-    balls = Array.from({length: ballCount}, () => new Ball(canvas));
+    gBalls = Array.from({length: gBallCount}, () => new Ball(gCanvas));
 }
 
 function cancelAnimation() {
-    if (!request) {
+    if (!gRequest) {
         return false;
     }
-    cancelAnimationFrame(request);
-    request = undefined;
+    cancelAnimationFrame(gRequest);
+    gRequest = undefined;
     return true;
 }
 
 function animate() {
-    frameCount++;
-    ctx.fillStyle = "#000000";
-    if (eraseCanvas || eraseCanvasOnce) {
+    gFrameCount++;
+    gCtx.fillStyle = "#000000";
+    if (gEraseCanvas || gEraseCanvasOnce) {
         // take into account the original translate, otherwise we get a grey outline in corner
-        ctx.fillRect(-0.5, -0.5, canvas.width, canvas.height);
+        gCtx.fillRect(-0.5, -0.5, gCanvas.width, gCanvas.height);
     }
-    eraseCanvasOnce = false;
+    gEraseCanvasOnce = false;
 
-    for (let ball of balls) {
-        ball.draw(ctx);
-        ball.step(canvas);
+    for (let ball of gBalls) {
+        ball.draw(gCtx);
+        ball.step(gCanvas);
     }
-    if (drawCorners) {
-        ctx.strokeStyle = "#FF0000"; // red
-        ctx.lineWidth = 1;
-        ctx.strokeRect(0, 0, 2, 2);
-        ctx.strokeRect(0, canvas.height - 3, 2, 2);
-        ctx.strokeRect(canvas.width - 3, 0, 2, 2);
-        ctx.strokeRect(canvas.width - 3, canvas.height - 3, 2, 2); // drawable pixels are [0 to canvas.width-1] and [0 to canvas.height-1] (after ctx.translate)
+    if (gDrawCorners) {
+        gCtx.strokeStyle = "#FF0000"; // red
+        gCtx.lineWidth = 1;
+        gCtx.strokeRect(0, 0, 2, 2);
+        gCtx.strokeRect(0, gCanvas.height - 3, 2, 2);
+        gCtx.strokeRect(gCanvas.width - 3, 0, 2, 2);
+        gCtx.strokeRect(gCanvas.width - 3, gCanvas.height - 3, 2, 2); // drawable pixels are [0 to canvas.width-1] and [0 to canvas.height-1] (after ctx.translate)
     }
-    request = requestAnimationFrame(animate);
+    gRequest = requestAnimationFrame(animate);
 }
 
 window.addEventListener("keydown", event => {
     // console.log(event.key);
     if (event.key === 'k') { // draw corner markers (debugging canvas size)
-        drawCorners = !drawCorners;
-        eraseCanvasOnce = true;
+        gDrawCorners = !gDrawCorners;
+        gEraseCanvasOnce = true;
     } else if (event.key === 'w') { // balls bounce or wrap around edge
-        wrapEdge = !wrapEdge;
+        gWrapEdge = !gWrapEdge;
     } else if (event.key === 'e') { // erase canvas or leave ball trails
-        eraseCanvas = !eraseCanvas;
+        gEraseCanvas = !gEraseCanvas;
     } else if (event.key === ' ') { // pause/resume animation
         if (!cancelAnimation()) {
-            request = requestAnimationFrame(animate);
+            gRequest = requestAnimationFrame(animate);
         }
     } else if (/^[0-9]$/.test(event.key)) { // specify number of balls
-        updateCount = updateCount * 10 + parseInt(event.key);
+        gUpdateCount = gUpdateCount * 10 + parseInt(event.key);
     } else if (event.key === 'Enter') { // change number of balls
-        if (updateCount === 0) {
+        if (gUpdateCount === 0) {
             return; // protect against double enter
         }
         cancelAnimation();
-        ballCount = updateCount;
-        updateCount = 0;
+        gBallCount = gUpdateCount;
+        gUpdateCount = 0;
         populate();
-        eraseCanvasOnce = true;
-        request = requestAnimationFrame(animate);
+        gEraseCanvasOnce = true;
+        gRequest = requestAnimationFrame(animate);
     } else if (event.key === 'F1') { // show documentation
         event.preventDefault();
         handleInterval(true);
@@ -136,36 +136,36 @@ function handleInterval(flip){
     const fpsDisplay = document.getElementById("fps-display");
     if ( to === 'none'){
         modal.style.display = "none";
-        clearInterval(intervalId);
-        intervalId = 0;
+        clearInterval(gIntervalId);
+        gIntervalId = 0;
         fpsDisplay.innerHTML='';
         return;
     }
     modal.style.display = "block";
     // fps display
-    intervalId = setInterval(() => {
+    gIntervalId = setInterval(() => {
         const currentTime = performance.now();
-        const elapsedTime = currentTime - startTime;
-        const fps = 1000 * frameCount / elapsedTime;
-        frameCount = 0;
-        startTime = performance.now();
+        const elapsedTime = currentTime - gStartTime;
+        const fps = 1000 * gFrameCount / elapsedTime;
+        gFrameCount = 0;
+        gStartTime = performance.now();
         fpsDisplay.innerHTML = `${fps.toFixed(2)}`;
     }, 1000);
 }
 
 window.onresize = () => {
     cancelAnimation();
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    gCanvas.width = window.innerWidth;
+    gCanvas.height = window.innerHeight;
     // console.log(`canvas size: ${canvas.width} ${canvas.height}`);
     populate();
-    ctx = canvas.getContext("2d");
-    ctx.translate(.5, .5);
-    eraseCanvasOnce = true;
-    request = requestAnimationFrame(animate);
+    gCtx = gCanvas.getContext("2d");
+    gCtx.translate(.5, .5);
+    gEraseCanvasOnce = true;
+    gRequest = requestAnimationFrame(animate);
 };
 
 window.onload = () => {
-    canvas = document.getElementById("my_canvas");
+    gCanvas = document.getElementById("my_canvas");
     window.onresize();
 };
