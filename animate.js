@@ -28,7 +28,7 @@ class Ball {
     rndVelocity() {
       return (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
     }
-    update(canvas) {
+    step(canvas) {
         this.x += this.vx;
         this.y += this.vy;
         if (this.x - this.r < 0) {
@@ -80,7 +80,7 @@ function animate() {
 
     for (let ball of balls) {
         drawBall(ball);
-        ball.update(canvas);
+        ball.step(canvas);
     }
     if (drawCorners) {
         ctx.strokeStyle = "#FF0000"; // red
