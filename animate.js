@@ -156,21 +156,21 @@ window.addEventListener("keydown", event => {
 });
 
 function showInfo(flip){
-    const modal = document.getElementById("popup");
-    const from = getComputedStyle(modal).display;
+    const popup = document.getElementById("popup");
+    const from = getComputedStyle(popup).display;
     const to = flip ? ( from === "none" ? "block" : "none" ) : "none";
     if ( from === to ){
         return;
     }
     const fpsDisplay = document.getElementById("fps-display");
     if ( to === 'none'){
-        modal.style.display = "none";
+        popup.style.display = "none";
         clearInterval(gIntervalId);
         gIntervalId = 0;
         fpsDisplay.innerHTML='';
         return;
     }
-    modal.style.display = "block";
+    popup.style.display = "block";
     // fps display
     gIntervalId = setInterval(() => {
         const currentTime = performance.now();
