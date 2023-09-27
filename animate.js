@@ -148,14 +148,14 @@ window.addEventListener("keydown", event => {
         gEnterNumber = new EnterNumber();
     } else if (event.key === 'F1') { // show documentation
         event.preventDefault();
-        handleInterval(true);
+        showInfo(true);
     } else if (event.key === 'Escape') { // hide modal on escape key press
         event.preventDefault();
-        handleInterval(false);
+        showInfo(false);
     }
 });
 
-function handleInterval(flip){
+function showInfo(flip){
     const modal = document.getElementById("popup");
     const from = getComputedStyle(modal).display;
     const to = flip ? ( from === "none" ? "block" : "none" ) : "none";
