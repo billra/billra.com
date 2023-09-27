@@ -78,17 +78,34 @@ class Animation {
         this.startAnimation();
     }
 
-    startAnimation() {
+    startAnimation() { // should only be called if there is no existing request
+        if (this.frameRequest){
+            throw 'frameRequest already exists'
+        }
+        this.startAnimationUnchecked();
+    }
+
+    stopAnimation() { // can be called even without an outstanding request
+        if (this.frameRequest) {
+            this.stopAnimationUnchecked();
+        }
+    }
+
+    startAnimationUnchecked() { // for internal use
         this.frameRequest = requestAnimationFrame(this.animate);
     }
 
-    stopAnimation() {
-        if (!this.frameRequest) {
-            return false;
-        }
+    stopAnimationUnchecked() { // for internal use
         cancelAnimationFrame(this.frameRequest);
         this.frameRequest = undefined;
-        return true;
+    }
+
+    toggleAnimation(){
+        if (this.frameRequest){
+            this.stopAnimationUnchecked();
+        } else {
+            this.startAnimationUnchecked();
+        }
     }
 
     animate() {
@@ -123,10 +140,8 @@ window.addEventListener("keydown", event => {
         gAnimation.wrapEdge = !gAnimation.wrapEdge;
     } else if (event.key === 'e') { // erase canvas or leave ball trails
         gAnimation.eraseCanvas = !gAnimation.eraseCanvas;
-    } else if (event.key === ' ') { // pause/resume animation  todo: toggleAnimation function ***
-        if (!gAnimation.stopAnimation()) {
-            gAnimation.request = requestAnimationFrame(gAnimation.animate);
-        }
+    } else if (event.key === ' ') { // pause/resume animation
+        gAnimation.toggleAnimation();
     } else if (gEnterNumber.complete(event.key)) { // change number of balls
         gAnimation.stopAnimation();
         gAnimation = new Animation(gEnterNumber.value);
