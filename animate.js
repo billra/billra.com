@@ -72,6 +72,7 @@ class Animation {
         this.canvas.height = window.innerHeight;
         this.ctx = this.canvas.getContext("2d");
         this.ctx.translate(.5, .5);
+        // console.log(`original: ${this.ctx.getTransform()}`);
         this.frameCount = 0;
         this.balls = Array.from({length: this.ballCount}, () => new Ball(this.canvas));
         this.animate = this.animate.bind(this);
@@ -98,7 +99,7 @@ class Animation {
     stopAnimationUnchecked() { // for internal use
         cancelAnimationFrame(this.frameRequest);
         this.frameRequest = undefined;
-    }
+    }e
 
     toggleAnimation(){
         if (this.frameRequest){
@@ -182,10 +183,13 @@ function showInfo(flip){
     }, 1000);
 }
 
-window.onresize = () => { // todo: non-continuous
-    gAnimation.stopAnimation();
-    gAnimation = new Animation(gAnimation.ballCount);
-    gEnterNumber = new EnterNumber();
+window.onresize = () => {
+    gAnimation.canvas.width = window.innerWidth;
+    gAnimation.canvas.height = window.innerHeight;
+    // console.log(`after resize: ${gAnimation.ctx.getTransform()}`);  // <- was reset!
+    gAnimation.ctx.translate(.5, .5); // restore translation
+    gAnimation.ctx.fillRect(-0.5, -0.5, gAnimation.canvas.width, gAnimation.canvas.height);
+    // console.log(`finally: ${gAnimation.ctx.getTransform()}`); // back to original
 };
 
 window.onload = () => {
