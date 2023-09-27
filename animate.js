@@ -1,10 +1,26 @@
 // animate.js
 
 let gAnimation;
+let gEnterNumber;
 
-let gUpdateCount = 0;
 let gStartTime = performance.now();
 let gIntervalId = 0;
+
+class EnterNumber {
+    constructor() {
+        this.value = 0;
+    }
+    complete(key) {
+        if (/^[0-9]$/.test(key)) { // number of balls digit by digit
+            this.value = this.value * 10 + parseInt(key);
+            return false
+        }
+        if (key === 'Enter') { // change number of balls
+            return this.value;
+        }
+        return false;
+    }
+}
 
 class Ball {
     constructor(canvas) {
@@ -63,15 +79,15 @@ class Animation {
     }
 
     startAnimation() {
-        this.request = requestAnimationFrame(this.animate);
+        this.frameRequest = requestAnimationFrame(this.animate);
     }
 
     stopAnimation() {
-        if (!this.request) {
+        if (!this.frameRequest) {
             return false;
         }
-        cancelAnimationFrame(this.request);
-        this.request = undefined;
+        cancelAnimationFrame(this.frameRequest);
+        this.frameRequest = undefined;
         return true;
     }
 
@@ -95,7 +111,7 @@ class Animation {
             // drawable pixels are [0 to canvas.width-1] and [0 to canvas.height-1] (after ctx.translate)
             this.ctx.strokeRect(this.canvas.width - 3, this.canvas.height - 3, 2, 2);
         }
-        this.request = requestAnimationFrame(this.animate);
+        this.frameRequest = requestAnimationFrame(this.animate);
     }
 }
 
@@ -111,15 +127,10 @@ window.addEventListener("keydown", event => {
         if (!gAnimation.stopAnimation()) {
             gAnimation.request = requestAnimationFrame(gAnimation.animate);
         }
-    } else if (/^[0-9]$/.test(event.key)) { // specify number of balls
-        gUpdateCount = gUpdateCount * 10 + parseInt(event.key);
-    } else if (event.key === 'Enter') { // change number of balls
-        if (gUpdateCount === 0) {
-            return; // protect against double enter
-        }
+    } else if (gEnterNumber.complete(event.key)) { // change number of balls
         gAnimation.stopAnimation();
-        gAnimation = new Animation(gUpdateCount);
-        gUpdateCount = 0;
+        gAnimation = new Animation(gEnterNumber.value);
+        gEnterNumber = new EnterNumber();
     } else if (event.key === 'F1') { // show documentation
         event.preventDefault();
         handleInterval(true);
@@ -159,8 +170,10 @@ function handleInterval(flip){
 window.onresize = () => { // todo: non-continuous
     gAnimation.stopAnimation();
     gAnimation = new Animation(gAnimation.ballCount);
+    gEnterNumber = new EnterNumber();
 };
 
 window.onload = () => {
     gAnimation = new Animation(20);
+    gEnterNumber = new EnterNumber();
 };
