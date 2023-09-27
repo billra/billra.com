@@ -1,18 +1,8 @@
 // animate.js
 
-let gDrawCorners = false;
-let gWrapEdge = false; // wrap or bounce
+let gAnimation;
 
-let gEraseCanvas = true;
-let gEraseCanvasOnce; // after resize or other change
-
-let gCanvas;
-let gCtx;
-let gRequest;
-let gBalls;
 let gUpdateCount = 0;
-let gBallCount = 20;
-let gFrameCount = 0;
 let gStartTime = performance.now();
 let gIntervalId = 0;
 
@@ -55,61 +45,71 @@ class Ball {
     }
 }
 
-// -------
+class Animation {
+    constructor(ballCount) {
+        this.ballCount = ballCount;
+        this.drawCorners = false;
+        this.wrapEdge = false; // wrap or bounce
+        this.eraseCanvas = true;
+        this.canvas = document.getElementById("my_canvas");
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.ctx = this.canvas.getContext("2d");
+        this.ctx.translate(.5, .5);
+        this.frameCount = 0;
+        this.balls = Array.from({length: this.ballCount}, () => new Ball(this.canvas));
+        this.animate = this.animate.bind(this);
+        this.startAnimation();
+    }
 
-function animate() {
-    gFrameCount++;
-    gCtx.fillStyle = "#000000";
-    if (gEraseCanvas || gEraseCanvasOnce) {
-        // take into account the original translate, otherwise we get a grey outline in corner
-        gCtx.fillRect(-0.5, -0.5, gCanvas.width, gCanvas.height);
+    startAnimation() {
+        this.request = requestAnimationFrame(this.animate);
     }
-    gEraseCanvasOnce = false;
 
-    for (let ball of gBalls) {
-        ball.draw(gCtx);
-        ball.step(gCanvas,gWrapEdge);
+    stopAnimation() {
+        if (!this.request) {
+            return false;
+        }
+        cancelAnimationFrame(this.request);
+        this.request = undefined;
+        return true;
     }
-    if (gDrawCorners) {
-        gCtx.strokeStyle = "#FF0000"; // red
-        gCtx.lineWidth = 1;
-        gCtx.strokeRect(0, 0, 2, 2);
-        gCtx.strokeRect(0, gCanvas.height - 3, 2, 2);
-        gCtx.strokeRect(gCanvas.width - 3, 0, 2, 2);
-        gCtx.strokeRect(gCanvas.width - 3, gCanvas.height - 3, 2, 2); // drawable pixels are [0 to canvas.width-1] and [0 to canvas.height-1] (after ctx.translate)
+
+    animate() {
+        this.frameCount++;
+        this.ctx.fillStyle = "#000000";
+        if (this.eraseCanvas) {
+            // take into account the original translate, otherwise we get a grey outline in corner
+            this.ctx.fillRect(-0.5, -0.5, this.canvas.width, this.canvas.height);
+        }
+        for (let ball of this.balls) {
+            ball.draw(this.ctx);
+            ball.step(this.canvas,this.wrapEdge);
+        }
+        if (this.drawCorners) {
+            this.ctx.strokeStyle = "#FF0000"; // red
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(0, 0, 2, 2);
+            this.ctx.strokeRect(0, this.canvas.height - 3, 2, 2);
+            this.ctx.strokeRect(this.canvas.width - 3, 0, 2, 2);
+            // drawable pixels are [0 to canvas.width-1] and [0 to canvas.height-1] (after ctx.translate)
+            this.ctx.strokeRect(this.canvas.width - 3, this.canvas.height - 3, 2, 2);
+        }
+        this.request = requestAnimationFrame(this.animate);
     }
-    gRequest = requestAnimationFrame(animate);
 }
-
-function startAnimation() {
-    gBalls = Array.from({length: gBallCount}, () => new Ball(gCanvas));
-    gEraseCanvasOnce = true;
-    gRequest = requestAnimationFrame(animate);
-}
-
-function stopAnimation() {
-    if (!gRequest) {
-        return false;
-    }
-    cancelAnimationFrame(gRequest);
-    gRequest = undefined;
-    return true;
-}
-
-// -------
 
 window.addEventListener("keydown", event => {
     // console.log(event.key);
     if (event.key === 'k') { // draw corner markers (debugging canvas size)
-        gDrawCorners = !gDrawCorners;
-        gEraseCanvasOnce = true;
+        gAnimation.drawCorners = true;
     } else if (event.key === 'w') { // balls bounce or wrap around edge
-        gWrapEdge = !gWrapEdge;
+        gAnimation.wrapEdge = !gAnimation.wrapEdge;
     } else if (event.key === 'e') { // erase canvas or leave ball trails
-        gEraseCanvas = !gEraseCanvas;
-    } else if (event.key === ' ') { // pause/resume animation  todo: toggleAnimation function
-        if (!stopAnimation()) {
-            gRequest = requestAnimationFrame(animate);
+        gAnimation.eraseCanvas = !gAnimation.eraseCanvas;
+    } else if (event.key === ' ') { // pause/resume animation  todo: toggleAnimation function ***
+        if (!gAnimation.stopAnimation()) {
+            gAnimation.request = requestAnimationFrame(gAnimation.animate);
         }
     } else if (/^[0-9]$/.test(event.key)) { // specify number of balls
         gUpdateCount = gUpdateCount * 10 + parseInt(event.key);
@@ -117,10 +117,9 @@ window.addEventListener("keydown", event => {
         if (gUpdateCount === 0) {
             return; // protect against double enter
         }
-        stopAnimation();
-        gBallCount = gUpdateCount;
+        gAnimation.stopAnimation();
+        gAnimation = new Animation(gUpdateCount);
         gUpdateCount = 0;
-        startAnimation();
     } else if (event.key === 'F1') { // show documentation
         event.preventDefault();
         handleInterval(true);
@@ -150,24 +149,18 @@ function handleInterval(flip){
     gIntervalId = setInterval(() => {
         const currentTime = performance.now();
         const elapsedTime = currentTime - gStartTime;
-        const fps = 1000 * gFrameCount / elapsedTime;
-        gFrameCount = 0;
+        const fps = 1000 * gAnimation.frameCount / elapsedTime;
+        gAnimation.frameCount = 0;
         gStartTime = performance.now();
         fpsDisplay.innerHTML = `${fps.toFixed(2)}`;
     }, 1000);
 }
 
 window.onresize = () => { // todo: non-continuous
-    stopAnimation();
-    gCanvas.width = window.innerWidth;
-    gCanvas.height = window.innerHeight;
-    // console.log(`canvas size: ${canvas.width} ${canvas.height}`);
-    gCtx = gCanvas.getContext("2d");
-    gCtx.translate(.5, .5);
-    startAnimation();
+    gAnimation.stopAnimation();
+    gAnimation = new Animation(gAnimation.ballCount);
 };
 
 window.onload = () => {
-    gCanvas = document.getElementById("my_canvas");
-    window.onresize();
+    gAnimation = new Animation(20);
 };
