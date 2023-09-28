@@ -170,7 +170,6 @@ window.addEventListener("keydown", event => {
         gAnimation.stopAnimation();
         gAnimation = new Animation(gEnterNumber.value);
         gEnterNumber = new EnterNumber();
-        gFPS = new FPS();
     } else if (event.key === 'F1') { // show documentation
         event.preventDefault();
         showInfo(true);
