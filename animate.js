@@ -185,11 +185,11 @@ function showInfo(flip){
     }, 1000);
 }
 
-window.onresize = () => {
+window.addEventListener("resize", () => {
     gAnimation.setupCanvasAndContext();
-};
+});
 
-window.onload = () => {
+window.addEventListener("load", () => {
     gAnimation = new Animation(20);
     gEnterNumber = new EnterNumber();
-};
+});
