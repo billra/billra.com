@@ -11,7 +11,7 @@ class EnterNumber {
     complete(key) {
         if (/^[0-9]$/.test(key)) { // number of balls digit by digit
             this.value = this.value * 10 + parseInt(key);
-            return false
+            return false;
         }
         if (key === 'Enter') { // change number of balls
             return this.value;
@@ -34,13 +34,13 @@ class FPS {
             const fps = 1000 * gAnimation.frameCount / elapsedTime;
             gAnimation.frameCount = 0;
             this.startTime = performance.now();
-            this.fpsDisplay.innerHTML = `${fps.toFixed(2)}`;
+            this.fpsDisplay.textContent = `${fps.toFixed(2)}`;
         }, 1000);
     }
     stop() {
         clearInterval(this.intervalId);
         this.intervalId = 0;
-        this.fpsDisplay.innerHTML = '';
+        this.fpsDisplay.textContent = '';
     }
 }
 
@@ -103,14 +103,14 @@ class Animation {
         this.ctx.translate(.5, .5); // coordinates centered on pixel
     }
 
-    startAnimation() { // should only be called if there is no existing request
+    startAnimation() { // should only be called if there is no existing frame request
         if (this.frameRequest) {
-            throw 'frameRequest already exists'
+            throw new Error('frameRequest already exists');
         }
         this.startAnimationUnchecked();
     }
 
-    stopAnimation() { // can be called even without an outstanding request
+    stopAnimation() { // can be called even without an outstanding frame request
         if (this.frameRequest) {
             this.stopAnimationUnchecked();
         }
