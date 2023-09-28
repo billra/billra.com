@@ -24,15 +24,16 @@ class FPS {
     constructor() {
         this.fpsDisplay = document.getElementById("fps-display");
         this.intervalId = 0;
+        this.frameCount = { value: 0 }; // allow frameCount.value pass by reference
     }
     start() {
-        gAnimation.frameCount = 0;
+        this.frameCount.value = 0;
         this.startTime = performance.now();
         this.intervalId = setInterval(() => {
             const currentTime = performance.now();
             const elapsedTime = currentTime - this.startTime;
-            const fps = 1000 * gAnimation.frameCount / elapsedTime;
-            gAnimation.frameCount = 0;
+            const fps = 1000 * this.frameCount.value / elapsedTime;
+            this.frameCount.value = 0;
             this.startTime = performance.now();
             this.fpsDisplay.textContent = `${fps.toFixed(2)}`;
         }, 1000);
@@ -84,14 +85,14 @@ class Ball {
 }
 
 class Animation {
-    constructor(ballCount) {
+    constructor(ballCount, frameCount) {
         this.drawCorners = false;
         this.wrapEdge = false; // wrap or bounce
         this.eraseCanvas = true;
         this.canvas = document.getElementById("my_canvas");
         this.ctx = this.canvas.getContext("2d");
         this.setupCanvasAndContext();
-        this.frameCount = 0;
+        this.frameCount = frameCount; // external object to update
         this.balls = Array.from({ length: ballCount }, () => new Ball(this.canvas));
         this.animate = this.animate.bind(this);
         this.startAnimation();
@@ -134,7 +135,7 @@ class Animation {
     }
 
     animate() {
-        this.frameCount++;
+        this.frameCount.value++;
         if (this.eraseCanvas) {
             // take into account the original translate
             this.ctx.clearRect(-0.5, -0.5, this.canvas.width, this.canvas.height);
@@ -168,7 +169,7 @@ window.addEventListener("keydown", event => {
         gAnimation.toggleAnimation();
     } else if (gEnterNumber.complete(event.key)) { // change number of balls
         gAnimation.stopAnimation();
-        gAnimation = new Animation(gEnterNumber.value);
+        gAnimation = new Animation(gEnterNumber.value, gFPS.frameCount);
         gEnterNumber = new EnterNumber();
     } else if (event.key === 'F1') { // show documentation
         event.preventDefault();
@@ -200,7 +201,7 @@ window.addEventListener("resize", () => {
 });
 
 window.addEventListener("load", () => {
-    gAnimation = new Animation(20);
-    gEnterNumber = new EnterNumber();
     gFPS = new FPS();
+    gAnimation = new Animation(20, gFPS.frameCount);
+    gEnterNumber = new EnterNumber();
 });
