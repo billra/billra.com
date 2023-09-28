@@ -2,9 +2,7 @@
 
 let gAnimation;
 let gEnterNumber;
-
-let gStartTime = performance.now();
-let gIntervalId = 0;
+let gFPS;
 
 class EnterNumber {
     constructor() {
@@ -19,6 +17,30 @@ class EnterNumber {
             return this.value;
         }
         return false;
+    }
+}
+
+class FPS {
+    constructor(){
+        this.fpsDisplay = document.getElementById("fps-display");
+        this.intervalId = 0;
+    }
+    start(){
+        gAnimation.frameCount = 0;
+        this.startTime=performance.now();
+        this.intervalId = setInterval(() => {
+            const currentTime = performance.now();
+            const elapsedTime = currentTime - this.startTime;
+            const fps = 1000 * gAnimation.frameCount / elapsedTime;
+            gAnimation.frameCount = 0;
+            this.startTime = performance.now();
+            this.fpsDisplay.innerHTML = `${fps.toFixed(2)}`;
+        }, 1000);
+    }
+    stop(){
+        clearInterval(this.intervalId);
+        this.intervalId = 0;
+        this.fpsDisplay.innerHTML = '';
     }
 }
 
@@ -148,6 +170,7 @@ window.addEventListener("keydown", event => {
         gAnimation.stopAnimation();
         gAnimation = new Animation(gEnterNumber.value);
         gEnterNumber = new EnterNumber();
+        gFPS = new FPS();
     } else if (event.key === 'F1') { // show documentation
         event.preventDefault();
         showInfo(true);
@@ -167,21 +190,11 @@ function showInfo(flip) {
     const fpsDisplay = document.getElementById("fps-display");
     if (to === 'none') {
         popup.style.display = "none";
-        clearInterval(gIntervalId);
-        gIntervalId = 0;
-        fpsDisplay.innerHTML = '';
+        gFPS.stop();
         return;
     }
     popup.style.display = "block";
-    // fps display
-    gIntervalId = setInterval(() => {
-        const currentTime = performance.now();
-        const elapsedTime = currentTime - gStartTime;
-        const fps = 1000 * gAnimation.frameCount / elapsedTime;
-        gAnimation.frameCount = 0;
-        gStartTime = performance.now();
-        fpsDisplay.innerHTML = `${fps.toFixed(2)}`;
-    }, 1000);
+    gFPS.start();
 }
 
 window.addEventListener("resize", () => {
@@ -191,4 +204,5 @@ window.addEventListener("resize", () => {
 window.addEventListener("load", () => {
     gAnimation = new Animation(20);
     gEnterNumber = new EnterNumber();
+    gFPS = new FPS();
 });
