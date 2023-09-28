@@ -63,7 +63,6 @@ class Ball {
 
 class Animation {
     constructor(ballCount) {
-        this.ballCount = ballCount;
         this.drawCorners = false;
         this.wrapEdge = false; // wrap or bounce
         this.eraseCanvas = true;
@@ -71,7 +70,7 @@ class Animation {
         this.ctx = this.canvas.getContext("2d");
         this.setupCanvasAndContext();
         this.frameCount = 0;
-        this.balls = Array.from({ length: this.ballCount }, () => new Ball(this.canvas));
+        this.balls = Array.from({ length: ballCount }, () => new Ball(this.canvas));
         this.animate = this.animate.bind(this);
         this.startAnimation();
     }
