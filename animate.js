@@ -68,15 +68,18 @@ class Animation {
         this.wrapEdge = false; // wrap or bounce
         this.eraseCanvas = true;
         this.canvas = document.getElementById("my_canvas");
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
         this.ctx = this.canvas.getContext("2d");
-        this.ctx.translate(.5, .5);
-        // console.log(`original: ${this.ctx.getTransform()}`);
+        this.setupCanvasAndContext();
         this.frameCount = 0;
         this.balls = Array.from({length: this.ballCount}, () => new Ball(this.canvas));
         this.animate = this.animate.bind(this);
         this.startAnimation();
+    }
+
+    setupCanvasAndContext(){
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.ctx.translate(.5, .5); // coordinates centered on pixel
     }
 
     startAnimation() { // should only be called if there is no existing request
@@ -99,7 +102,7 @@ class Animation {
     stopAnimationUnchecked() { // for internal use
         cancelAnimationFrame(this.frameRequest);
         this.frameRequest = undefined;
-    }e
+    }
 
     toggleAnimation(){
         if (this.frameRequest){
@@ -184,12 +187,7 @@ function showInfo(flip){
 }
 
 window.onresize = () => {
-    gAnimation.canvas.width = window.innerWidth;
-    gAnimation.canvas.height = window.innerHeight;
-    // console.log(`after resize: ${gAnimation.ctx.getTransform()}`);  // <- was reset!
-    gAnimation.ctx.translate(.5, .5); // restore translation
-    gAnimation.ctx.fillRect(-0.5, -0.5, gAnimation.canvas.width, gAnimation.canvas.height);
-    // console.log(`finally: ${gAnimation.ctx.getTransform()}`); // back to original
+    gAnimation.setupCanvasAndContext();
 };
 
 window.onload = () => {
