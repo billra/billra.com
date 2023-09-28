@@ -40,7 +40,7 @@ class Ball {
         ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2, true);
         ctx.fill();
     }
-    step(canvas,wrapEdge) {
+    step(canvas, wrapEdge) {
         this.x += this.vx;
         this.y += this.vy;
         if (this.x - this.r < 0) {
@@ -71,19 +71,19 @@ class Animation {
         this.ctx = this.canvas.getContext("2d");
         this.setupCanvasAndContext();
         this.frameCount = 0;
-        this.balls = Array.from({length: this.ballCount}, () => new Ball(this.canvas));
+        this.balls = Array.from({ length: this.ballCount }, () => new Ball(this.canvas));
         this.animate = this.animate.bind(this);
         this.startAnimation();
     }
 
-    setupCanvasAndContext(){
+    setupCanvasAndContext() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
         this.ctx.translate(.5, .5); // coordinates centered on pixel
     }
 
     startAnimation() { // should only be called if there is no existing request
-        if (this.frameRequest){
+        if (this.frameRequest) {
             throw 'frameRequest already exists'
         }
         this.startAnimationUnchecked();
@@ -104,8 +104,8 @@ class Animation {
         this.frameRequest = undefined;
     }
 
-    toggleAnimation(){
-        if (this.frameRequest){
+    toggleAnimation() {
+        if (this.frameRequest) {
             this.stopAnimationUnchecked();
         } else {
             this.startAnimationUnchecked();
@@ -120,7 +120,7 @@ class Animation {
         }
         for (let ball of this.balls) {
             ball.draw(this.ctx);
-            ball.step(this.canvas,this.wrapEdge);
+            ball.step(this.canvas, this.wrapEdge);
         }
         if (this.drawCorners) {
             this.ctx.strokeStyle = "#FF0000"; // red
@@ -158,19 +158,19 @@ window.addEventListener("keydown", event => {
     }
 });
 
-function showInfo(flip){
+function showInfo(flip) {
     const popup = document.getElementById("popup");
     const from = getComputedStyle(popup).display;
-    const to = flip ? ( from === "none" ? "block" : "none" ) : "none";
-    if ( from === to ){
+    const to = flip ? (from === "none" ? "block" : "none") : "none";
+    if (from === to) {
         return;
     }
     const fpsDisplay = document.getElementById("fps-display");
-    if ( to === 'none'){
+    if (to === 'none') {
         popup.style.display = "none";
         clearInterval(gIntervalId);
         gIntervalId = 0;
-        fpsDisplay.innerHTML='';
+        fpsDisplay.innerHTML = '';
         return;
     }
     popup.style.display = "block";
