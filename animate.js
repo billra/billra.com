@@ -21,13 +21,13 @@ class EnterNumber {
 }
 
 class FPS {
-    constructor(){
+    constructor() {
         this.fpsDisplay = document.getElementById("fps-display");
         this.intervalId = 0;
     }
-    start(){
+    start() {
         gAnimation.frameCount = 0;
-        this.startTime=performance.now();
+        this.startTime = performance.now();
         this.intervalId = setInterval(() => {
             const currentTime = performance.now();
             const elapsedTime = currentTime - this.startTime;
@@ -37,7 +37,7 @@ class FPS {
             this.fpsDisplay.innerHTML = `${fps.toFixed(2)}`;
         }, 1000);
     }
-    stop(){
+    stop() {
         clearInterval(this.intervalId);
         this.intervalId = 0;
         this.fpsDisplay.innerHTML = '';
@@ -187,7 +187,6 @@ function showInfo(flip) {
     if (from === to) {
         return;
     }
-    const fpsDisplay = document.getElementById("fps-display");
     if (to === 'none') {
         popup.style.display = "none";
         gFPS.stop();
