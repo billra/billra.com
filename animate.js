@@ -114,8 +114,9 @@ class Animation {
 
     animate() {
         this.frameCount++;
-        this.ctx.fillStyle = "#000000";
         if (this.eraseCanvas) {
+            // erase canvas by painting it the same color as the background
+            this.ctx.fillStyle = "#000000"; // same color as css body background color
             // take into account the original translate, otherwise we get a grey outline in corner
             this.ctx.fillRect(-0.5, -0.5, this.canvas.width, this.canvas.height);
         }
