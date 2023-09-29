@@ -111,6 +111,9 @@ function collisions(balls) {
     return pairs;
 }
 
+// In a 2D collision between two balls of equal mass, the normal (perpendicular
+// to the collision plane) components of the velocities are swapped while the
+// tangential components remain the same.
 function collisionUpdate(ball1, ball2) {
     const dx = ball2.x - ball1.x;
     const dy = ball2.y - ball1.y;
@@ -119,16 +122,25 @@ function collisionUpdate(ball1, ball2) {
     const normalX = dx / distance;
     const normalY = dy / distance;
 
-    // Dot Product of the velocity vectors and the normal/tangent vectors
+    const tangentX = -normalY;
+    const tangentY = normalX;
+
     const ball1NormalVelocity = ball1.vx * normalX + ball1.vy * normalY;
     const ball2NormalVelocity = ball2.vx * normalX + ball2.vy * normalY;
 
-    // Swap the normal velocities between the balls
-    ball1.vx = ball2NormalVelocity * normalX;
-    ball1.vy = ball2NormalVelocity * normalY;
+    const ball1TangentVelocity = ball1.vx * tangentX + ball1.vy * tangentY;
+    const ball2TangentVelocity = ball2.vx * tangentX + ball2.vy * tangentY;
 
-    ball2.vx = ball1NormalVelocity * normalX;
-    ball2.vy = ball1NormalVelocity * normalY;
+    // Swap the normal velocities
+    const ball1vxAfter = ball2NormalVelocity * normalX + ball1TangentVelocity * tangentX;
+    const ball1vyAfter = ball2NormalVelocity * normalY + ball1TangentVelocity * tangentY;
+    const ball2vxAfter = ball1NormalVelocity * normalX + ball2TangentVelocity * tangentX;
+    const ball2vyAfter = ball1NormalVelocity * normalY + ball2TangentVelocity * tangentY;
+
+    ball1.vx = ball1vxAfter;
+    ball1.vy = ball1vyAfter;
+    ball2.vx = ball2vxAfter;
+    ball2.vy = ball2vyAfter;
 }
 
 class Animation {
