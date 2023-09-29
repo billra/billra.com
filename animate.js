@@ -131,16 +131,11 @@ function collisionUpdate(ball1, ball2) {
     const ball1TangentVelocity = ball1.vx * tangentX + ball1.vy * tangentY;
     const ball2TangentVelocity = ball2.vx * tangentX + ball2.vy * tangentY;
 
-    // Swap the normal velocities
-    const ball1vxAfter = ball2NormalVelocity * normalX + ball1TangentVelocity * tangentX;
-    const ball1vyAfter = ball2NormalVelocity * normalY + ball1TangentVelocity * tangentY;
-    const ball2vxAfter = ball1NormalVelocity * normalX + ball2TangentVelocity * tangentX;
-    const ball2vyAfter = ball1NormalVelocity * normalY + ball2TangentVelocity * tangentY;
-
-    ball1.vx = ball1vxAfter;
-    ball1.vy = ball1vyAfter;
-    ball2.vx = ball2vxAfter;
-    ball2.vy = ball2vyAfter;
+    // swap normal velocity, keep tangential velocity
+    ball1.vx = ball2NormalVelocity * normalX + ball1TangentVelocity * tangentX;
+    ball1.vy = ball2NormalVelocity * normalY + ball1TangentVelocity * tangentY;
+    ball2.vx = ball1NormalVelocity * normalX + ball2TangentVelocity * tangentX;
+    ball2.vy = ball1NormalVelocity * normalY + ball2TangentVelocity * tangentY;
 }
 
 class Animation {
