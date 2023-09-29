@@ -52,12 +52,17 @@ class Ball {
         this.r = minRadius + Math.random() * (maxRadius - minRadius);
         this.x = this.r + Math.random() * (canvas.width - 2 * this.r);
         this.y = this.r + Math.random() * (canvas.height - 2 * this.r);
-        this.vx = this.rndVelocity();
-        this.vy = this.rndVelocity();
+        [this.vx, this.vy] = this.setVelocity();
         this.hue = Math.floor(Math.random() * 256);
     }
-    rndVelocity() {
-        return (.5 + Math.random() * 3) * (Math.round(Math.random()) * 2 - 1);
+    setVelocity() {
+        const minVelocity = 1; // inclusive
+        const maxVelocity = 3.5; // exclusive
+        const velocity = minVelocity + Math.random() * (maxVelocity - minVelocity);
+        const angle = Math.random() * 2 * Math.PI; // angle between 0 (inclusive) and 360 (exclusive) degrees
+        const vx = velocity * Math.cos(angle);
+        const vy = velocity * Math.sin(angle); // decompose velocity into x and y components
+        return [vx, vy];
     }
     draw(ctx) {
         ctx.fillStyle = `hsl(${this.hue++}, 100%, 60%)`;
