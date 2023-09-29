@@ -91,6 +91,26 @@ class Ball {
     }
 }
 
+function collide(ball1, ball2) {
+    const dx = ball1.x - ball2.x;
+    const dy = ball1.y - ball2.y;
+    const distanceSq = dx ** 2 + dy ** 2;
+    const sumOfRadii = ball1.r + ball2.r;
+    return distanceSq <= sumOfRadii ** 2;
+}
+
+function collisions(balls) {
+    const pairs = [];
+    for (let i = 0; i < balls.length; i++) {
+        for (let j = i + 1; j < balls.length; j++) {
+            if (collide(balls[i], balls[j])) {
+                pairs.push([balls[i], balls[j]]);
+            }
+        }
+    }
+    return pairs;
+}
+
 class Animation {
     constructor(ballCount, frameCount) {
         this.drawCorners = false;
