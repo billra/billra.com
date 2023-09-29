@@ -47,7 +47,9 @@ class FPS {
 
 class Ball {
     constructor(canvas) {
-        this.r = 5 + Math.random() * 10;
+        const minRadius = 5; // inclusive
+        const maxRadius = 15; // exclusive
+        this.r = minRadius + Math.random() * (maxRadius - minRadius);
         this.x = this.r + Math.random() * (canvas.width - 2 * this.r);
         this.y = this.r + Math.random() * (canvas.height - 2 * this.r);
         this.vx = this.rndVelocity();
