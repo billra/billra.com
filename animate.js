@@ -111,6 +111,26 @@ function collisions(balls) {
     return pairs;
 }
 
+function collisionUpdate(ball1, ball2) {
+    const dx = ball2.x - ball1.x;
+    const dy = ball2.y - ball1.y;
+    const distance = Math.sqrt(dx ** 2 + dy ** 2);
+
+    const normalX = dx / distance;
+    const normalY = dy / distance;
+
+    // Dot Product of the velocity vectors and the normal/tangent vectors
+    const ball1NormalVelocity = ball1.vx * normalX + ball1.vy * normalY;
+    const ball2NormalVelocity = ball2.vx * normalX + ball2.vy * normalY;
+
+    // Swap the normal velocities between the balls
+    ball1.vx = ball2NormalVelocity * normalX;
+    ball1.vy = ball2NormalVelocity * normalY;
+
+    ball2.vx = ball1NormalVelocity * normalX;
+    ball2.vy = ball1NormalVelocity * normalY;
+}
+
 class Animation {
     constructor(ballCount, frameCount) {
         this.drawCorners = false;
