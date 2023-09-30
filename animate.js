@@ -102,7 +102,8 @@ function collisionUpdate(ball1, ball2) {
     if (distance > minDistance) {
         return; // no collision
     }
-
+    // todo: large step can cause deep collision where balls are on top of each other
+    // todo: could even trigger bad calculation if centers moved past each other
     const normalX = dx / distance; // todo: division by zero?
     const normalY = dy / distance;
 
