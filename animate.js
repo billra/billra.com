@@ -263,3 +263,8 @@ window.addEventListener("load", () => {
     gAnimation = new Animation(20, gFPS.frameCount);
     gEnterNumber = new EnterNumber();
 });
+
+// todo:
+// - multiple simultaneous collisions, two pass
+//   - collect updates (new members)
+//   - apply
