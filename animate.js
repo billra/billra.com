@@ -102,17 +102,24 @@ function collisionUpdate(ball1, ball2) {
     if (distance > minDistance) {
         return; // no collision
     }
-    // todo: large step can cause deep collision where balls are on top of each other
-    // todo: could even trigger bad calculation if centers moved past each other
-    const normalX = dx / distance; // todo: division by zero?
-    const normalY = dy / distance;
+    const relativeVelocityX = ball2.vx - ball1.vx;
+    const relativeVelocityY = ball2.vy - ball1.vy;
+    const timeOfCollision = -(dx * relativeVelocityX + dy * relativeVelocityY) / (distance ** 2);
 
+     // accurate calculation of normal and tangent requires that we
+     // base them on the positions of the balls when they collided
+    ball1.x -= ball1.vx * timeOfCollision;
+    ball1.y -= ball1.vy * timeOfCollision;
+    ball2.x -= ball2.vx * timeOfCollision;
+    ball2.y -= ball2.vy * timeOfCollision;
+
+    const normalX = dx / distance;
+    const normalY = dy / distance;
     const tangentX = -normalY;
     const tangentY = normalX;
 
     const nv1 = ball1.vx * normalX + ball1.vy * normalY; // calculate normal velocity
     const nv2 = ball2.vx * normalX + ball2.vy * normalY;
-
     const tv1 = ball1.vx * tangentX + ball1.vy * tangentY; // calculate tangent velocity
     const tv2 = ball2.vx * tangentX + ball2.vy * tangentY;
 
@@ -121,17 +128,6 @@ function collisionUpdate(ball1, ball2) {
     ball1.vy = nv2 * normalY + tv1 * tangentY;
     ball2.vx = nv1 * normalX + tv2 * tangentX;
     ball2.vy = nv1 * normalY + tv2 * tangentY;
-
-    // move balls to resolve the collision
-    const overlap = (minDistance - distance) / 2; // equal mass, each takes half the overlap
-
-    const overlapX = overlap * normalX;
-    const overlapY = overlap * normalY;
-
-    ball1.x -= overlapX;
-    ball1.y -= overlapY;
-    ball2.x += overlapX;
-    ball2.y += overlapY;
 }
 
 function doCollisions(balls) {
@@ -269,3 +265,5 @@ window.addEventListener("load", () => {
 // - multiple simultaneous collisions, two pass
 //   - collect updates (new members)
 //   - apply
+// - still small chance of division by zero, or move past
+// - add timeOfCollision to new path
