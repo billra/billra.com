@@ -119,7 +119,7 @@ function collisionUpdate(ball1, ball2) {
     const dy = ball2.y - ball1.y;
     const distance = Math.sqrt(dx ** 2 + dy ** 2);
 
-    const normalX = dx / distance;
+    const normalX = dx / distance; // todo: division by zero?
     const normalY = dy / distance;
 
     const tangentX = -normalY;
@@ -136,6 +136,18 @@ function collisionUpdate(ball1, ball2) {
     ball1.vy = nv2 * normalY + tv1 * tangentY;
     ball2.vx = nv1 * normalX + tv2 * tangentX;
     ball2.vy = nv1 * normalY + tv2 * tangentY;
+
+    // move balls to resolve the collision
+    const minDistance = ball1.r + ball2.r;
+    const overlap = (minDistance - distance) / 2; // equal mass, each takes half the overlap
+
+    const overlapX = overlap * normalX;
+    const overlapY = overlap * normalY;
+
+    ball1.x -= overlapX;
+    ball1.y -= overlapY;
+    ball2.x += overlapX;
+    ball2.y += overlapY;
 }
 
 class Animation {
