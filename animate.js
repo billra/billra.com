@@ -91,26 +91,6 @@ class Ball {
     }
 }
 
-function collide(ball1, ball2) {
-    const dx = ball1.x - ball2.x;
-    const dy = ball1.y - ball2.y;
-    const distanceSq = dx ** 2 + dy ** 2;
-    const sumOfRadii = ball1.r + ball2.r;
-    return distanceSq <= sumOfRadii ** 2;
-}
-
-function collisions(balls) {
-    const pairs = [];
-    for (let i = 0; i < balls.length; i++) {
-        for (let j = i + 1; j < balls.length; j++) {
-            if (collide(balls[i], balls[j])) {
-                pairs.push([balls[i], balls[j]]);
-            }
-        }
-    }
-    return pairs;
-}
-
 // In a 2D collision between two balls of equal mass, the normal (perpendicular
 // to the collision plane) components of the velocities are swapped while the
 // tangential components remain the same.
@@ -118,6 +98,10 @@ function collisionUpdate(ball1, ball2) {
     const dx = ball2.x - ball1.x;
     const dy = ball2.y - ball1.y;
     const distance = Math.sqrt(dx ** 2 + dy ** 2);
+    const minDistance = ball1.r + ball2.r;
+    if (distance > minDistance) {
+        return; // no collision
+    }
 
     const normalX = dx / distance; // todo: division by zero?
     const normalY = dy / distance;
@@ -138,7 +122,6 @@ function collisionUpdate(ball1, ball2) {
     ball2.vy = nv1 * normalY + tv2 * tangentY;
 
     // move balls to resolve the collision
-    const minDistance = ball1.r + ball2.r;
     const overlap = (minDistance - distance) / 2; // equal mass, each takes half the overlap
 
     const overlapX = overlap * normalX;
@@ -148,6 +131,14 @@ function collisionUpdate(ball1, ball2) {
     ball1.y -= overlapY;
     ball2.x += overlapX;
     ball2.y += overlapY;
+}
+
+function doCollisions(balls) {
+    for (let i = 0; i < balls.length; i++) {
+        for (let j = i + 1; j < balls.length; j++) {
+            collisionUpdate(balls[i], balls[j]);
+        }
+    }
 }
 
 class Animation {
@@ -210,11 +201,7 @@ class Animation {
             ball.draw(this.ctx);
             ball.step(this.canvas, this.wrapEdge); // ball to wall collisions
         }
-        // ball to ball collisions
-        const pairs = collisions(this.balls);
-        for (const [ball1, ball2] of pairs) {
-            collisionUpdate(ball1, ball2);
-        }
+        doCollisions(this.balls); // inter ball collisions
         if (this.drawCorners) {
             this.ctx.strokeStyle = "#FF0000"; // red
             this.ctx.lineWidth = 1;
