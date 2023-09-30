@@ -196,7 +196,12 @@ class Animation {
         }
         for (let ball of this.balls) {
             ball.draw(this.ctx);
-            ball.step(this.canvas, this.wrapEdge);
+            ball.step(this.canvas, this.wrapEdge); // ball to wall collisions
+        }
+        // ball to ball collisions
+        const pairs = collisions(this.balls);
+        for (const [ball1, ball2] of pairs) {
+            collisionUpdate(ball1, ball2);
         }
         if (this.drawCorners) {
             this.ctx.strokeStyle = "#FF0000"; // red
