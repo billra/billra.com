@@ -112,7 +112,8 @@ function collisionUpdate(ball1, ball2) {
 
     const relativeVelocityX = ball2.vx - ball1.vx;
     const relativeVelocityY = ball2.vy - ball1.vy;
-    const timeOfCollision = -(dx * relativeVelocityX + dy * relativeVelocityY) / (distance ** 2);
+    const dotProduct = dx * relativeVelocityX + dy * relativeVelocityY;
+    const timeOfCollision = -dotProduct / (distance ** 2);
 
     ball1.x -= ball1.vx * timeOfCollision;
     ball1.y -= ball1.vy * timeOfCollision;
