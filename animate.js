@@ -94,9 +94,9 @@ class Ball {
 function checkClose(a, b) {
     var diff = Math.abs(a - b);
     if (diff > Number.EPSILON) {
-      console.assert(false, `${a} is not close to ${b}, difference: ${diff}`);
+        console.assert(false, `${a} is not close to ${b}, difference: ${diff}`);
     }
-  }
+}
 
 // In a 2D collision between two balls of equal mass, the normal (perpendicular
 // to the collision plane) components of the velocities are swapped while the
