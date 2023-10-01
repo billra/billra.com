@@ -95,23 +95,28 @@ class Ball {
 // to the collision plane) components of the velocities are swapped while the
 // tangential components remain the same.
 function collisionUpdate(ball1, ball2) {
-    const dx = ball2.x - ball1.x;
-    const dy = ball2.y - ball1.y;
-    const distance = Math.sqrt(dx ** 2 + dy ** 2);
+    let dx = ball2.x - ball1.x;
+    let dy = ball2.y - ball1.y;
+    let distance = Math.sqrt(dx ** 2 + dy ** 2);
     const minDistance = ball1.r + ball2.r;
     if (distance > minDistance) {
         return; // no collision
     }
+
     const relativeVelocityX = ball2.vx - ball1.vx;
     const relativeVelocityY = ball2.vy - ball1.vy;
     const timeOfCollision = -(dx * relativeVelocityX + dy * relativeVelocityY) / (distance ** 2);
 
-     // accurate calculation of normal and tangent requires that we
-     // base them on the positions of the balls when they collided
     ball1.x -= ball1.vx * timeOfCollision;
     ball1.y -= ball1.vy * timeOfCollision;
     ball2.x -= ball2.vx * timeOfCollision;
     ball2.y -= ball2.vy * timeOfCollision;
+
+    // recalculate dx, dy, and distance so that normal and tangent
+    // calculations are based on ball positions at time of impact
+    dx = ball2.x - ball1.x;
+    dy = ball2.y - ball1.y;
+    distance = Math.sqrt(dx ** 2 + dy ** 2);
 
     const normalX = dx / distance;
     const normalY = dy / distance;
