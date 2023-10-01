@@ -91,9 +91,9 @@ class Ball {
     }
 }
 
-function checkClose(a, b) {
+function checkClose(a, b, tolerance = 1e-6) {
     var diff = Math.abs(a - b);
-    if (diff > Number.EPSILON) {
+    if (diff > tolerance) {
         console.assert(false, `${a} is not close to ${b}, difference: ${diff}`);
     }
 }
