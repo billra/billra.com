@@ -91,6 +91,13 @@ class Ball {
     }
 }
 
+function checkClose(a, b) {
+    var diff = Math.abs(a - b);
+    if (diff > Number.EPSILON) {
+      console.assert(false, `${a} is not close to ${b}, difference: ${diff}`);
+    }
+  }
+
 // In a 2D collision between two balls of equal mass, the normal (perpendicular
 // to the collision plane) components of the velocities are swapped while the
 // tangential components remain the same.
@@ -117,6 +124,7 @@ function collisionUpdate(ball1, ball2) {
     dx = ball2.x - ball1.x;
     dy = ball2.y - ball1.y;
     distance = Math.sqrt(dx ** 2 + dy ** 2);
+    checkClose(distance, minDistance);
 
     const normalX = dx / distance;
     const normalY = dy / distance;
