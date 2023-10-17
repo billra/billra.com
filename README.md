@@ -16,8 +16,7 @@ todo: loop description
 
 Algorithm:
 - collision is detected by ball overlapping
-- both balls are moved back to the point in time of collision
-  - algorithm needed
+- the position of both balls are moved back to where they were at the time of collision (calculation needed)
   - percentage of time balls travel on new path is calculated: `ts%`
 - result of collision is applied to the balls from the collision point for `ts%`
 
