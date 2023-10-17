@@ -18,8 +18,8 @@ Algorithm:
 - collision is detected by ball overlapping
 - both balls are moved back to the point in time of collision
   - algorithm needed
-  - percentage of time balls travel on new path is calculated: ts%
-- result of collision is applied to the balls from the collision point for ts%
+  - percentage of time balls travel on new path is calculated: `ts%`
+- result of collision is applied to the balls from the collision point for `ts%`
 
 Not yet part of calculation:
 - multiple simultaneous collisions, i.e. 3 or more bodies
