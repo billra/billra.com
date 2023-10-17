@@ -7,9 +7,10 @@ Use F1 for control description help screen.
 
 ## Accurate Discrete Two Dimensional Ball Collision Calculation
 
-Ball motion on the two dimensional field is calculated in discrete time steps.
-Balls can collide. This is detected by overlapping balls during a time step.
-Balls overlapping indicate that there was a collision sometime during this time step and the last one.
+Ball motion on a two-dimensional field is calculated using discrete time steps.
+The position of the ball is updated according to its velocity at each step.
+A collision is indicated by ball overlap after position update.
+This collision occurred at some point between the current time step and the previous one.
 
 todo: loop description
 
