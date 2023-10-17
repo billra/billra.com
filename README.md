@@ -36,3 +36,7 @@ Future generalized collision algorithm for many balls:
 - do normal two ball collision from simplified algorithm above
 - update `tbc` with any pairs affected by collision movement: remove or reinsert by time
 - ...
+
+New feature:
+- Each ball picks one it is attracted to. Direction of travel is updated each step to point to that ball.
+Easier to implement if `vx`, `vy` is stored as `dir` and `v` instead?
