@@ -20,6 +20,11 @@ Algorithm:
   - percentage of time balls travel on new path is calculated: `ts%`
 - result of collision is applied to the balls from the collision point for `ts%`
 
+Ball Representation:
+- `x`, `y` coordinates of the center of the ball
+- `r` radius of ball
+- `vx`, `vy` velocity of ball, distance traveled in one time step
+
 Not yet part of calculation:
 - multiple simultaneous collisions, i.e. 3 or more bodies
 - collisions which move a ball so that it collides with another and that calculation should be part of the current time step
