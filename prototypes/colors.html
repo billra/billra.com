@@ -45,12 +45,21 @@
     <div id="color-container"></div>
 
     <script>
-        let intensity = [0, 127, 255];
+        let intensity;
 
         document.querySelectorAll('input[type=radio][name=count]').forEach(function(radio) {
             radio.addEventListener('change', () => {
                 const count = parseInt(radio.value, 10);
                 const roundValue = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
+                intensity = createDistributionArray(count, roundValue);
+                showColorChart(intensity);
+            });
+        });
+
+        document.querySelectorAll('input[type=radio][name=round]').forEach(function(radio) {
+            radio.addEventListener('change', () => {
+                const count = parseInt(document.querySelector('input[type=radio][name=count]:checked').value, 10);
+                const roundValue = parseInt(radio.value, 10);
                 intensity = createDistributionArray(count, roundValue);
                 showColorChart(intensity);
             });
