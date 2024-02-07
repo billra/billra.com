@@ -29,7 +29,7 @@
     <h1>Color Permutations</h1>
 
     <div>
-        Intensity levels:
+        Levels:
         <label><input type="radio" name="count" value="2" checked>2</label>
         <label><input type="radio" name="count" value="3">3</label>
         <label><input type="radio" name="count" value="4">4</label>
@@ -49,8 +49,8 @@
             rb.addEventListener('change', () => {
                 const count = parseInt(rb.value, 10);
                 const roundUp = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
-                const intensity = createDistributionArray(count, roundUp);
-                showColorChart(intensity);
+                const levels = createDistributionArray(count, roundUp);
+                showColorChart(levels);
             });
         });
 
@@ -58,8 +58,8 @@
             rb.addEventListener('change', () => {
                 const count = parseInt(document.querySelector('input[type=radio][name=count]:checked').value, 10);
                 const roundUp = parseInt(rb.value, 10);
-                const intensity = createDistributionArray(count, roundUp);
-                showColorChart(intensity);
+                const levels = createDistributionArray(count, roundUp);
+                showColorChart(levels);
             });
         });
 
@@ -70,8 +70,8 @@
             defaultRadio.dispatchEvent(event);
         });
 
-        function showColorChart(intensity){
-            const ivs = arrayIntToHex(intensity);
+        function showColorChart(levels){
+            const ivs = arrayIntToHex(levels);
             console.log(ivs);
             const container = document.getElementById('color-container');
             container.innerHTML = ''; // clear old values
