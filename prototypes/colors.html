@@ -45,13 +45,11 @@
     <div id="color-container"></div>
 
     <script>
-        let intensity;
-
         document.querySelectorAll('input[type=radio][name=count]').forEach(function(radio) {
             radio.addEventListener('change', () => {
                 const count = parseInt(radio.value, 10);
                 const roundValue = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
-                intensity = createDistributionArray(count, roundValue);
+                const intensity = createDistributionArray(count, roundValue);
                 showColorChart(intensity);
             });
         });
@@ -60,7 +58,7 @@
             radio.addEventListener('change', () => {
                 const count = parseInt(document.querySelector('input[type=radio][name=count]:checked').value, 10);
                 const roundValue = parseInt(radio.value, 10);
-                intensity = createDistributionArray(count, roundValue);
+                const intensity = createDistributionArray(count, roundValue);
                 showColorChart(intensity);
             });
         });
@@ -77,7 +75,7 @@
             // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
             return ary.map(num => num.toString(16).toUpperCase().padStart(2, '0'));
         }
-        function showColorChart(){
+        function showColorChart(intensity){
             // create an array of hex value strings from array of integers
             // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
             const ivs = arrayIntToHex(intensity);
