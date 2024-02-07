@@ -32,13 +32,11 @@
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             const container = document.getElementById('color-container');
-            const redValues = ['00', '7F', 'FF']; // or ['00', '40', '80', 'C0', 'FF']
-            const greenValues = ['00', '7F', 'FF'];
-            const blueValues = ['00', '7F', 'FF'];
+            const intensity = ['00', '7F', 'FF']; // or ['00', '40', '80', 'C0', 'FF']
 
-            for (let red of redValues) {
-                for (let green of greenValues) {
-                    for (let blue of blueValues) {
+            for (let red of intensity) {
+                for (let green of intensity) {
+                    for (let blue of intensity) {
                         const colorBoxWithValue = document.createElement('div');
                         colorBoxWithValue.classList.add('color-box-with-value');
 
