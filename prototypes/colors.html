@@ -33,10 +33,15 @@
         const intensity = [0, 127, 255];
         window.addEventListener('DOMContentLoaded', showColorChart);
 
+        function arrayIntToHex(ary){
+            // create an array of hex value strings from array of integers
+            // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
+            return ary.map(num => num.toString(16).toUpperCase().padStart(2, '0'));
+        }
         function showColorChart(vals){
             // create an array of hex value strings from array of integers
             // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
-            const ivs = intensity.map(num => num.toString(16).toUpperCase().padStart(2, '0'));
+            const ivs = arrayIntToHex(intensity);
             console.log(ivs);
             const container = document.getElementById('color-container');
 
