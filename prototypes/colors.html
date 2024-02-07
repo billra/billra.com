@@ -27,18 +27,39 @@
 </head>
 <body>
     <h1>Color Permutations</h1>
+
+    <div>
+        Intensity levels:
+        <label><input type="radio" name="count" value="2"> 2</label>
+        <label><input type="radio" name="count" value="3"> 3</label>
+        <label><input type="radio" name="count" value="4"> 4</label>
+        <label><input type="radio" name="count" value="5"> 5</label>
+    </div>
+    
+    <br>
     <div id="color-container"></div>
 
     <script>
-        const intensity = [0, 127, 255];
+        let intensity = [0, 127, 255];
         window.addEventListener('DOMContentLoaded', showColorChart);
+
+        document.querySelectorAll('input[type=radio][name=count]').forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                const count = parseInt(this.value, 10);
+                intensity = createDistributionArray(count, false);
+                const container = document.getElementById('color-container');
+                container.innerHTML = ''; // Clear color-container
+
+                showColorChart(intensity);
+            });
+        });
 
         function arrayIntToHex(ary){
             // create an array of hex value strings from array of integers
             // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
             return ary.map(num => num.toString(16).toUpperCase().padStart(2, '0'));
         }
-        function showColorChart(vals){
+        function showColorChart(){
             // create an array of hex value strings from array of integers
             // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
             const ivs = arrayIntToHex(intensity);
@@ -74,10 +95,10 @@
             }
             return result;
         }
-        for(let i=2; i<8; i++){
-            console.log(arrayIntToHex(createDistributionArray(i)));
-            console.log(arrayIntToHex(createDistributionArray(i,true)));
-        }
+        // for(let i=2; i<7; i++){
+        //     console.log(arrayIntToHex(createDistributionArray(i)));
+        //     console.log(arrayIntToHex(createDistributionArray(i,true)));
+        // }
     </script>
 </body>
 </html>
