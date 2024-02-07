@@ -30,7 +30,8 @@
     <div id="color-container"></div>
 
     <script>
-        window.addEventListener('DOMContentLoaded', ()=>showColorChart([0, 127, 255])); // or ['00', '40', '80', 'C0', 'FF']
+        const intensityValues = [0, 127, 255]; // or ['00', '40', '80', 'C0', 'FF']
+        window.addEventListener('DOMContentLoaded', ()=>showColorChart(intensityValues));
 
         function showColorChart(vals){
             // create an array of hex value strings from array of integers
