@@ -30,7 +30,7 @@
 
     <div>
         Intensity levels:
-        <label><input type="radio" name="count" value="2"> 2</label>
+        <label><input type="radio" name="count" value="2" checked> 2</label>
         <label><input type="radio" name="count" value="3"> 3</label>
         <label><input type="radio" name="count" value="4"> 4</label>
         <label><input type="radio" name="count" value="5"> 5</label>
@@ -41,7 +41,6 @@
 
     <script>
         let intensity = [0, 127, 255];
-        window.addEventListener('DOMContentLoaded', showColorChart);
 
         document.querySelectorAll('input[type=radio][name=count]').forEach(function(radio) {
             radio.addEventListener('change', () => {
@@ -49,6 +48,13 @@
                 intensity = createDistributionArray(count, false);
                 showColorChart(intensity);
             });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // simulate click on the default radio button
+            const defaultRadio = document.querySelector('input[type=radio][name=count]:checked');
+            const event = new Event('change');
+            defaultRadio.dispatchEvent(event);
         });
 
         function arrayIntToHex(ary){
