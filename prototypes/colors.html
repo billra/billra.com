@@ -49,7 +49,7 @@
             rb.addEventListener('change', () => {
                 const count = parseInt(rb.value, 10);
                 const roundUp = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
-                const levels = createDistributionArray(count, roundUp);
+                const levels = makeLevels(count, roundUp);
                 showColorChart(levels);
             });
         });
@@ -58,7 +58,7 @@
             rb.addEventListener('change', () => {
                 const count = parseInt(document.querySelector('input[type=radio][name=count]:checked').value, 10);
                 const roundUp = parseInt(rb.value, 10);
-                const levels = createDistributionArray(count, roundUp);
+                const levels = makeLevels(count, roundUp);
                 showColorChart(levels);
             });
         });
@@ -103,7 +103,7 @@
             return ary.map(num => num.toString(16).toUpperCase().padStart(2, '0'));
         }
 
-        function createDistributionArray(count,roundUp) { // count must be > 1
+        function makeLevels(count,roundUp) { // count must be > 1
             let step = 255 / (count - 1);
             let result = [];
             for (let i = 0; i < count; i++) {
@@ -112,8 +112,8 @@
             return result;
         }
         // for(let i=2; i<7; i++){
-        //     console.log(arrayIntToHex(createDistributionArray(i)));
-        //     console.log(arrayIntToHex(createDistributionArray(i,true)));
+        //     console.log(arrayIntToHex(makeLevels(i)));
+        //     console.log(arrayIntToHex(makeLevels(i,true)));
         // }
     </script>
 </body>
