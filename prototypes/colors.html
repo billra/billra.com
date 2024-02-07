@@ -30,19 +30,19 @@
     <div id="color-container"></div>
 
     <script>
-        const intensityValues = [0, 127, 255]; // or ['00', '40', '80', 'C0', 'FF']
-        window.addEventListener('DOMContentLoaded', ()=>showColorChart(intensityValues));
+        const intensity = [0, 127, 255];
+        window.addEventListener('DOMContentLoaded', showColorChart);
 
         function showColorChart(vals){
             // create an array of hex value strings from array of integers
             // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
-            const intensity = vals.map(num => num.toString(16).toUpperCase().padStart(2, '0'));
-            console.log(intensity);
+            const ivs = intensity.map(num => num.toString(16).toUpperCase().padStart(2, '0'));
+            console.log(ivs);
             const container = document.getElementById('color-container');
 
-            for (let red of intensity) {
-                for (let green of intensity) {
-                    for (let blue of intensity) {
+            for (let red of ivs) {
+                for (let green of ivs) {
+                    for (let blue of ivs) {
                         const colorBoxWithValue = document.createElement('div');
                         colorBoxWithValue.classList.add('color-box-with-value');
 
