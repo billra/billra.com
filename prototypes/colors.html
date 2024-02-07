@@ -30,7 +30,9 @@
     <div id="color-container"></div>
 
     <script>
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', showColorChart);
+        
+        function showColorChart(){
             const container = document.getElementById('color-container');
             const intensity = ['00', '7F', 'FF']; // or ['00', '40', '80', 'C0', 'FF']
 
@@ -53,7 +55,7 @@
                     }
                 }
             }
-        });
+        }
     </script>
 </body>
 </html>
