@@ -35,6 +35,11 @@
         <label><input type="radio" name="count" value="4"> 4</label>
         <label><input type="radio" name="count" value="5"> 5</label>
     </div>
+    <div>
+        Round:
+        <label><input type="radio" name="round" value="0" checked> down</label>
+        <label><input type="radio" name="round" value="1"> up</label>
+    </div>
 
     <br>
     <div id="color-container"></div>
@@ -45,7 +50,8 @@
         document.querySelectorAll('input[type=radio][name=count]').forEach(function(radio) {
             radio.addEventListener('change', () => {
                 const count = parseInt(radio.value, 10);
-                intensity = createDistributionArray(count, false);
+                const roundValue = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
+                intensity = createDistributionArray(count, roundValue);
                 showColorChart(intensity);
             });
         });
