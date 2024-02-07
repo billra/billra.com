@@ -71,13 +71,13 @@
         });
 
         function showColorChart(levels){
-            const ivs = arrayIntToHex(levels);
-            console.log(ivs);
+            const hls = levelsToHex(levels); // hex level strings
+            console.log(hls);
             const container = document.getElementById('color-container');
             container.innerHTML = ''; // clear old values
-            for (let red of ivs) {
-                for (let green of ivs) {
-                    for (let blue of ivs) {
+            for (let red of hls) {
+                for (let green of hls) {
+                    for (let blue of hls) {
                         makeColorBox(container,red,blue,green);
                     }
                 }
@@ -97,10 +97,10 @@
             container.appendChild(colorBoxWithValue);
         }
 
-        function arrayIntToHex(ary){
+        function levelsToHex(levels){
             // create an array of hex value strings from array of integers
             // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
-            return ary.map(num => num.toString(16).toUpperCase().padStart(2, '0'));
+            return levels.map(num => num.toString(16).toUpperCase().padStart(2, '0'));
         }
 
         function makeLevels(count,roundUp) { // count must be > 1
@@ -112,8 +112,8 @@
             return result;
         }
         // for(let i=2; i<7; i++){
-        //     console.log(arrayIntToHex(makeLevels(i)));
-        //     console.log(arrayIntToHex(makeLevels(i,true)));
+        //     console.log(levelsToHex(makeLevels(i)));
+        //     console.log(levelsToHex(makeLevels(i,true)));
         // }
     </script>
 </body>
