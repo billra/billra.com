@@ -44,8 +44,8 @@
         window.addEventListener('DOMContentLoaded', showColorChart);
 
         document.querySelectorAll('input[type=radio][name=count]').forEach(function(radio) {
-            radio.addEventListener('change', function() {
-                const count = parseInt(this.value, 10);
+            radio.addEventListener('change', () => {
+                const count = parseInt(radio.value, 10);
                 intensity = createDistributionArray(count, false);
                 showColorChart(intensity);
             });
