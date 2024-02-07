@@ -78,22 +78,23 @@
             for (let red of ivs) {
                 for (let green of ivs) {
                     for (let blue of ivs) {
-                        const colorBoxWithValue = document.createElement('div');
-                        colorBoxWithValue.classList.add('color-box-with-value');
-
-                        const colorBox = document.createElement('div');
-                        colorBox.style.backgroundColor = `#${red}${green}${blue}`;
-                        colorBox.classList.add('color-box');
-                        colorBoxWithValue.appendChild(colorBox);
-
-                        const colorValue = document.createElement('div');
-                        colorValue.innerText = `#${red}${green}${blue}`;
-                        colorBoxWithValue.appendChild(colorValue);
-
-                        container.appendChild(colorBoxWithValue);
+                        makeColorBox(container,red,blue,green);
                     }
                 }
             }
+        }
+
+        function makeColorBox(container,red,blue,green){
+            const colorBoxWithValue = document.createElement('div');
+            colorBoxWithValue.classList.add('color-box-with-value');
+            const colorBox = document.createElement('div');
+            colorBox.style.backgroundColor = `#${red}${green}${blue}`;
+            colorBox.classList.add('color-box');
+            colorBoxWithValue.appendChild(colorBox);
+            const colorValue = document.createElement('div');
+            colorValue.innerText = `#${red}${green}${blue}`;
+            colorBoxWithValue.appendChild(colorValue);
+            container.appendChild(colorBoxWithValue);
         }
 
         function arrayIntToHex(ary){
