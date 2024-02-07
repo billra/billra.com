@@ -35,7 +35,7 @@
         <label><input type="radio" name="count" value="4"> 4</label>
         <label><input type="radio" name="count" value="5"> 5</label>
     </div>
-    
+
     <br>
     <div id="color-container"></div>
 
@@ -47,9 +47,6 @@
             radio.addEventListener('change', function() {
                 const count = parseInt(this.value, 10);
                 intensity = createDistributionArray(count, false);
-                const container = document.getElementById('color-container');
-                container.innerHTML = ''; // Clear color-container
-
                 showColorChart(intensity);
             });
         });
@@ -65,6 +62,7 @@
             const ivs = arrayIntToHex(intensity);
             console.log(ivs);
             const container = document.getElementById('color-container');
+            container.innerHTML = ''; // clear old values
 
             for (let red of ivs) {
                 for (let green of ivs) {
