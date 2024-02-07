@@ -30,11 +30,14 @@
     <div id="color-container"></div>
 
     <script>
-        window.addEventListener('DOMContentLoaded', showColorChart);
-        
-        function showColorChart(){
+        window.addEventListener('DOMContentLoaded', ()=>showColorChart([0, 127, 255])); // or ['00', '40', '80', 'C0', 'FF']
+
+        function showColorChart(vals){
+            // create an array of hex value strings from array of integers
+            // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
+            const intensity = vals.map(num => num.toString(16).toUpperCase().padStart(2, '0'));
+            console.log(intensity);
             const container = document.getElementById('color-container');
-            const intensity = ['00', '7F', 'FF']; // or ['00', '40', '80', 'C0', 'FF']
 
             for (let red of intensity) {
                 for (let green of intensity) {
