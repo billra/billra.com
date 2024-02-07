@@ -30,35 +30,35 @@
 
     <div>
         Intensity levels:
-        <label><input type="radio" name="count" value="2" checked> 2</label>
-        <label><input type="radio" name="count" value="3"> 3</label>
-        <label><input type="radio" name="count" value="4"> 4</label>
-        <label><input type="radio" name="count" value="5"> 5</label>
+        <label><input type="radio" name="count" value="2" checked>2</label>
+        <label><input type="radio" name="count" value="3">3</label>
+        <label><input type="radio" name="count" value="4">4</label>
+        <label><input type="radio" name="count" value="5">5</label>
     </div>
     <div>
         Round:
-        <label><input type="radio" name="round" value="0" checked> down</label>
-        <label><input type="radio" name="round" value="1"> up</label>
+        <label><input type="radio" name="round" value="0" checked>down</label>
+        <label><input type="radio" name="round" value="1">up</label>
     </div>
 
     <br>
     <div id="color-container"></div>
 
     <script>
-        document.querySelectorAll('input[type=radio][name=count]').forEach(function(radio) {
-            radio.addEventListener('change', () => {
-                const count = parseInt(radio.value, 10);
-                const roundValue = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
-                const intensity = createDistributionArray(count, roundValue);
+        document.querySelectorAll('input[type=radio][name=count]').forEach((rb) => {
+            rb.addEventListener('change', () => {
+                const count = parseInt(rb.value, 10);
+                const roundUp = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
+                const intensity = createDistributionArray(count, roundUp);
                 showColorChart(intensity);
             });
         });
 
-        document.querySelectorAll('input[type=radio][name=round]').forEach(function(radio) {
-            radio.addEventListener('change', () => {
+        document.querySelectorAll('input[type=radio][name=round]').forEach((rb) => {
+            rb.addEventListener('change', () => {
                 const count = parseInt(document.querySelector('input[type=radio][name=count]:checked').value, 10);
-                const roundValue = parseInt(radio.value, 10);
-                const intensity = createDistributionArray(count, roundValue);
+                const roundUp = parseInt(rb.value, 10);
+                const intensity = createDistributionArray(count, roundUp);
                 showColorChart(intensity);
             });
         });
@@ -70,19 +70,11 @@
             defaultRadio.dispatchEvent(event);
         });
 
-        function arrayIntToHex(ary){
-            // create an array of hex value strings from array of integers
-            // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
-            return ary.map(num => num.toString(16).toUpperCase().padStart(2, '0'));
-        }
         function showColorChart(intensity){
-            // create an array of hex value strings from array of integers
-            // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
             const ivs = arrayIntToHex(intensity);
             console.log(ivs);
             const container = document.getElementById('color-container');
             container.innerHTML = ''; // clear old values
-
             for (let red of ivs) {
                 for (let green of ivs) {
                     for (let blue of ivs) {
@@ -102,6 +94,12 @@
                     }
                 }
             }
+        }
+
+        function arrayIntToHex(ary){
+            // create an array of hex value strings from array of integers
+            // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
+            return ary.map(num => num.toString(16).toUpperCase().padStart(2, '0'));
         }
 
         function createDistributionArray(count,roundUp) { // count must be > 1
