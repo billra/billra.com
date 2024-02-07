@@ -60,6 +60,22 @@
                 }
             }
         }
+
+        function createDistributionArray(count) { // count must be > 1
+
+            let step = 255 / (count - 1);
+            let result = [];
+
+            for (let i = 0; i < count; i++) {
+                result.push(Math.round(step * i));
+            }
+
+            return result;
+        }
+        console.log(createDistributionArray(2));
+        console.log(createDistributionArray(3));
+        console.log(createDistributionArray(4));
+        console.log(createDistributionArray(5));
     </script>
 </body>
 </html>
