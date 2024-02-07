@@ -66,18 +66,18 @@
             }
         }
 
-        function createDistributionArray(count) { // count must be > 1
+        function createDistributionArray(count,roundUp) { // count must be > 1
             let step = 255 / (count - 1);
             let result = [];
             for (let i = 0; i < count; i++) {
-                result.push(Math.round(step * i));
+                result.push(roundUp?Math.ceil(step*i):Math.floor(step*i));
             }
             return result;
         }
-        console.log(arrayIntToHex(createDistributionArray(2)));
-        console.log(arrayIntToHex(createDistributionArray(3)));
-        console.log(arrayIntToHex(createDistributionArray(4)));
-        console.log(arrayIntToHex(createDistributionArray(5)));
+        for(let i=2; i<8; i++){
+            console.log(arrayIntToHex(createDistributionArray(i)));
+            console.log(arrayIntToHex(createDistributionArray(i,true)));
+        }
     </script>
 </body>
 </html>
