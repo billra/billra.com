@@ -4,8 +4,10 @@ Web based text editor. Name derived from a content editable div: &lt;div class="
 
 ## Task List
 
-- save to storage so F5 brings back text
+- x save to storage so F5 brings back text
+- icon
 - experiment with page color and editor margin 2px
+- ... menu start point
 - save and load file as text
 -   as html
 - tab text gets filename
