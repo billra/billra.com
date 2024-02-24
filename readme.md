@@ -5,6 +5,7 @@ Web based text editor. Name derived from a content editable div: &lt;div class="
 ## Task List
 
 - x save to storage so F5 brings back text
+- x scroll bar when editor vertical full
 - icon
 - experiment with page color and editor margin 2px
 - ... menu start point

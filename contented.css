@@ -17,6 +17,8 @@ body {
     padding: 4px;
     height: 100%; /* editor takes full available height */
     box-sizing: border-box; /* include padding and border in the element's total width and height */
+    overflow: auto;
+    scrollbar-color: #707070 #101010;
 }
 
 .editor:focus {
