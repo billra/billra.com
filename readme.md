@@ -6,9 +6,9 @@ Web based text editor. Name derived from a content editable div: &lt;div class="
 
 - x save to storage so F5 brings back text
 - x scroll bar when editor vertical full
-- icon
+- x icon
 - experiment with page color and editor margin 2px
-- ... menu start point
+- x menu start point
 - save and load file as text
 -   as html
 - tab text gets filename

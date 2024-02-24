@@ -10,3 +10,8 @@ if (savedState) {
     editorDiv.innerHTML = savedState;
     console.log('editor state restored');
 }
+// menu handling
+const menu = document.querySelector('.menu');
+menu.addEventListener('click', function(event) {
+    console.log('Menu clicked:', event);
+});

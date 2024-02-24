@@ -25,3 +25,15 @@ body {
     outline: none;
     border-color: darkred;
 }
+
+.menu {
+    position: fixed;
+    top: 4px;
+    right: 4px; /* Adjust this value to control the distance from the right edge */
+    cursor: pointer;
+    color: darkorange;
+    z-index: 999;
+    background-color: rgba(169, 169, 169, 0.75);
+    padding: 2px 14px;
+    border-radius: 15px;
+}
