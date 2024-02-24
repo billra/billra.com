@@ -1,16 +1,25 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%; /* ensure body takes full viewport height */
+}
+
 body {
-    color: white;
-    background-color: #0A0A0A;
     font-family: Arial, sans-serif;
 }
+
 .editor {
+    color: white;
     background-color: black;
-    border: 2px solid darkblue;
-    border-radius: 4px;
+    border: 2px solid darkred;
+    border-radius: 5px;
     margin: 0px;
     padding: 4px;
+    height: 100%; /* editor takes full available height */
+    box-sizing: border-box; /* include padding and border in the element's total width and height */
 }
+
 .editor:focus {
     outline: none;
-    border-color: darkred;
+    border-color: red;
 }
