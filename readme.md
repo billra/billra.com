@@ -4,7 +4,11 @@ Web based text editor. Name derived from a content editable div: &lt;div class="
 
 ## Task List
 
-- startup
+- save to storage so F5 brings back text
+- experiment with page color and editor margin 2px
+- save and load file as text
+-   as html
+- tab text gets filename
 
 ## Quick Start
 

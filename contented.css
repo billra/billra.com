@@ -11,7 +11,7 @@ body {
 .editor {
     color: white;
     background-color: black;
-    border: 2px solid darkred;
+    border: 2px solid darkslategray;
     border-radius: 5px;
     margin: 0px;
     padding: 4px;
@@ -21,5 +21,5 @@ body {
 
 .editor:focus {
     outline: none;
-    border-color: red;
+    border-color: darkred;
 }
