@@ -15,3 +15,5 @@ const menu = document.querySelector('.menu');
 menu.addEventListener('click', function(event) {
     console.log('Menu clicked:', event);
 });
+// focus
+editorDiv.focus();
