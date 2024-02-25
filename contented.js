@@ -12,8 +12,21 @@ if (savedState) {
 }
 // menu handling
 const menu = document.querySelector('.menu');
-menu.addEventListener('click', function(event) {
+menu.addEventListener('click', event => {
     console.log('Menu clicked:', event);
 });
 // focus
-editorDiv.focus();
+editorDiv.focus(); // focus starts on editor
+
+editorDiv.addEventListener('keydown', event => {
+    if (event.key === 'Tab' && event.shiftKey) {
+        event.preventDefault();
+        menu.focus(); // skip over browser items
+    }
+});
+menu.addEventListener('keydown', event => {
+    if (event.key === 'Tab' && !event.shiftKey) {
+        event.preventDefault();
+        editorDiv.focus(); // skip over browser items
+    }
+});
