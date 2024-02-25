@@ -8,7 +8,10 @@ Web based text editor. Name derived from a content editable div: &lt;div class="
 - x scroll bar when editor vertical full
 - x icon
 - x menu start point
-- menu: tab order after edit control, behave like mouseover
+- x menu: tab order after edit control
+- ctrl-s for save (html)
+- ctrl-n for new (prompt dirty)
+- ctrl-o for open (prompt dirty)
 - menu: mouseover drops down list:
 - menu: save html -> file with htm extension, default with ctrl-s
 - menu: save text -> file with txt extension

@@ -29,3 +29,24 @@ menuDiv.addEventListener('keydown', event => {
         editorDiv.focus(); // skip over browser items
     }
 });
+// filesystem
+window.addEventListener('keydown', event => {
+    if (event.key === 's' && event.ctrlKey) {
+        event.preventDefault();
+        saveHtml();
+    }
+});
+function saveHtml(){
+    // Files are saved immediately or a dialog is displayed allowing
+    // the name to be changed. This behavior is controlled by the browser.
+    // Chrome setting: "Ask where to save each file before downloading".
+    // FireFox setting: "Always ask you where to save files".
+    const blob=new Blob([editorDiv.innerHTML],{type:'text/plain;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement('a');
+    link.href=url;
+    link.download='content.htm';
+    link.style.display='none';
+    link.click();
+    URL.revokeObjectURL(url);
+}
