@@ -33,20 +33,22 @@ menuDiv.addEventListener('keydown', event => {
 window.addEventListener('keydown', event => {
     if (event.key === 's' && event.ctrlKey) {
         event.preventDefault();
-        saveHtml();
+        // wrapped content can be displayed in browser and recognized as innerHTML when loading
+        const html = '<div id="contented" style="color: white; background-color: black;">' + editorDiv.innerHTML + '</div>';
+        save('content.htm', html);
     }
 });
-function saveHtml(){
+function save(filename, content) {
     // Files are saved immediately or a dialog is displayed allowing
     // the name to be changed. This behavior is controlled by the browser.
     // Chrome setting: "Ask where to save each file before downloading".
     // FireFox setting: "Always ask you where to save files".
-    const blob=new Blob([editorDiv.innerHTML],{type:'text/plain;charset=utf-8'});
-    const url=URL.createObjectURL(blob);
-    const link=document.createElement('a');
-    link.href=url;
-    link.download='content.htm';
-    link.style.display='none';
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
     link.click();
     URL.revokeObjectURL(url);
 }
