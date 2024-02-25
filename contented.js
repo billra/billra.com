@@ -31,21 +31,21 @@ menuDiv.addEventListener('keydown', event => {
 });
 // filesystem
 window.addEventListener('keydown', event => {
-    if (event.key.toLowerCase() !== 's' || !event.ctrlKey) {
-        return; // not ctrl-s or ctrl-S
-    }
-    event.preventDefault();
-    console.log('save...');
-    if (event.shiftKey) { // 'S' key pressed (capital letter)
-        // save as HTML
+    // ctrl + 'S' (capital letter) pressed  -> save as HTML
+    if (event.key === 'S' && event.ctrlKey) {
+        event.preventDefault();
         // wrapped content can be displayed in browser and recognized as innerHTML when loading
         const html = '<div id="contented" style="color: white; background-color: black;">' + editorDiv.innerHTML + '</div>';
         save('content.htm', html);
-        return;
     }
-    // 's' key pressed (lowercase letter)
-    // todo: save as text
-    console.log('todo: ctrl-s text save');
+});
+window.addEventListener('keydown', event => {
+    // ctrl + 's' (lowercase letter) pressed  -> save as text
+    if (event.key === 's' && event.ctrlKey) {
+        event.preventDefault();
+        // todo: save as text
+        console.log('todo: ctrl-s text save');
+    }
 });
 function save(filename, content) {
     // Files are saved immediately or a dialog is displayed allowing
