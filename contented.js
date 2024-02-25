@@ -1,4 +1,4 @@
-// persist editing across F5 refresh
+// persist editor contents across F5 refresh
 const editorDiv = document.querySelector('.editor');
 const contentsKey = 'contents';
 window.addEventListener('beforeunload', () => {
@@ -11,20 +11,19 @@ if (savedState) {
     console.log('editor state restored');
 }
 // menu handling
-const menu = document.querySelector('.menu');
-menu.addEventListener('click', event => {
+const menuDiv = document.querySelector('.menu');
+menuDiv.addEventListener('click', event => {
     console.log('Menu clicked:', event);
 });
 // focus
 editorDiv.focus(); // focus starts on editor
-
 editorDiv.addEventListener('keydown', event => {
     if (event.key === 'Tab' && event.shiftKey) {
         event.preventDefault();
-        menu.focus(); // skip over browser items
+        menuDiv.focus(); // skip over browser items
     }
 });
-menu.addEventListener('keydown', event => {
+menuDiv.addEventListener('keydown', event => {
     if (event.key === 'Tab' && !event.shiftKey) {
         event.preventDefault();
         editorDiv.focus(); // skip over browser items
