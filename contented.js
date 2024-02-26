@@ -16,11 +16,18 @@ menuDiv.addEventListener('click', event => {
     console.log('Menu clicked:', event);
 });
 // focus
+let blurRange;
 editorDiv.addEventListener('focus', () => {
     console.log('editorDiv focus');
+    const selection=window.getSelection();
+    if(blurRange){
+        selection.addRange(blurRange);
+    }
 });
 editorDiv.addEventListener('blur', () => {
     console.log('editorDiv blur');
+    const selection=window.getSelection();
+    blurRange=selection.getRangeAt(0);
 });
 editorDiv.focus(); // focus starts on editor
 editorDiv.addEventListener('keydown', event => {
@@ -40,9 +47,16 @@ function getText(){
     // Replace: html '&nbsp' text retrieval correctly returns '\u00A0'
     // (unicode non-breaking space). We almost always want spaces.
     const selection=window.getSelection();
-    selection.selectAllChildren(editorDiv); // editor div gets focus event here
+    if(document.activeElement===editorDiv){ // simulate blur to update blurRange to latest selection
+        blurRange=selection.getRangeAt(0);
+    }
+    editorDiv.focus();
+    selection.selectAllChildren(editorDiv); // editor div would get focus event here if it did not already have focus
     const text=selection.toString().replace(/\u00A0/g,' ');
     selection.removeAllRanges();
+    if (blurRange){
+        selection.addRange(blurRange);
+    }
     return text;
 }
 // filesystem
