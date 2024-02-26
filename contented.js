@@ -44,18 +44,19 @@ editorDiv.addEventListener('blur', () => {
     blurRange = selection.getRangeAt(0);
 });
 function getText() {
-    // The contenteditable div uses &nbsp; to preserve display spacing.
-    // Replace: html '&nbsp' text retrieval correctly returns '\u00A0'
-    // (unicode non-breaking space). We almost always want spaces.
     const selection = window.getSelection();
-    // if editorDiv currently has focus, we must update blurRange to latest selection
-    if (document.activeElement === editorDiv) {
+    if (document.activeElement === editorDiv) { // if editorDiv currently has focus
+        // update blurRange so focus restores correct selection
         blurRange = selection.getRangeAt(0);
     } else {
         editorDiv.focus();
     }
     selection.selectAllChildren(editorDiv); // editor div would get focus event here if it did not already have focus
+    // The contenteditable div uses &nbsp; to preserve display spacing.
+    // Replace: html '&nbsp' text retrieval correctly returns '\u00A0'
+    // (unicode non-breaking space). We almost always want spaces.
     const text = selection.toString().replace(/\u00A0/g, ' ');
+    // restore blurRange selection
     selection.removeAllRanges();
     selection.addRange(blurRange);
     return text;
