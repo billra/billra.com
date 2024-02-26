@@ -28,18 +28,17 @@ menuDiv.addEventListener('keydown', event => {
         editorDiv.focus(); // skip over browser items
     }
 });
-
-
+// preserve editor cursor and selection
 editorDiv.focus(); // focus starts on editor
 let blurRange = window.getSelection().getRangeAt(0); // initialized
 editorDiv.addEventListener('focus', () => {
-    console.log('editorDiv focus, set selection');
+    // console.log('editorDiv focus, set selection');
     const selection = window.getSelection();
     selection.removeAllRanges();
     selection.addRange(blurRange);
 });
 editorDiv.addEventListener('blur', () => {
-    console.log('editorDiv blur, save selection');
+    // console.log('editorDiv blur, save selection');
     const selection = window.getSelection();
     blurRange = selection.getRangeAt(0);
 });
@@ -49,9 +48,12 @@ function getText() {
         // update blurRange so focus restores correct selection
         blurRange = selection.getRangeAt(0);
     } else {
+        // required so that selectAllChildren does not trigger
+        // a focus event and end up only selecting the blurRange
         editorDiv.focus();
     }
-    selection.selectAllChildren(editorDiv); // editor div would get focus event here if it did not already have focus
+    // the editorDiv will get a focus event here if it does not already have focus
+    selection.selectAllChildren(editorDiv);
     // The contenteditable div uses &nbsp; to preserve display spacing.
     // Replace: html '&nbsp' text retrieval correctly returns '\u00A0'
     // (unicode non-breaking space). We almost always want spaces.
@@ -61,8 +63,6 @@ function getText() {
     selection.addRange(blurRange);
     return text;
 }
-
-
 // filesystem
 window.addEventListener('keydown', event => {
     // ctrl + 'S' (capital letter) pressed  -> save as HTML

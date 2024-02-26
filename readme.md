@@ -10,7 +10,7 @@ Web based text editor. Name derived from a content editable div: &lt;div class="
 - x menu start point
 - x menu: tab order after edit control
 - x ctrl-S for save (html)
-- ctrl-s for save (text)
+- x ctrl-s for save (text)
 - ctrl-n for new (prompt dirty)
 - ctrl-o for open (prompt dirty)
 - menu: mouseover drops down list:
