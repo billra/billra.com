@@ -16,20 +16,6 @@ menuDiv.addEventListener('click', event => {
     console.log('Menu clicked:', event);
 });
 // focus
-let blurRange;
-editorDiv.addEventListener('focus', () => {
-    console.log('editorDiv focus');
-    const selection=window.getSelection();
-    if(blurRange){
-        selection.addRange(blurRange);
-    }
-});
-editorDiv.addEventListener('blur', () => {
-    console.log('editorDiv blur');
-    const selection=window.getSelection();
-    blurRange=selection.getRangeAt(0);
-});
-editorDiv.focus(); // focus starts on editor
 editorDiv.addEventListener('keydown', event => {
     if (event.key === 'Tab' && event.shiftKey) {
         event.preventDefault();
@@ -42,23 +28,40 @@ menuDiv.addEventListener('keydown', event => {
         editorDiv.focus(); // skip over browser items
     }
 });
-function getText(){
+
+
+editorDiv.focus(); // focus starts on editor
+let blurRange = window.getSelection().getRangeAt(0); // initialized
+editorDiv.addEventListener('focus', () => {
+    console.log('editorDiv focus, set selection');
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(blurRange);
+});
+editorDiv.addEventListener('blur', () => {
+    console.log('editorDiv blur, save selection');
+    const selection = window.getSelection();
+    blurRange = selection.getRangeAt(0);
+});
+function getText() {
     // The contenteditable div uses &nbsp; to preserve display spacing.
     // Replace: html '&nbsp' text retrieval correctly returns '\u00A0'
     // (unicode non-breaking space). We almost always want spaces.
-    const selection=window.getSelection();
-    if(document.activeElement===editorDiv){ // simulate blur to update blurRange to latest selection
-        blurRange=selection.getRangeAt(0);
+    const selection = window.getSelection();
+    // if editorDiv currently has focus, we must update blurRange to latest selection
+    if (document.activeElement === editorDiv) {
+        blurRange = selection.getRangeAt(0);
+    } else {
+        editorDiv.focus();
     }
-    editorDiv.focus();
     selection.selectAllChildren(editorDiv); // editor div would get focus event here if it did not already have focus
-    const text=selection.toString().replace(/\u00A0/g,' ');
+    const text = selection.toString().replace(/\u00A0/g, ' ');
     selection.removeAllRanges();
-    if (blurRange){
-        selection.addRange(blurRange);
-    }
+    selection.addRange(blurRange);
     return text;
 }
+
+
 // filesystem
 window.addEventListener('keydown', event => {
     // ctrl + 'S' (capital letter) pressed  -> save as HTML
