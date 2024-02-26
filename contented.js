@@ -16,6 +16,12 @@ menuDiv.addEventListener('click', event => {
     console.log('Menu clicked:', event);
 });
 // focus
+editorDiv.addEventListener('focus', () => {
+    console.log('editorDiv focus');
+});
+editorDiv.addEventListener('blur', () => {
+    console.log('editorDiv blur');
+});
 editorDiv.focus(); // focus starts on editor
 editorDiv.addEventListener('keydown', event => {
     if (event.key === 'Tab' && event.shiftKey) {
