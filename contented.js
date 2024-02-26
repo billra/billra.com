@@ -29,6 +29,45 @@ menuDiv.addEventListener('keydown', event => {
         editorDiv.focus(); // skip over browser items
     }
 });
+// maintain selection and cursor position
+let selectionRange; // keeps track of old selection when focus leaves editor
+let skipFocus; // skip a focus event triggered by a text selection
+editorDiv.addEventListener('blur', event => {
+    // save existing selection
+    console.log('handle editorDiv blur', event);
+    const selection = window.getSelection();
+    selectionRange = selection.rangeCount ? selection.getRangeAt(0) : null;
+});
+editorDiv.addEventListener('focus', event => {
+    console.log('event: editorDiv focus', event);
+    if (skipFocus){
+        console.log('skip focus event');
+        skipFocus=false;
+        return;
+    }
+    console.log('restore selection from focus event');
+    const selection=window.getSelection();
+    selection.removeAllRanges();
+    if(selectionRange){ // restore selection saved during blur
+        selection.addRange(selectionRange);
+    }
+});
+function getText(){
+    // The contenteditable div uses &nbsp; to preserve display spacing.
+    // Replace: html '&nbsp' text retrieval correctly returns '\u00A0'
+    // (unicode non-breaking space). We almost always want spaces.
+    const selection=window.getSelection();
+    skipFocus=true;
+    selection.selectAllChildren(editorDiv); // editor div gets focus event here
+    const text=selection.toString().replace(/\u00A0/g,' ');
+    // do skipped focus processing
+    console.log('restore selection from getText');
+    selection.removeAllRanges();
+    if(selectionRange){ // restore selection saved during blur
+        selection.addRange(selectionRange);
+    }
+    return text;
+}
 // filesystem
 window.addEventListener('keydown', event => {
     // ctrl + 'S' (capital letter) pressed  -> save as HTML
@@ -43,8 +82,8 @@ window.addEventListener('keydown', event => {
     // ctrl + 's' (lowercase letter) pressed  -> save as text
     if (event.key === 's' && event.ctrlKey) {
         event.preventDefault();
-        // todo: save as text
-        console.log('todo: ctrl-s text save');
+        const text = getText();
+        save('content.txt', text);
     }
 });
 function save(filename, content) {
