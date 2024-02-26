@@ -29,44 +29,14 @@ menuDiv.addEventListener('keydown', event => {
         editorDiv.focus(); // skip over browser items
     }
 });
-// maintain selection and cursor position
-let selectionRange; // keeps track of old selection when focus leaves editor
-let skipFocus; // skip a focus event triggered by a text selection
-editorDiv.addEventListener('blur', () => {
-    // save existing selection
-    console.log('event: editorDiv blur, saving selectionRange');
-    const selection = window.getSelection();
-    selectionRange = selection.rangeCount ? selection.getRangeAt(0) : null;
-});
-editorDiv.addEventListener('focus', () => {
-    console.log('event: editorDiv focus');
-    if (skipFocus){
-        console.log('  skip focus event');
-        skipFocus=false;
-        return;
-    }
-    console.log('  restore selection');
-    restoreSelection();
-});
-function restoreSelection(){
-    const selection=window.getSelection();
-    selection.removeAllRanges();
-    if(selectionRange){
-        selection.addRange(selectionRange);
-    }
-}
 function getText(){
     // The contenteditable div uses &nbsp; to preserve display spacing.
     // Replace: html '&nbsp' text retrieval correctly returns '\u00A0'
     // (unicode non-breaking space). We almost always want spaces.
-    console.log('getText called');
     const selection=window.getSelection();
-    skipFocus=true;
     selection.selectAllChildren(editorDiv); // editor div gets focus event here
     const text=selection.toString().replace(/\u00A0/g,' ');
-    // restore the selection as we will get a blur event
-    console.log('restore selection during getText call');
-    restoreSelection();
+    selection.removeAllRanges();
     return text;
 }
 // filesystem
