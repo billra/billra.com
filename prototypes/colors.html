@@ -44,6 +44,9 @@
         <label><input type="radio" name="round" value="0" checked>down</label>
         <label><input type="radio" name="round" value="1">up</label>
     </div>
+    <div>
+        <label><input type="checkbox" id="id-grey-wrap">Grey Wrap</label>
+    </div>
 
     <div id="color-container"></div>
 
@@ -76,19 +79,21 @@
         function showColorChart(levels){
             const hls = levelsToHex(levels); // hex level strings
             console.log(hls);
+            const greyWrap = document.getElementById('id-grey-wrap').checked;
+            console.log('grey wrap:',greyWrap);
             const container = document.getElementById('color-container');
             container.innerHTML = ''; // clear old values
             for (let red of hls) {
                 for (let green of hls) {
                     for (let blue of hls) {
-                        makeColorBox(container,red,blue,green);
+                        makeColorBox(container,red,blue,green,greyWrap);
                     }
                 }
             }
         }
 
-        function makeColorBox(container,red,blue,green){
-            if (red === blue && blue === green) { // no comparison chaining in JavaScript
+        function makeColorBox(container,red,blue,green,greyWrap){
+            if (greyWrap && red === blue && blue === green) {
                 const lineBreak = document.createElement('br');
                 container.appendChild(lineBreak);
             }
