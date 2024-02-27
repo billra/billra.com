@@ -51,12 +51,14 @@
     <div id="color-container"></div>
 
     <script>
+        let gLevels;
+
         document.querySelectorAll('input[type=radio][name=count]').forEach((rb) => {
             rb.addEventListener('change', () => {
                 const count = parseInt(rb.value, 10);
                 const roundUp = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
-                const levels = makeLevels(count, roundUp);
-                showColorChart(levels);
+                gLevels = makeLevels(count, roundUp);
+                showColorChart();
             });
         });
 
@@ -64,10 +66,12 @@
             rb.addEventListener('change', () => {
                 const count = parseInt(document.querySelector('input[type=radio][name=count]:checked').value, 10);
                 const roundUp = parseInt(rb.value, 10);
-                const levels = makeLevels(count, roundUp);
-                showColorChart(levels);
+                gLevels = makeLevels(count, roundUp);
+                showColorChart();
             });
         });
+
+        document.getElementById('id-grey-wrap').addEventListener('change',showColorChart);
 
         document.addEventListener('DOMContentLoaded', () => {
             // simulate click on the default radio button
@@ -76,8 +80,8 @@
             defaultRadio.dispatchEvent(event);
         });
 
-        function showColorChart(levels){
-            const hls = levelsToHex(levels); // hex level strings
+        function showColorChart(){
+            const hls = levelsToHex(gLevels); // hex level strings
             console.log(hls);
             const greyWrap = document.getElementById('id-grey-wrap').checked;
             console.log('grey wrap:',greyWrap);
