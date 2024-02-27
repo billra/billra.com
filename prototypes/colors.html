@@ -23,6 +23,10 @@
             border: 1px solid white;
             margin-bottom: 5px;
         }
+
+        #color-container {
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -41,7 +45,6 @@
         <label><input type="radio" name="round" value="1">up</label>
     </div>
 
-    <br>
     <div id="color-container"></div>
 
     <script>
@@ -85,6 +88,10 @@
         }
 
         function makeColorBox(container,red,blue,green){
+            if (red === blue && blue === green) { // no comparison chaining in JavaScript
+                const lineBreak = document.createElement('br');
+                container.appendChild(lineBreak);
+            }
             const colorBoxWithValue = document.createElement('div');
             colorBoxWithValue.classList.add('color-box-with-value');
             const colorBox = document.createElement('div');
