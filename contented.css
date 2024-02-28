@@ -3,11 +3,9 @@ html, body {
     padding: 0;
     height: 100%; /* ensure body takes full viewport height */
 }
-
 body {
     font-family: Arial, sans-serif;
 }
-
 .editor {
     color: white;
     background-color: black;
@@ -20,12 +18,10 @@ body {
     overflow: auto;
     scrollbar-color: hsl(0 0 50) hsl(0 0 10);
 }
-
 .editor:focus {
     outline: none;
     border-color: hsl(0 0 66);
 }
-
 .menu {
     z-index: 999; /* always on top */
     position: fixed;
@@ -38,12 +34,10 @@ body {
     background-color: hsl(0 0 50 / 75%);
     transition: background-color 0.5s;
 }
-
 .menu:hover {
     color: lightgreen;
     background-color: hsl(0 0 10);
 }
-
 /*
 The hsl syntax is convenient for specifying grey colors.
 see https://drafts.csswg.org/css-color/#typedef-modern-hsl-syntax
