@@ -35,13 +35,16 @@ body {
     border-radius: 15px;
     cursor: pointer;
     color: darkorange;
-    background-color: rgba(120, 120, 120, 0.75);
+    background-color: hsl(0 0 50 / 75%);
     transition: background-color 0.5s;
 }
 
 .menu:hover {
     color: lightgreen;
-    background-color: rgba(30, 30, 30, 1); /* Fully opaque background on hover */
+    background-color: hsl(0 0 10);
 }
 
-/* see https://drafts.csswg.org/css-color/#typedef-modern-hsl-syntax */
+/*
+The hsl syntax is convenient for specifying grey colors.
+see https://drafts.csswg.org/css-color/#typedef-modern-hsl-syntax
+*/

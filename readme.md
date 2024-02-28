@@ -17,6 +17,7 @@ Web based text editor. Name derived from a content editable div: &lt;div class="
 - menu: save html -> file with htm extension, default with ctrl-s
 - menu: save text -> file with txt extension
 - menu: load -> fills contenteditable div with the html or txt depending on extension
+- use 'light-dark(white, black)' css syntax and settings dialog to select color scheme
 - browser tab text gets filename
 - experiment with page color and editor margin 2px
 
