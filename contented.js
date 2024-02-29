@@ -64,12 +64,14 @@ function getText() {
     return text;
 }
 // filesystem
+const contentedFileBegin='<div id="contented" style="color: white; background-color: black;">';
+const contentedFileEnd='</div>'; // single definition for creation and identification
 window.addEventListener('keydown', event => {
     // ctrl + 'S' (capital letter) pressed  -> save as HTML
     if (event.key === 'S' && event.ctrlKey) {
         event.preventDefault();
         // wrapped content can be displayed in browser and recognized as innerHTML when loading
-        const html = '<div id="contented" style="color: white; background-color: black;">' + editorDiv.innerHTML + '</div>';
+        const html = contentedFileBegin + editorDiv.innerHTML + contentedFileEnd;
         save('content.htm', html);
     }
 });
