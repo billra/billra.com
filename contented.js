@@ -64,8 +64,8 @@ function getText() {
     return text;
 }
 // filesystem
-const contentedFileBegin='<div id="contented" style="color: white; background-color: black;">';
-const contentedFileEnd='</div>'; // single definition for creation and identification
+const contentedFileBegin = '<div id="contented" style="color: white; background-color: black;">';
+const contentedFileEnd = '</div>'; // single definition for creation and identification
 window.addEventListener('keydown', event => {
     // ctrl + 'S' (capital letter) pressed  -> save as HTML
     if (event.key === 'S' && event.ctrlKey) {
@@ -101,10 +101,10 @@ window.addEventListener('keydown', event => {
     // ctrl + 'o' pressed  -> open file
     if (event.key === 'o' && event.ctrlKey) {
         event.preventDefault();
-        doLoad();
+        loadDialog();
     }
 });
-function doLoad() {
+function loadDialog() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.txt,.htm,.html,.text';
@@ -112,12 +112,19 @@ function doLoad() {
         const file = input.files[0];
         const reader = new FileReader();
         reader.onload = () => {
-            const filename = file.name;
-            const contents = reader.result;
-            console.log('filename:', filename);
-            console.log('contents:', contents);
+            const str = reader.result;
+            doLoad(str);
         };
         reader.readAsText(file, 'UTF-8');
     };
     input.click();
+}
+function doLoad(str) {
+    if (str.startsWith(contentedFileBegin)) {
+        const html = str.slice(contentedFileBegin.length, -contentedFileEnd.length);
+        editorDiv.innerHTML = html;
+    } else {
+        // todo: undo the getText html '&nbsp' to space conversion
+        editorDiv.innerText=str;
+    }
 }
