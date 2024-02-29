@@ -99,6 +99,23 @@ window.addEventListener('keydown', event => {
     // ctrl + 'o' pressed  -> open file
     if (event.key === 'o' && event.ctrlKey) {
         event.preventDefault();
-        console.log('open file, todo');
+        doLoad();
     }
 });
+function doLoad() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'text/plain,text/html'; // perhaps: accept=".txt,.text,.htm,.html"
+    input.onchange = () => {
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = () => {
+            const filename = file.name;
+            const contents = reader.result;
+            console.log('filename:', filename);
+            console.log('contents:', contents);
+        };
+        reader.readAsText(file, 'UTF-8');
+    };
+    input.click();
+}
