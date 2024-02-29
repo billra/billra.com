@@ -123,8 +123,12 @@ function doLoad(str) {
     if (str.startsWith(contentedFileBegin)) {
         const html = str.slice(contentedFileBegin.length, -contentedFileEnd.length);
         editorDiv.innerHTML = html;
-    } else {
-        // todo: undo the getText html '&nbsp' to space conversion
-        editorDiv.innerText=str;
+        return;
     }
+    // todo: nl/space
+    // text files: undo the getText html '&nbsp' to space conversion
+    // - all pairs: space,space -> nbsp,space
+    // - finish end if odd space count: space,space -> space,nbsp
+    const strFixed=str.replaceAll('  ', '\u00A0 ').replaceAll('  ', ' \u00A0');
+    editorDiv.innerText = strFixed;
 }
