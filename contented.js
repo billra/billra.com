@@ -105,7 +105,7 @@ window.addEventListener('keydown', event => {
 function doLoad() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'text/plain,text/html'; // perhaps: accept=".txt,.text,.htm,.html"
+    input.accept = '.txt,.htm,.html,.text';
     input.onchange = () => {
         const file = input.files[0];
         const reader = new FileReader();
