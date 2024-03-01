@@ -125,10 +125,12 @@ function doLoad(str) {
         editorDiv.innerHTML = html;
         return;
     }
-    // todo: nl/space
     // text files: undo the getText html '&nbsp' to space conversion
-    // - all pairs: space,space -> nbsp,space
-    // - finish end if odd space count: space,space -> space,nbsp
-    const strFixed=str.replaceAll('  ', '\u00A0 ').replaceAll('  ', ' \u00A0');
+    const strFixed = str
+        .replaceAll('\n ', '\n\u00A0') // preserve space after newline
+        .replaceAll('  ', ' \u00A0');  // double spaces need nbsp
+    // side effect:
+    // A line that starts out being '1&nbsp; 2' reconstitutes to '1 &nbsp;2'.
+    // Similarly, '1&nbsp; &nbsp;2' reconstitutes to '1 &nbsp; 2'.
     editorDiv.innerText = strFixed;
 }
