@@ -29,3 +29,19 @@ Web based text editor. Name derived from a content editable div: &lt;div class="
 - new command window: `start cmd`
 - start http server: `python -m http.server 8098`
 - browse to `http://localhost:8098/contented.html` to launch application
+
+contents of contenteditable test:
+
+<!--
+<div class="editor" contenteditable="" spellcheck="false">start here
+<div>&nbsp;1 x</div>
+<div>&nbsp; 2&nbsp; x</div>
+<div>&nbsp; &nbsp;3&nbsp; &nbsp;x</div>
+<div>&nbsp; &nbsp; 4&nbsp; &nbsp; x</div>
+<div>&nbsp; &nbsp; &nbsp;5&nbsp; &nbsp; &nbsp;x</div>
+<div>single</div><div><br></div>
+<div>double</div><div><br></div><div><br></div>
+<div>triple</div><div><br></div><div><br></div>
+<div>
+-->
+see comments
