@@ -1,5 +1,5 @@
 // persist editor contents across F5 refresh
-const editorDiv = document.querySelector('.editor');
+const editorDiv = document.getElementById('id-editor');
 const contentsKey = 'contents';
 window.addEventListener('beforeunload', () => {
     localStorage.setItem(contentsKey, editorDiv.innerHTML);
