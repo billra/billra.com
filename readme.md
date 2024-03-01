@@ -9,10 +9,10 @@ Web based text editor. Name derived from a content editable div: &lt;div class="
 - x icon
 - x menu start point
 - x menu: tab order after edit control
-- x ctrl-S for save (html)
-- x ctrl-s for save (text)
+- x ctrl-S (capital letter) for save (html)
+- x ctrl-s (lowercase letter) for save (text)
+- x ctrl-o for open, html and text auto detect based on contents
 - ctrl-n for new (prompt dirty)
-- ctrl-o for open (prompt dirty)
 - menu: mouseover drops down list:
 - menu: save html -> file with htm extension, default with ctrl-s
 - menu: save text -> file with txt extension
@@ -29,19 +29,3 @@ Web based text editor. Name derived from a content editable div: &lt;div class="
 - new command window: `start cmd`
 - start http server: `python -m http.server 8098`
 - browse to `http://localhost:8098/contented.html` to launch application
-
-contents of contenteditable test:
-
-<!--
-<div class="editor" contenteditable="" spellcheck="false">start here
-<div>&nbsp;1 x</div>
-<div>&nbsp; 2&nbsp; x</div>
-<div>&nbsp; &nbsp;3&nbsp; &nbsp;x</div>
-<div>&nbsp; &nbsp; 4&nbsp; &nbsp; x</div>
-<div>&nbsp; &nbsp; &nbsp;5&nbsp; &nbsp; &nbsp;x</div>
-<div>single</div><div><br></div>
-<div>double</div><div><br></div><div><br></div>
-<div>triple</div><div><br></div><div><br></div>
-<div>
--->
-see comments
