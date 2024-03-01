@@ -11,7 +11,7 @@ if (savedState) {
     console.log('editor state restored');
 }
 // menu handling
-const menuDiv = document.querySelector('.menu');
+const menuDiv = document.getElementById('id-menu');
 menuDiv.addEventListener('click', event => {
     console.log('Menu clicked:', event);
 });

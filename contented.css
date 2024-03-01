@@ -22,7 +22,7 @@ body {
     outline: none;
     border-color: hsl(0 0 50);
 }
-.menu {
+#id-menu {
     z-index: 999; /* always on top */
     position: fixed;
     top: 4px;
@@ -34,7 +34,7 @@ body {
     background-color: hsl(0 0 50 / 75%);
     transition: background-color 0.5s;
 }
-.menu:hover {
+#id-menu:hover {
     color: lightgreen;
     background-color: hsl(0 0 10);
 }
