@@ -22,6 +22,9 @@ body {
     outline: none;
     border-color: hsl(0 0 50);
 }
+#id-help {
+    background-color: #000030;
+}
 #id-menu {
     z-index: 999; /* always on top */
     position: fixed;

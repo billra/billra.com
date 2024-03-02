@@ -10,10 +10,23 @@ if (savedState) {
     editorDiv.innerHTML = savedState;
     console.log('editor state restored');
 }
+// help section
+const helpDiv = document.getElementById('id-help');
+helpDiv.style.display = 'none'; // starts not displayed
 // menu handling
 const menuDiv = document.getElementById('id-menu');
 menuDiv.addEventListener('click', event => {
     console.log('Menu clicked:', event);
+    // swap help and editor
+    if (editorDiv.style.display === 'none') {
+        helpDiv.style.display = 'none';
+        editorDiv.style.display = 'block';
+        editorDiv.focus();
+    } else {
+        editorDiv.style.display = 'none';
+        helpDiv.style.display = 'block';
+        helpDiv.focus();
+    }
 });
 // focus
 editorDiv.addEventListener('keydown', event => {
@@ -25,7 +38,11 @@ editorDiv.addEventListener('keydown', event => {
 menuDiv.addEventListener('keydown', event => {
     if (event.key === 'Tab' && !event.shiftKey) {
         event.preventDefault();
-        editorDiv.focus(); // skip over browser items
+        if (editorDiv.style.display === 'none') {
+            helpDiv.focus();
+        } else {
+            editorDiv.focus();
+        }
     }
 });
 // preserve editor cursor and selection
