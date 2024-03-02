@@ -27,9 +27,7 @@ function swapView() {
         helpDiv.focus();
     }
 }
-menuDiv.addEventListener('click', event => {
-    swapView();
-});
+menuDiv.addEventListener('click', swapView);
 menuDiv.addEventListener('keydown', event => {
     if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
