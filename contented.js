@@ -15,9 +15,8 @@ const helpDiv = document.getElementById('id-help');
 helpDiv.style.display = 'none'; // starts not displayed
 // menu handling
 const menuDiv = document.getElementById('id-menu');
-menuDiv.addEventListener('click', event => {
-    console.log('Menu clicked:', event);
-    // swap help and editor
+function swapView() {
+    // swap help and editor display
     if (editorDiv.style.display === 'none') {
         helpDiv.style.display = 'none';
         editorDiv.style.display = 'block';
@@ -27,14 +26,25 @@ menuDiv.addEventListener('click', event => {
         helpDiv.style.display = 'block';
         helpDiv.focus();
     }
+}
+menuDiv.addEventListener('click', event => {
+    swapView();
 });
-// focus
-editorDiv.addEventListener('keydown', event => {
-    if (event.key === 'Tab' && event.shiftKey) {
+menuDiv.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        menuDiv.focus(); // skip over browser items
+        swapView();
     }
 });
+// focus
+function skipBrowserTabstops(event){
+    if (event.key === 'Tab' && event.shiftKey) {
+        event.preventDefault();
+        menuDiv.focus();
+    }
+}
+editorDiv.addEventListener('keydown', skipBrowserTabstops);
+helpDiv.addEventListener('keydown', skipBrowserTabstops);
 menuDiv.addEventListener('keydown', event => {
     if (event.key === 'Tab' && !event.shiftKey) {
         event.preventDefault();
