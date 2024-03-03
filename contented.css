@@ -31,7 +31,7 @@ h2 {
 #id-help {
     background-color: #000030;
 }
-#id-menu {
+#id-button {
     z-index: 999; /* always on top */
     position: fixed;
     top: 4px;
@@ -43,7 +43,7 @@ h2 {
     background-color: hsl(0 0 50 / 75%);
     transition: background-color 0.5s;
 }
-#id-menu:hover {
+#id-button:hover {
     color: lightgreen;
     background-color: hsl(0 0 10);
 }

@@ -13,8 +13,8 @@ if (savedState) {
 // help section
 const helpDiv = document.getElementById('id-help');
 helpDiv.style.display = 'none'; // starts not displayed
-// menu handling
-const menuDiv = document.getElementById('id-menu');
+// button handling
+const btnDiv = document.getElementById('id-button');
 function swapView() {
     // swap help and editor display
     if (editorDiv.style.display === 'none') {
@@ -27,8 +27,8 @@ function swapView() {
         helpDiv.focus();
     }
 }
-menuDiv.addEventListener('click', swapView);
-menuDiv.addEventListener('keydown', event => {
+btnDiv.addEventListener('click', swapView);
+btnDiv.addEventListener('keydown', event => {
     if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         swapView();
@@ -38,12 +38,12 @@ menuDiv.addEventListener('keydown', event => {
 function skipBrowserTabstops(event){
     if (event.key === 'Tab' && event.shiftKey) {
         event.preventDefault();
-        menuDiv.focus();
+        btnDiv.focus();
     }
 }
 editorDiv.addEventListener('keydown', skipBrowserTabstops);
 helpDiv.addEventListener('keydown', skipBrowserTabstops);
-menuDiv.addEventListener('keydown', event => {
+btnDiv.addEventListener('keydown', event => {
     if (event.key === 'Tab' && !event.shiftKey) {
         event.preventDefault();
         if (editorDiv.style.display === 'none') {
