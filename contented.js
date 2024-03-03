@@ -27,6 +27,10 @@ function swapView() {
         helpDiv.focus();
     }
 }
+helpDiv.addEventListener('keydown', event => {
+    event.preventDefault();
+    swapView(); // any key: return to editor
+});
 btnDiv.addEventListener('click', swapView);
 btnDiv.addEventListener('keydown', event => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -35,22 +39,17 @@ btnDiv.addEventListener('keydown', event => {
     }
 });
 // focus
-function skipBrowserTabstops(event){
+editorDiv.addEventListener('keydown', event => {
     if (event.key === 'Tab' && event.shiftKey) {
         event.preventDefault();
         btnDiv.focus();
     }
-}
-editorDiv.addEventListener('keydown', skipBrowserTabstops);
-helpDiv.addEventListener('keydown', skipBrowserTabstops);
+});
 btnDiv.addEventListener('keydown', event => {
     if (event.key === 'Tab' && !event.shiftKey) {
         event.preventDefault();
-        if (editorDiv.style.display === 'none') {
-            helpDiv.focus();
-        } else {
-            editorDiv.focus();
-        }
+        editorDiv.focus(); // only handle editorDiv
+        // btnDiv will never have focus when helpDiv is displayed
     }
 });
 // preserve editor cursor and selection
