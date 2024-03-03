@@ -1,12 +1,9 @@
 # Contented
 
-Web based text editor. Name derived from a content editable div: &lt;div class="editor" <u>contented</u>itable&gt;&lt;/div&gt;.
+Web based text editor. Name derived from a contenteditable div, which this editor is based on.
 
 ## Task List
 
-- x any keypress in help will switch to editor
-- x author and version number
-- preserve selection over F5
 - empty content hint
 - settings: spell check, start in editor
 - move to billra for publishing

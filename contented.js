@@ -2,15 +2,15 @@
 document.getElementById('id-author').innerText=document.querySelector('meta[name="author"]').content;
 document.getElementById('id-version').innerText=document.querySelector('meta[name="version"]').content;
 // persist editor contents across F5 refresh
-const editorDiv = document.getElementById('id-editor');
+const editDiv = document.getElementById('id-edit');
 const contentsKey = 'contents';
 window.addEventListener('beforeunload', () => {
-    localStorage.setItem(contentsKey, editorDiv.innerHTML);
+    localStorage.setItem(contentsKey, editDiv.innerHTML);
     console.log('editor state saved');
 });
 const savedState = localStorage.getItem(contentsKey);
 if (savedState) {
-    editorDiv.innerHTML = savedState;
+    editDiv.innerHTML = savedState;
     console.log('editor state restored');
 }
 // help section
@@ -20,16 +20,16 @@ helpDiv.style.display = 'none'; // starts not displayed
 const btnDiv = document.getElementById('id-button');
 function swapView() {
     // swap help and editor display
-    if (editorDiv.style.display === 'none') {
+    if (editDiv.style.display === 'none') {
         helpDiv.style.display = 'none';
-        editorDiv.style.display = 'block';
-        editorDiv.focus();
+        editDiv.style.display = 'block';
+        editDiv.focus();
     } else {
-        if (document.activeElement === editorDiv) { // if editorDiv currently has focus
+        if (document.activeElement === editDiv) { // if editDiv currently has focus
             // happens for F1, etc. while in editor
-            editorDiv.blur(); // save selection before display none
+            editDiv.blur(); // save selection before display none
         }
-        editorDiv.style.display = 'none';
+        editDiv.style.display = 'none';
         helpDiv.style.display = 'block';
         helpDiv.focus();
     }
@@ -45,14 +45,14 @@ btnDiv.addEventListener('keydown', event => {
         swapView();
     }
 });
-editorDiv.addEventListener('keydown', event => {
+editDiv.addEventListener('keydown', event => {
     if (event.key === 'F1') {
         event.preventDefault();
         swapView();
     }
 });
 // focus
-editorDiv.addEventListener('keydown', event => {
+editDiv.addEventListener('keydown', event => {
     if (event.key === 'Tab' && event.shiftKey) {
         event.preventDefault();
         btnDiv.focus();
@@ -61,36 +61,36 @@ editorDiv.addEventListener('keydown', event => {
 btnDiv.addEventListener('keydown', event => {
     if (event.key === 'Tab' && !event.shiftKey) {
         event.preventDefault();
-        editorDiv.focus(); // only handle editorDiv
+        editDiv.focus(); // only handle editDiv
         // btnDiv will never have focus when helpDiv is displayed
     }
 });
 // preserve editor cursor and selection
-editorDiv.focus(); // focus starts on editor
+editDiv.focus(); // focus starts on editor
 let blurRange = window.getSelection().getRangeAt(0); // initialized
-editorDiv.addEventListener('focus', () => {
-    // console.log('editorDiv focus, set selection');
+editDiv.addEventListener('focus', () => {
+    // console.log('editDiv focus, set selection');
     const selection = window.getSelection();
     selection.removeAllRanges();
     selection.addRange(blurRange);
 });
-editorDiv.addEventListener('blur', () => {
-    // console.log('editorDiv blur, save selection');
+editDiv.addEventListener('blur', () => {
+    // console.log('editDiv blur, save selection');
     const selection = window.getSelection();
     blurRange = selection.getRangeAt(0);
 });
 function getText() {
     const selection = window.getSelection();
-    if (document.activeElement === editorDiv) { // if editorDiv currently has focus
+    if (document.activeElement === editDiv) { // if editDiv currently has focus
         // update blurRange so focus restores correct selection
         blurRange = selection.getRangeAt(0);
     } else {
         // required so that selectAllChildren does not trigger
         // a focus event and end up only selecting the blurRange
-        editorDiv.focus();
+        editDiv.focus();
     }
-    // the editorDiv will get a focus event here if it does not already have focus
-    selection.selectAllChildren(editorDiv);
+    // the editDiv will get a focus event here if it does not already have focus
+    selection.selectAllChildren(editDiv);
     // The contenteditable div uses &nbsp; to preserve display spacing.
     // Replace: html '&nbsp' text retrieval correctly returns '\u00A0'
     // (unicode non-breaking space). We almost always want spaces.
@@ -108,7 +108,7 @@ window.addEventListener('keydown', event => {
     if (event.key === 'S' && event.ctrlKey) {
         event.preventDefault();
         // wrapped content can be displayed in browser and recognized as innerHTML when loading
-        const html = contentedFileBegin + editorDiv.innerHTML + contentedFileEnd;
+        const html = contentedFileBegin + editDiv.innerHTML + contentedFileEnd;
         save('content.htm', html);
     }
 });
@@ -159,7 +159,7 @@ function loadDialog() {
 function doLoad(str) {
     if (str.startsWith(contentedFileBegin)) {
         const html = str.slice(contentedFileBegin.length, -contentedFileEnd.length);
-        editorDiv.innerHTML = html;
+        editDiv.innerHTML = html;
         return;
     }
     // text files: undo the getText html '&nbsp' to space conversion
@@ -169,5 +169,5 @@ function doLoad(str) {
     // side effect:
     // A line that starts out being '1&nbsp; 2' reconstitutes to '1 &nbsp;2'.
     // Similarly, '1&nbsp; &nbsp;2' reconstitutes to '1 &nbsp; 2'.
-    editorDiv.innerText = strFixed;
+    editDiv.innerText = strFixed;
 }

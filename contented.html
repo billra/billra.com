@@ -3,30 +3,30 @@
 <head>
     <title>Contented Editor</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.3">
+    <meta name="version" content="1.4">
     <meta charset="UTF-8">
     <link rel="icon" href="contented.ico">
     <link rel="stylesheet" href="contented.css">
     <script defer src="contented.js"></script>
 </head>
 <body>
-    <div id="id-editor" class="fill" contenteditable spellcheck="false"></div>
+    <div id="id-edit" class="fill" contenteditable spellcheck="false"></div>
     <div id="id-help" tabindex="0" class="fill">
         <h1><img src="contented.ico" alt="icon"> Contented HTML Text Editor
             <span class="small">v<span id="id-version"></span></span></h1>
         <div>Type text and paste items from other applications.</div>
         <h2>Keys:</h2>
         <ul>
-            <li>ctrl-s save as text, stripping everything else</li>
-            <li>ctrl-S save as HTML, keeping all content</li>
+            <li>ctrl-s (lowercase letter) save as text, stripping everything else</li>
+            <li>ctrl-S (capital letter) save as HTML, keeping all content</li>
             <li>ctrl-o open file, auto-detect text and HTML</li>
         </ul>
         <h2>Features:</h2>
         <ul>
-            <li>The file created when saving as HTML can be opened in a web browser or opened again in Contented.</li>
+            <li>The file created when saving "as HTML" can be opened in a web browser or reopened in Contented.</li>
             <li>Many things can be simply pasted into the editor and retain their original formatting.</li>
             <li>Contents preserved on F5 page refresh.</li>
-            <li>Keyboard navigation: Tab, space bar, and enter.</li>
+            <li>Keyboard navigation.</li>
             <li>Fast, no external libraries.</li>
         </ul>
         <div>Opening a file saved "as HTML" by Contented will restore the entire contents of the editor.
