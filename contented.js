@@ -22,6 +22,10 @@ function swapView() {
         editorDiv.style.display = 'block';
         editorDiv.focus();
     } else {
+        if (document.activeElement === editorDiv) { // if editorDiv currently has focus
+            // happens for F1, etc. while in editor
+            editorDiv.blur(); // save selection before display none
+        }
         editorDiv.style.display = 'none';
         helpDiv.style.display = 'block';
         helpDiv.focus();
@@ -34,6 +38,12 @@ helpDiv.addEventListener('keydown', event => {
 btnDiv.addEventListener('click', swapView);
 btnDiv.addEventListener('keydown', event => {
     if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        swapView();
+    }
+});
+editorDiv.addEventListener('keydown', event => {
+    if (event.key === 'F1') {
         event.preventDefault();
         swapView();
     }
