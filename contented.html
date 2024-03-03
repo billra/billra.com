@@ -3,7 +3,7 @@
 <head>
     <title>Contented Editor</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.1">
+    <meta name="version" content="1.2">
     <meta charset="UTF-8">
     <link rel="icon" href="contented.ico">
     <link rel="stylesheet" href="contented.css">
@@ -12,7 +12,8 @@
 <body>
     <div id="id-editor" class="fill" contenteditable spellcheck="false"></div>
     <div id="id-help" tabindex="0" class="fill">
-        <h1><img src="contented.ico" alt="icon"> Contented HTML Text Editor</h1>
+        <h1><img src="contented.ico" alt="icon"> Contented HTML Text Editor
+            <span class="small">v<span id="id-version"></span></span></h1>
         <div>Type text and paste items from other applications.</div>
         <h2>Keys:</h2>
         <ul>
@@ -29,6 +30,8 @@
             <li>Fast, no external libraries.</li>
         </ul>
         <div>Be contented.</div>
+        <br>
+        <div class="small">author: <span id="id-author"></span></div>
     </div>
     <div id="id-button" tabindex="0" title="click me">contented</div>
 </body>

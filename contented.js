@@ -1,3 +1,6 @@
+// update document with head information
+document.getElementById('id-author').innerText=document.querySelector('meta[name="author"]').content;
+document.getElementById('id-version').innerText=document.querySelector('meta[name="version"]').content;
 // persist editor contents across F5 refresh
 const editorDiv = document.getElementById('id-editor');
 const contentsKey = 'contents';

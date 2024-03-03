@@ -4,8 +4,9 @@ Web based text editor. Name derived from a content editable div: &lt;div class="
 
 ## Task List
 
-- any keypress in help will switch to editor
-- version number
+- x any keypress in help will switch to editor
+- x author and version number
+- preserve selection over F5
 - empty content hint
 - settings: spell check, start in editor
 - move to billra for publishing
