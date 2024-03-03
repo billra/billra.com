@@ -3,7 +3,7 @@
 <head>
     <title>Contented Editor</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.2">
+    <meta name="version" content="1.3">
     <meta charset="UTF-8">
     <link rel="icon" href="contented.ico">
     <link rel="stylesheet" href="contented.css">
@@ -29,7 +29,15 @@
             <li>Keyboard navigation: Tab, space bar, and enter.</li>
             <li>Fast, no external libraries.</li>
         </ul>
-        <div>Be contented.</div>
+        <div>Opening a file saved "as HTML" by Contented will restore the entire contents of the editor.
+            Opening a normal ".html" file (or any other file) allows you to edit that file as a text file.
+            Contented looks at the first line of the file to make this determination.
+        </div>
+        <br>
+        <div>When saving, files are written immediately or a dialog is displayed allowing the name to be changed.
+            This behavior is controlled by the browser.
+            Chrome setting: "Ask where to save each file before downloading".
+            FireFox setting: "Always ask you where to save files". Be contented.</div>
         <br>
         <div class="small">author: <span id="id-author"></span></div>
     </div>
