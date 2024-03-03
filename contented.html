@@ -3,7 +3,7 @@
 <head>
     <title>Contented Editor</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="0.6">
+    <meta name="version" content="1.0">
     <meta charset="UTF-8">
     <link rel="icon" href="contented.ico">
     <link rel="stylesheet" href="contented.css">
@@ -11,7 +11,24 @@
 </head>
 <body>
     <div id="id-editor" class="fill" contenteditable spellcheck="false"></div>
-    <div id="id-help" tabindex="0" class="fill">help text will go here</div>
+    <div id="id-help" tabindex="0" class="fill">
+        <h1><img src="contented.ico" alt="icon"> Contented HTML Text Editor</h1>
+        <div>Type text and paste items from other applications.</div>
+        <h2>Keys:</h2>
+        <ul>
+            <li>ctrl-s save as text, stripping everything else</li>
+            <li>ctrl-S save as HTML, keeping all content</li>
+            <li>ctrl-o open file, auto-detect text and HTML</li>
+        </ul>
+        <h2>Features:</h2>
+        <ul>
+            <li>The file created when saving as HTML can be opened in a web browser or opened again in Contented.</li>
+            <li>Many things can be simply pasted into the editor and retain their original formatting.</li>
+            <li>Contents preserved on F5 page refresh.</li>
+            <li>Keyboard navigation: Tab, space bar, and enter.</li>
+            <li>Fast, no external libraries.</li>
+        </ul>
+    </div>
     <div id="id-menu" tabindex="0" title="click me">contented</div>
 </body>
 </html>

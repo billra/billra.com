@@ -12,9 +12,11 @@ Web based text editor. Name derived from a content editable div: &lt;div class="
 - x ctrl-S (capital letter) for save (html)
 - x ctrl-s (lowercase letter) for save (text)
 - x ctrl-o for open, html and text auto detect based on contents
-- help text
+- x help text
+- any keypress in help will switch to editor
 - version number
 - empty content hint
+- settings: spell check, start in editor
 - move to billra for publishing
 - ctrl-n for new (prompt dirty)
 - menu: mouseover drops down list:
@@ -33,21 +35,3 @@ Web based text editor. Name derived from a content editable div: &lt;div class="
 - new command window: `start cmd`
 - start http server: `python -m http.server 8098`
 - browse to `http://localhost:8098/contented.html` to launch application
-
-## help section
-
-![icon](contented.ico) Contented HTML Text Editor
-
-Type text and paste items from other applications.
-
-Keys:
-- ctrl-s save as text, stripping everything else
-- ctrl-S save as HTML, keeping all content
-- ctrl-o open file, auto-detect text and HTML
-
-Features:
-- The file created when saving as HTML can be opened in a web browser or opened again in contented.
-- Many things can be simply pasted into the editor and retain their original formatting.
-- Contents preserved on F5 page refresh.
-- Keyboard navigation: Tab, space bar, and enter.
-- Fast, no external libraries.
