@@ -110,13 +110,16 @@ window.addEventListener('keydown', event => {
         const html = contentedFileBegin + editDiv.innerHTML + contentedFileEnd;
         save('content.htm', html);
     }
-});
-window.addEventListener('keydown', event => {
     // ctrl + 's' (lowercase letter) pressed  -> save as text
     if (event.key === 's' && event.ctrlKey) {
         event.preventDefault();
         const text = getText();
         save('content.txt', text);
+    }
+    // ctrl + 'o' pressed  -> open file
+    if (event.key === 'o' && event.ctrlKey) {
+        event.preventDefault();
+        loadDialog();
     }
 });
 function save(filename, content) {
@@ -133,13 +136,6 @@ function save(filename, content) {
     link.click();
     URL.revokeObjectURL(url);
 }
-window.addEventListener('keydown', event => {
-    // ctrl + 'o' pressed  -> open file
-    if (event.key === 'o' && event.ctrlKey) {
-        event.preventDefault();
-        loadDialog();
-    }
-});
 function loadDialog() {
     const input = document.createElement('input');
     input.type = 'file';
