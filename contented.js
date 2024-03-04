@@ -39,9 +39,16 @@ helpDiv.addEventListener('keydown', event => {
 });
 btnDiv.addEventListener('click', swapView);
 btnDiv.addEventListener('keydown', event => {
+    // enter and space swaps between help and editor
     if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         swapView();
+    }
+    // wrap focus, avoiding browser items
+    if (event.key === 'Tab' && !event.shiftKey) {
+        event.preventDefault();
+        editDiv.focus(); // only handle editDiv
+        // btnDiv will never have focus when helpDiv is displayed
     }
 });
 editDiv.addEventListener('keydown', event => {
@@ -55,13 +62,6 @@ editDiv.addEventListener('keydown', event => {
     if (event.key === 'Tab' && event.shiftKey) {
         event.preventDefault();
         btnDiv.focus();
-    }
-});
-btnDiv.addEventListener('keydown', event => {
-    if (event.key === 'Tab' && !event.shiftKey) {
-        event.preventDefault();
-        editDiv.focus(); // only handle editDiv
-        // btnDiv will never have focus when helpDiv is displayed
     }
 });
 // preserve editor cursor and selection
