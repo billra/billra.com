@@ -92,7 +92,7 @@ function getText() {
     // The contenteditable div uses &nbsp; to preserve display spacing.
     // Replace: html '&nbsp' text retrieval correctly returns '\u00A0'
     // (unicode non-breaking space). We almost always want spaces.
-    const text = selection.toString().replace(/\u00A0/g, ' ');
+    const text = selection.toString().replaceAll('\u00A0', ' ');
     // restore blurRange selection
     selection.removeAllRanges();
     selection.addRange(blurRange);
