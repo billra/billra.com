@@ -52,13 +52,12 @@ btnDiv.addEventListener('keydown', event => {
     }
 });
 editDiv.addEventListener('keydown', event => {
+    // show contented specific help for F1
     if (event.key === 'F1') {
         event.preventDefault();
         swapView();
     }
-});
-// focus
-editDiv.addEventListener('keydown', event => {
+    // wrap focus, avoiding browser items
     if (event.key === 'Tab' && event.shiftKey) {
         event.preventDefault();
         btnDiv.focus();
