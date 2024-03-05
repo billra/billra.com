@@ -33,7 +33,15 @@ helpDiv.addEventListener('keydown', event => {
     event.preventDefault();
     swapView(); // any key: return to editor
 });
-btnDiv.addEventListener('click', swapView);
+btnDiv.addEventListener('click', event => {
+    event.preventDefault();
+    swapView();
+});
+btnDiv.addEventListener('mousedown', event => {
+    // prevent default selection behavior
+    // retain selection in editDiv
+    event.preventDefault();
+});
 btnDiv.addEventListener('keydown', event => {
     // enter and space swaps between help and editor
     if (event.key === 'Enter' || event.key === ' ') {
