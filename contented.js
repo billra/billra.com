@@ -24,10 +24,6 @@ function swapView() {
         editDiv.style.display = 'block';
         editDiv.focus();
     } else {
-        if (document.activeElement === editDiv) { // if editDiv currently has focus
-            // happens for F1, etc. while in editor
-            editDiv.blur(); // save selection before display none
-        }
         editDiv.style.display = 'none';
         helpDiv.style.display = 'block';
         helpDiv.focus();
@@ -65,37 +61,18 @@ editDiv.addEventListener('keydown', event => {
 });
 // preserve editor cursor and selection
 editDiv.focus(); // focus starts on editor
-let blurRange = window.getSelection().getRangeAt(0); // initialized
-editDiv.addEventListener('focus', () => {
-    // console.log('editDiv focus, set selection');
-    const selection = window.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(blurRange);
-});
-editDiv.addEventListener('blur', () => {
-    // console.log('editDiv blur, save selection');
-    const selection = window.getSelection();
-    blurRange = selection.getRangeAt(0);
-});
 function getText() {
     const selection = window.getSelection();
-    if (document.activeElement === editDiv) { // if editDiv currently has focus
-        // update blurRange so focus restores correct selection
-        blurRange = selection.getRangeAt(0);
-    } else {
-        // required so that selectAllChildren does not trigger
-        // a focus event and end up only selecting the blurRange
-        editDiv.focus();
-    }
+    const initialRange = selection.getRangeAt(0);
     // the editDiv will get a focus event here if it does not already have focus
     selection.selectAllChildren(editDiv);
     // The contenteditable div uses &nbsp; to preserve display spacing.
     // Replace: html '&nbsp' text retrieval correctly returns '\u00A0'
     // (unicode non-breaking space). We almost always want spaces.
     const text = selection.toString().replaceAll('\u00A0', ' ');
-    // restore blurRange selection
+    // restore selection
     selection.removeAllRanges();
-    selection.addRange(blurRange);
+    selection.addRange(initialRange);
     return text;
 }
 // filesystem
