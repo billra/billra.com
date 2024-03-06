@@ -1,0 +1,56 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%; /* ensure body takes full viewport height */
+}
+body {
+    font-family: Arial, sans-serif;
+    color: white;
+    background-color: black;
+}
+h1 {
+    font-size: 120%;
+}
+h2 {
+    font-size: 110%;
+}
+.small {
+    font-size: 50%;
+}
+.fill {
+    border: 2px solid hsl(0 0 25);
+    border-radius: 5px;
+    margin: 0px;
+    padding: 4px;
+    height: 100%;
+    box-sizing: border-box; /* include padding and border in the element's total width and height */
+    overflow: auto;
+    scrollbar-color: hsl(0 0 50) hsl(0 0 10);
+}
+.fill:focus {
+    outline: none;
+    border-color: hsl(0 0 50);
+}
+#id-help {
+    background-color: #000030;
+}
+#id-button {
+    z-index: 999; /* always on top */
+    position: fixed;
+    top: 4px;
+    right: 20px;
+    padding: 2px 14px;
+    border-radius: 15px;
+    cursor: pointer;
+    color: darkorange;
+    background-color: hsl(0 0 50 / 75%);
+    transition: background-color 0.5s;
+}
+#id-button:hover {
+    color: lightgreen;
+    background-color: hsl(0 0 10);
+}
+/*
+The hsl syntax is convenient for specifying grey colors.
+see https://drafts.csswg.org/css-color/#typedef-modern-hsl-syntax
+*/
