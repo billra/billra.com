@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Color Permutations</title>
+    <style>
+        body {
+            background-color: black;
+            font-family: Arial, sans-serif;
+            color: white;
+            text-align: center;
+        }
+
+        .color-box-with-value {
+            display: inline-block;
+            width: 100px;
+            margin: 10px;
+            text-align: center;
+        }
+
+        .color-box {
+            width: 100px;
+            height: 100px;
+            border: 1px solid white;
+            margin-bottom: 5px;
+        }
+
+        #color-container {
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>Color Permutations</h1>
+
+    <div>
+        Levels:
+        <label><input type="radio" name="count" value="2" checked>2</label>
+        <label><input type="radio" name="count" value="3">3</label>
+        <label><input type="radio" name="count" value="4">4</label>
+        <label><input type="radio" name="count" value="5">5</label>
+        <label><input type="radio" name="count" value="6">6</label>
+        <label><input type="radio" name="count" value="7">7</label>
+    </div>
+    <div>
+        Round:
+        <label><input type="radio" name="round" value="0" checked>down</label>
+        <label><input type="radio" name="round" value="1">up</label>
+    </div>
+    <div>
+        <label><input type="checkbox" id="id-grey-wrap">Grey Wrap</label>
+    </div>
+
+    <div id="color-container"></div>
+
+    <script>
+        function regenerateLevels(){
+            const count = parseInt(document.querySelector('input[type=radio][name=count]:checked').value, 10);
+            const roundUp = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
+            gLevels = makeLevels(count, roundUp);
+        }
+        let gLevels;
+
+        document.querySelectorAll('input[type=radio][name=count]').forEach((rb) => {
+            rb.addEventListener('change', () => {
+                regenerateLevels();
+                showColorChart();
+            });
+        });
+
+        document.querySelectorAll('input[type=radio][name=round]').forEach((rb) => {
+            rb.addEventListener('change', () => {
+                regenerateLevels();
+                showColorChart();
+            });
+        });
+
+        document.getElementById('id-grey-wrap').addEventListener('change',showColorChart);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            regenerateLevels();
+            showColorChart();
+        });
+
+        function showColorChart(){
+            const hls = levelsToHex(gLevels); // hex level strings
+            console.log(hls);
+            const greyWrap = document.getElementById('id-grey-wrap').checked;
+            const container = document.getElementById('color-container');
+            container.innerHTML = ''; // clear old values
+            for (let red of hls) {
+                for (let green of hls) {
+                    for (let blue of hls) {
+                        makeColorBox(container,red,blue,green,greyWrap);
+                    }
+                }
+            }
+        }
+
+        function makeColorBox(container,red,blue,green,greyWrap){
+            if (greyWrap && red === blue && blue === green) {
+                const lineBreak = document.createElement('br');
+                container.appendChild(lineBreak);
+            }
+            const colorBoxWithValue = document.createElement('div');
+            colorBoxWithValue.classList.add('color-box-with-value');
+            const colorBox = document.createElement('div');
+            colorBox.style.backgroundColor = `#${red}${green}${blue}`;
+            colorBox.classList.add('color-box');
+            colorBoxWithValue.appendChild(colorBox);
+            const colorValue = document.createElement('div');
+            colorValue.innerText = `#${red}${green}${blue}`;
+            colorBoxWithValue.appendChild(colorValue);
+            container.appendChild(colorBoxWithValue);
+        }
+
+        function levelsToHex(levels){
+            // create an array of hex value strings from array of integers
+            // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
+            return levels.map(num => num.toString(16).toUpperCase().padStart(2, '0'));
+        }
+
+        function makeLevels(count,roundUp) { // count must be > 1
+            let step = 255 / (count - 1);
+            let result = [];
+            for (let i = 0; i < count; i++) {
+                result.push(roundUp?Math.ceil(step*i):Math.floor(step*i));
+            }
+            return result;
+        }
+        // for(let i=2; i<7; i++){
+        //     console.log(levelsToHex(makeLevels(i)));
+        //     console.log(levelsToHex(makeLevels(i,true)));
+        // }
+    </script>
+</body>
+</html>
+
+<!-- see, e.g. https://www.htmlcsscolor.com/hex/007F7F to find nearest named color -->
