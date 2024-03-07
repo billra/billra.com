@@ -1,0 +1,21 @@
+body {
+    background-color: black;
+    font-family: Arial, sans-serif;
+    color: white;
+    text-align: center;
+}
+.color-box-with-value {
+    display: inline-block;
+    width: 100px;
+    margin: 10px;
+    text-align: center;
+}
+.color-box {
+    width: 100px;
+    height: 100px;
+    border: 1px solid white;
+    margin-bottom: 5px;
+}
+#color-container {
+    text-align: left;
+}
