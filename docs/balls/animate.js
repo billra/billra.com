@@ -247,7 +247,7 @@ window.addEventListener("resize", () => {
 
 window.addEventListener("load", () => {
     gFPS = new FPS();
-    gAnimation = new Animation(20, gFPS.frameCount);
+    gAnimation = new Animation(120, gFPS.frameCount);
     gEnterNumber = new EnterNumber();
 });
 
