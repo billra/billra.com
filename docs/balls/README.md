@@ -1,8 +1,6 @@
 # animation
 javascript canvas animation
 
-This project is live on GitHub Pages: https://billra.github.io/animation/
-
 Use F1 for control description help screen.
 
 ## Accurate Discrete Two Dimensional Ball Collision Calculation
