@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Color Picker Page</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-color: black;
+        }
+
+        #colorPicker {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+
+<body>
+    <input type="color" id="colorPicker" style="display: none;">
+    <script>
+        const colorPicker = document.getElementById('colorPicker');
+        let open = false;
+        function changeBackgroundColor(event) {
+            if (!open) {
+                colorPicker.click();
+                open = true;
+            } else {
+                open = false;
+            }
+        }
+
+        colorPicker.addEventListener('input', function () {
+            document.body.style.backgroundColor = this.value; // Set the background color of the entire page
+        });
+
+        document.body.addEventListener('click', changeBackgroundColor);
+    </script>
+</body>
+
+</html>
