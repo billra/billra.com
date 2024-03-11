@@ -11,6 +11,29 @@ Web based text editor. Name derived from a contenteditable div, which this edito
 - browser tab text gets filename
 - experiment with page color and editor margin 2px
 
+```
+todo: doLoad fails some test cases
+|0|
+|1 | fail
+|2  |
+|3   | fail
+|4    |
+|5     | fail
+more test cases:
+| 1|
+|  2|
+|   3|
+|    4|
+|     5|
+|1 1|
+|2  2|
+|4   3|
+|5    4|
+|5     5|
+where '|' mark beginning and ending of lines
+include beginning and end of file
+```
+
 ## Quick Start
 
 - open cmd command prompt
