@@ -142,11 +142,11 @@ function doLoad(str) {
         return;
     }
     // text files: undo the getText html '&nbsp' to space conversion
+    // see git\aichatcli\prototypes\nbsp.html for test cases
     const strFixed = str
-        .replaceAll('\n ', '\n\u00A0') // preserve space after newline
-        .replaceAll('  ', ' \u00A0');  // double spaces need nbsp
-    // side effect:
-    // A line that starts out being '1&nbsp; 2' reconstitutes to '1 &nbsp;2'.
-    // Similarly, '1&nbsp; &nbsp;2' reconstitutes to '1 &nbsp; 2'.
+        .replace(/  /g, '\u00A0 ') // in general
+        .replace(/  /g, ' \u00A0') // odd count leftovers
+        .replace(/(^|\n) /g, '$1\u00A0') // first must be nbsp
+        .replace(/ ($|\n)/g, '\u00A0$1'); // last must be nbsp
     editDiv.innerText = strFixed;
 }
