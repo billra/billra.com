@@ -19,38 +19,60 @@ document.querySelectorAll('input[type=radio][name=round]').forEach((rb) => {
     });
 });
 
+const boxSizeSlider = document.getElementById('box-size');
+const boxSizeValue = document.getElementById('box-size-value');
+
+boxSizeSlider.addEventListener('input', () => {
+    boxSizeValue.textContent = boxSizeSlider.value;
+});
+
 document.getElementById('id-grey-wrap').addEventListener('change', showColorChart);
 document.getElementById('id-short-hex').addEventListener('change', showColorChart);
+document.getElementById('box-size').addEventListener('change', showColorChart);
 
 document.addEventListener('DOMContentLoaded', () => {
     regenerateLevels();
     showColorChart();
 });
 
+function clearCursorDisplay(){
+    const cursorDisplay = document.querySelector('.cursor-display');
+    if (cursorDisplay) {
+        cursorDisplay.remove();
+    }
+}
+
 function showColorChart() {
     const hls = levelsToHex(gLevels); // hex level strings
     console.log(hls);
     const greyWrap = document.getElementById('id-grey-wrap').checked;
     const shortHex = document.getElementById('id-short-hex').checked;
+    const boxSize = boxSizeSlider.value;
     const container = document.getElementById('color-container');
     container.innerHTML = ''; // clear old values
+    // This can be triggered by keyboard control of the size slider.
+    // We clear the cursor color value display as there might me a new
+    // color under the cursor without an associated mousemove event.
+    clearCursorDisplay();
 
     for (let red of hls) {
         for (let green of hls) {
             for (let blue of hls) {
-                makeColorBox(container, red, blue, green, greyWrap, shortHex);
+                makeColorBox(container, red, blue, green, greyWrap, shortHex, boxSize);
             }
         }
     }
 }
 
-function makeColorBox(container, red, blue, green, greyWrap, shortHex) {
+function makeColorBox(container, red, blue, green, greyWrap, shortHex, boxSize) {
     if (greyWrap && red === blue && blue === green) {
         const lineBreak = document.createElement('br');
         container.appendChild(lineBreak);
     }
 
     const colorBox = document.createElement('div');
+    colorBox.style.width = `${boxSize}px`;
+    colorBox.style.height = `${boxSize}px`;
     const longHex = `${red}${green}${blue}`;
     const colorString = shortHex && /^(\w)\1(\w)\2(\w)\3$/.test(longHex)
         ? `#${red[0]}${green[0]}${blue[0]}`
@@ -71,25 +93,22 @@ function makeColorBox(container, red, blue, green, greyWrap, shortHex) {
             });
     });
 
-    colorBox.addEventListener('mouseover', (event) => {
-        const cursorDisplay = document.createElement('div');
-        cursorDisplay.classList.add('cursor-display');
-        document.body.appendChild(cursorDisplay);
-        cursorDisplay.innerText = `${colorString}`;
-
-        // Position the color value display next to the cursor
-        document.addEventListener('mousemove', (event) => {
+    // Position the color value display next to the cursor
+    colorBox.addEventListener('mousemove', (event) => {
+        let cursorDisplay = document.querySelector('.cursor-display');
+        if (!cursorDisplay) {
+            cursorDisplay = document.createElement('div');
+            cursorDisplay.classList.add('cursor-display');
+            document.body.appendChild(cursorDisplay);
+            cursorDisplay.innerText = `${colorString}`;
             cursorDisplay.style.position = 'fixed';
-            cursorDisplay.style.top = (event.clientY + 10) + 'px';
-            cursorDisplay.style.left = (event.clientX + 10) + 'px';
-        });
+        }
+        cursorDisplay.style.top = (event.clientY + 10) + 'px';
+        cursorDisplay.style.left = (event.clientX + 10) + 'px';
     });
 
     colorBox.addEventListener('mouseout', (event) => {
-        const cursorDisplay = document.querySelector('.cursor-display');
-        if (cursorDisplay) {
-            cursorDisplay.remove();
-        }
+        clearCursorDisplay();
     });
 
     container.appendChild(colorBox);

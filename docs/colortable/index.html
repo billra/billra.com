@@ -3,7 +3,7 @@
 <head>
     <title>Color Table</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.4">
+    <meta name="version" content="1.5">
     <meta charset="UTF-8">
     <link rel="icon" href="colortable.ico">
     <link rel="stylesheet" href="colortable.css">
@@ -30,6 +30,11 @@
     </div>
     <div>
         <label><input type="checkbox" id="id-short-hex">Short Hex</label>
+    </div>
+    <div>
+        <label for="box-size">Color Box Size:</label>
+        <input type="range" id="box-size" min="40" max="200" step="5" value="100">
+        <span id="box-size-value">100</span> px
     </div>
     <div>Click to copy color code to clipboard.</div>
     <div id="color-container"></div>
