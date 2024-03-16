@@ -39,6 +39,29 @@ function showColorChart() {
             }
         }
     }
+    // Add event listeners for mouseover and mouseout on color boxes
+    container.addEventListener('mouseover', (event) => {
+        if (event.target.classList.contains('color-box')) {
+            const colorValue = event.target.dataset.colorValue; // Retrieve color value from custom data attribute
+            const colorValueDisplay = document.createElement('div');
+            colorValueDisplay.classList.add('color-value-display');
+            colorValueDisplay.innerText = `#${colorValue}`;
+            document.body.appendChild(colorValueDisplay);
+            // Position the color value display next to the cursor
+            document.addEventListener('mousemove', (event) => {
+                colorValueDisplay.style.top = (event.clientY + 10) + 'px';
+                colorValueDisplay.style.left = (event.clientX + 10) + 'px';
+            });
+        }
+    });
+    container.addEventListener('mouseout', (event) => {
+        if (event.target.classList.contains('color-box')) {
+            const colorValueDisplay = document.querySelector('.color-value-display');
+            if (colorValueDisplay) {
+                colorValueDisplay.remove(); // Remove color value display on mouseout
+            }
+        }
+    });
 }
 
 function makeColorBox(container, red, blue, green, greyWrap) {
@@ -49,15 +72,16 @@ function makeColorBox(container, red, blue, green, greyWrap) {
     const colorBoxWithValue = document.createElement('div');
     colorBoxWithValue.classList.add('color-box-with-value');
     const colorBox = document.createElement('div');
-    colorBox.style.backgroundColor = `#${red}${green}${blue}`;
+    const colorValue = `#${red}${green}${blue}`;
+    colorBox.style.backgroundColor = colorValue;
     colorBox.classList.add('color-box');
+    colorBox.setAttribute('data-color-value', colorValue);
     colorBoxWithValue.appendChild(colorBox);
-    const colorValue = document.createElement('div');
-    colorValue.innerText = `#${red}${green}${blue}`;
-    colorBoxWithValue.appendChild(colorValue);
+    const colorValueElement = document.createElement('div');
+    colorValueElement.innerText = colorValue;
+    colorBoxWithValue.appendChild(colorValueElement);
     container.appendChild(colorBoxWithValue);
 }
-
 function levelsToHex(levels) {
     // create an array of hex value strings from array of integers
     // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
