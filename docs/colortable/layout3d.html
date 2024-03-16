@@ -50,62 +50,35 @@
             align-items: center;
         }
     </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const size = 3; // todo: radio buttons for 2,3,4
+            const display = document.getElementById('display');
+            const zAxis = document.createElement('div');
+            zAxis.classList.add('z-axis');
+            for (let z = size - 1; z >= 0; z--) {
+                const yAxis = document.createElement('div');
+                yAxis.classList.add('y-axis');
+                for (let y = size - 1; y >= 0; y--) {
+                    const xAxis = document.createElement('div');
+                    xAxis.classList.add('x-axis');
+                    for (let x = 0; x < size; x++) {
+                        const block = document.createElement('div');
+                        block.classList.add('block');
+                        block.innerText = `(${x},${y},${z})`;
+                        xAxis.appendChild(block);
+                    }
+                    yAxis.appendChild(xAxis);
+                }
+                zAxis.appendChild(yAxis);
+            }
+            display.appendChild(zAxis);
+        });
+    </script>
 </head>
 <body>
     <h1>Example Contents</h1>
     <div class="description">Resize window to see layout changes.</div>
-    <div class="z-axis">
-        <div class="y-axis">
-            <div class="x-axis">
-                <div class="block">(0,2,2)</div>
-                <div class="block">(1,2,2)</div>
-                <div class="block">(2,2,2)</div>
-            </div>
-            <div class="x-axis">
-                <div class="block">(0,1,2)</div>
-                <div class="block">(1,1,2)</div>
-                <div class="block">(2,1,2)</div>
-            </div>
-            <div class="x-axis">
-                <div class="block">(0,0,2)</div>
-                <div class="block">(1,0,2)</div>
-                <div class="block">(2,0,2)</div>
-            </div>
-        </div>
-        <div class="y-axis">
-            <div class="x-axis">
-                <div class="block">(0,2,1)</div>
-                <div class="block">(1,2,1)</div>
-                <div class="block">(2,2,1)</div>
-            </div>
-            <div class="x-axis">
-                <div class="block">(0,1,1)</div>
-                <div class="block">(1,1,1)</div>
-                <div class="block">(2,1,1)</div>
-            </div>
-            <div class="x-axis">
-                <div class="block">(0,0,1)</div>
-                <div class="block">(1,0,1)</div>
-                <div class="block">(2,0,1)</div>
-            </div>
-        </div>
-        <div class="y-axis">
-            <div class="x-axis">
-                <div class="block">(0,2,0)</div>
-                <div class="block">(1,2,0)</div>
-                <div class="block">(2,2,0)</div>
-            </div>
-            <div class="x-axis">
-                <div class="block">(0,1,0)</div>
-                <div class="block">(1,1,0)</div>
-                <div class="block">(2,1,0)</div>
-            </div>
-            <div class="x-axis">
-                <div class="block">(0,0,0)</div>
-                <div class="block">(1,0,0)</div>
-                <div class="block">(2,0,0)</div>
-            </div>
-        </div>
-    </div>
+    <div id="display"></div>
 </body>
 </html>
