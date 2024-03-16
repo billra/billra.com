@@ -54,7 +54,6 @@ function makeColorBox(container, red, blue, green, greyWrap) {
     const colorString = `#${red}${green}${blue}`;
     colorBox.style.backgroundColor = colorString;
     colorBox.classList.add('color-box');
-    colorBox.setAttribute('data-color-string', colorString);
 
     colorBox.style.cursor = 'pointer'; // indicate click action
 
@@ -70,7 +69,6 @@ function makeColorBox(container, red, blue, green, greyWrap) {
     });
 
     colorBox.addEventListener('mouseover', (event) => {
-        const colorString = event.target.dataset.colorString;
         const cursorDisplay = document.createElement('div');
         cursorDisplay.classList.add('cursor-display');
         document.body.appendChild(cursorDisplay);
@@ -87,7 +85,7 @@ function makeColorBox(container, red, blue, green, greyWrap) {
     colorBox.addEventListener('mouseout', (event) => {
         const cursorDisplay = document.querySelector('.cursor-display');
         if (cursorDisplay) {
-            cursorDisplay.remove(); // Remove color value display on mouseout
+            cursorDisplay.remove();
         }
     });
 
