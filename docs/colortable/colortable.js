@@ -32,6 +32,7 @@ function showColorChart() {
     const greyWrap = document.getElementById('id-grey-wrap').checked;
     const container = document.getElementById('color-container');
     container.innerHTML = ''; // clear old values
+
     for (let red of hls) {
         for (let green of hls) {
             for (let blue of hls) {
@@ -46,18 +47,54 @@ function makeColorBox(container, red, blue, green, greyWrap) {
         const lineBreak = document.createElement('br');
         container.appendChild(lineBreak);
     }
+
     const colorBoxWithValue = document.createElement('div');
     colorBoxWithValue.classList.add('color-box-with-value');
     const colorBox = document.createElement('div');
-    colorBox.style.backgroundColor = `#${red}${green}${blue}`;
+    const colorString = `#${red}${green}${blue}`;
+    colorBox.style.backgroundColor = colorString;
     colorBox.classList.add('color-box');
+
+    colorBox.style.cursor = 'pointer'; // indicate click action
+
+    // click to copy color code to clipboard
+    colorBox.addEventListener('click', () => {
+        navigator.clipboard.writeText(colorString)
+            .then(() => {
+                console.log('Color value copied to clipboard:', colorString);
+            })
+            .catch(err => {
+                console.error('Failed to copy color value to clipboard:', err);
+            });
+    });
+
+    colorBox.addEventListener('mouseover', (event) => {
+        const cursorDisplay = document.createElement('div');
+        cursorDisplay.classList.add('cursor-display');
+        document.body.appendChild(cursorDisplay);
+        cursorDisplay.innerText = `${colorString}`;
+
+        // Position the color value display next to the cursor
+        document.addEventListener('mousemove', (event) => {
+            cursorDisplay.style.position = 'fixed';
+            cursorDisplay.style.top = (event.clientY + 10) + 'px';
+            cursorDisplay.style.left = (event.clientX + 10) + 'px';
+        });
+    });
+
+    colorBox.addEventListener('mouseout', (event) => {
+        const cursorDisplay = document.querySelector('.cursor-display');
+        if (cursorDisplay) {
+            cursorDisplay.remove();
+        }
+    });
+
     colorBoxWithValue.appendChild(colorBox);
-    const colorValue = document.createElement('div');
-    colorValue.innerText = `#${red}${green}${blue}`;
-    colorBoxWithValue.appendChild(colorValue);
+    const colorValueElement = document.createElement('div');
+    colorValueElement.innerText = colorString;
+    colorBoxWithValue.appendChild(colorValueElement);
     container.appendChild(colorBoxWithValue);
 }
-
 function levelsToHex(levels) {
     // create an array of hex value strings from array of integers
     // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
