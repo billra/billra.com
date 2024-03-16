@@ -19,3 +19,8 @@ body {
 #color-container {
     text-align: left;
 }
+.color-value-display {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 5px;
+    padding: 3px;
+}

@@ -32,6 +32,7 @@ function showColorChart() {
     const greyWrap = document.getElementById('id-grey-wrap').checked;
     const container = document.getElementById('color-container');
     container.innerHTML = ''; // clear old values
+
     for (let red of hls) {
         for (let green of hls) {
             for (let blue of hls) {
@@ -39,21 +40,28 @@ function showColorChart() {
             }
         }
     }
+
     // Add event listeners for mouseover and mouseout on color boxes
     container.addEventListener('mouseover', (event) => {
         if (event.target.classList.contains('color-box')) {
             const colorValue = event.target.dataset.colorValue; // Retrieve color value from custom data attribute
-            const colorValueDisplay = document.createElement('div');
-            colorValueDisplay.classList.add('color-value-display');
-            colorValueDisplay.innerText = `#${colorValue}`;
-            document.body.appendChild(colorValueDisplay);
+            let colorValueDisplay = document.querySelector('.color-value-display');
+            if (!colorValueDisplay) {
+                colorValueDisplay = document.createElement('div');
+                colorValueDisplay.classList.add('color-value-display');
+                document.body.appendChild(colorValueDisplay);
+            }
+            colorValueDisplay.innerText = `${colorValue}`;
+
             // Position the color value display next to the cursor
             document.addEventListener('mousemove', (event) => {
+                colorValueDisplay.style.position = 'fixed';
                 colorValueDisplay.style.top = (event.clientY + 10) + 'px';
                 colorValueDisplay.style.left = (event.clientX + 10) + 'px';
             });
         }
     });
+
     container.addEventListener('mouseout', (event) => {
         if (event.target.classList.contains('color-box')) {
             const colorValueDisplay = document.querySelector('.color-value-display');
