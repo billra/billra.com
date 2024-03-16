@@ -20,6 +20,7 @@ document.querySelectorAll('input[type=radio][name=round]').forEach((rb) => {
 });
 
 document.getElementById('id-grey-wrap').addEventListener('change', showColorChart);
+document.getElementById('id-short-hex').addEventListener('change', showColorChart);
 
 document.addEventListener('DOMContentLoaded', () => {
     regenerateLevels();
@@ -30,19 +31,20 @@ function showColorChart() {
     const hls = levelsToHex(gLevels); // hex level strings
     console.log(hls);
     const greyWrap = document.getElementById('id-grey-wrap').checked;
+    const shortHex = document.getElementById('id-short-hex').checked;
     const container = document.getElementById('color-container');
     container.innerHTML = ''; // clear old values
 
     for (let red of hls) {
         for (let green of hls) {
             for (let blue of hls) {
-                makeColorBox(container, red, blue, green, greyWrap);
+                makeColorBox(container, red, blue, green, greyWrap, shortHex);
             }
         }
     }
 }
 
-function makeColorBox(container, red, blue, green, greyWrap) {
+function makeColorBox(container, red, blue, green, greyWrap, shortHex) {
     if (greyWrap && red === blue && blue === green) {
         const lineBreak = document.createElement('br');
         container.appendChild(lineBreak);
@@ -51,7 +53,10 @@ function makeColorBox(container, red, blue, green, greyWrap) {
     const colorBoxWithValue = document.createElement('div');
     colorBoxWithValue.classList.add('color-box-with-value');
     const colorBox = document.createElement('div');
-    const colorString = `#${red}${green}${blue}`;
+    const longHex = `${red}${green}${blue}`;
+    const colorString = shortHex && /^(\w)\1(\w)\2(\w)\3$/.test(longHex)
+        ? `#${red[0]}${green[0]}${blue[0]}`
+        : `#${longHex}`;
     colorBox.style.backgroundColor = colorString;
     colorBox.classList.add('color-box');
 
