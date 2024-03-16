@@ -50,8 +50,6 @@ function makeColorBox(container, red, blue, green, greyWrap, shortHex) {
         container.appendChild(lineBreak);
     }
 
-    const colorBoxWithValue = document.createElement('div');
-    colorBoxWithValue.classList.add('color-box-with-value');
     const colorBox = document.createElement('div');
     const longHex = `${red}${green}${blue}`;
     const colorString = shortHex && /^(\w)\1(\w)\2(\w)\3$/.test(longHex)
@@ -94,11 +92,7 @@ function makeColorBox(container, red, blue, green, greyWrap, shortHex) {
         }
     });
 
-    colorBoxWithValue.appendChild(colorBox);
-    const colorValueElement = document.createElement('div');
-    colorValueElement.innerText = colorString;
-    colorBoxWithValue.appendChild(colorValueElement);
-    container.appendChild(colorBoxWithValue);
+    container.appendChild(colorBox);
 }
 function levelsToHex(levels) {
     // create an array of hex value strings from array of integers

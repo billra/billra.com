@@ -4,23 +4,19 @@ body {
     color: white;
     text-align: center;
 }
-.color-box-with-value {
+.color-box {
     display: inline-block;
     width: 100px;
-    margin: 10px;
-    text-align: center;
-}
-.color-box {
-    width: 100px;
     height: 100px;
-    border: 1px solid white;
-    margin-bottom: 5px;
 }
 #color-container {
-    text-align: left;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
 }
 .cursor-display {
     background-color: rgba(0, 0, 0, 0.6);
     border-radius: 5px;
-    padding: 3px;
+    padding: 2px;
 }
