@@ -51,18 +51,18 @@ function makeColorBox(container, red, blue, green, greyWrap) {
     const colorBoxWithValue = document.createElement('div');
     colorBoxWithValue.classList.add('color-box-with-value');
     const colorBox = document.createElement('div');
-    const colorValue = `#${red}${green}${blue}`;
-    colorBox.style.backgroundColor = colorValue;
+    const colorString = `#${red}${green}${blue}`;
+    colorBox.style.backgroundColor = colorString;
     colorBox.classList.add('color-box');
-    colorBox.setAttribute('data-color-value', colorValue);
+    colorBox.setAttribute('data-color-string', colorString);
 
     colorBox.style.cursor = 'pointer'; // indicate click action
 
     // click to copy color code to clipboard
     colorBox.addEventListener('click', () => {
-        navigator.clipboard.writeText(colorValue)
+        navigator.clipboard.writeText(colorString)
             .then(() => {
-                console.log('Color value copied to clipboard:', colorValue);
+                console.log('Color value copied to clipboard:', colorString);
             })
             .catch(err => {
                 console.error('Failed to copy color value to clipboard:', err);
@@ -70,30 +70,30 @@ function makeColorBox(container, red, blue, green, greyWrap) {
     });
 
     colorBox.addEventListener('mouseover', (event) => {
-        const colorValue = event.target.dataset.colorValue;
-        const colorValueDisplay = document.createElement('div');
-        colorValueDisplay.classList.add('color-value-display');
-        document.body.appendChild(colorValueDisplay);
-        colorValueDisplay.innerText = `${colorValue}`;
+        const colorString = event.target.dataset.colorString;
+        const cursorDisplay = document.createElement('div');
+        cursorDisplay.classList.add('cursor-display');
+        document.body.appendChild(cursorDisplay);
+        cursorDisplay.innerText = `${colorString}`;
 
         // Position the color value display next to the cursor
         document.addEventListener('mousemove', (event) => {
-            colorValueDisplay.style.position = 'fixed';
-            colorValueDisplay.style.top = (event.clientY + 10) + 'px';
-            colorValueDisplay.style.left = (event.clientX + 10) + 'px';
+            cursorDisplay.style.position = 'fixed';
+            cursorDisplay.style.top = (event.clientY + 10) + 'px';
+            cursorDisplay.style.left = (event.clientX + 10) + 'px';
         });
     });
 
     colorBox.addEventListener('mouseout', (event) => {
-        const colorValueDisplay = document.querySelector('.color-value-display');
-        if (colorValueDisplay) {
-            colorValueDisplay.remove(); // Remove color value display on mouseout
+        const cursorDisplay = document.querySelector('.cursor-display');
+        if (cursorDisplay) {
+            cursorDisplay.remove(); // Remove color value display on mouseout
         }
     });
 
     colorBoxWithValue.appendChild(colorBox);
     const colorValueElement = document.createElement('div');
-    colorValueElement.innerText = colorValue;
+    colorValueElement.innerText = colorString;
     colorBoxWithValue.appendChild(colorValueElement);
     container.appendChild(colorBoxWithValue);
 }
