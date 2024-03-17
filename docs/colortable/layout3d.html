@@ -1,80 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>3D Data Display</title>
+    <title>3D Display Layout</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.0">
-    <style>
-        :root{
-            --gap-size: 7px;
-        }
-        body {
-            background-color: #222;
-            font-family: Arial, sans-serif;
-            color: white;
-            text-align: center;
-        }
-        h1 {
-            font-size: 120%;
-        }
-        .description {
-            margin: 8px;
-        }
-        .z-axis {
-            background-color: #555;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .y-axis {
-            background-color: #888;
-            display: flex;
-            flex-direction: column;
-            /* effect: double gap between x,y block grids */
-            margin: var(--gap-size); /* surrounding the x,y block grid */
-            gap: var(--gap-size); /* vertical: in between block rows in a column */
-        }
-        .x-axis {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--gap-size); /* horizontal: in between blocks in a row */
-        }
-        .block {
-            width: 150px;
-            height: 150px;
-            background-color: dodgerblue;
-            font-size: 200%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-    </style>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const size = 3; // todo: radio buttons for 2,3,4
-            const display = document.getElementById('display');
-            const zAxis = document.createElement('div');
-            zAxis.classList.add('z-axis');
-            for (let z = size - 1; z >= 0; z--) {
-                const yAxis = document.createElement('div');
-                yAxis.classList.add('y-axis');
-                for (let y = size - 1; y >= 0; y--) {
-                    const xAxis = document.createElement('div');
-                    xAxis.classList.add('x-axis');
-                    for (let x = 0; x < size; x++) {
-                        const block = document.createElement('div');
-                        block.classList.add('block');
-                        block.innerText = `(${x},${y},${z})`;
-                        xAxis.appendChild(block);
-                    }
-                    yAxis.appendChild(xAxis);
-                }
-                zAxis.appendChild(yAxis);
-            }
-            display.appendChild(zAxis);
-        });
-    </script>
+    <meta name="version" content="1.1">
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="layout3d.css">
+    <script defer src="layout3d.js"></script>
 </head>
 <body>
     <h1>Example Contents</h1>
