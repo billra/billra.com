@@ -1,24 +1,22 @@
-function settingChange() {
-    const size = parseInt(document.querySelector('input[type=radio][name=size]:checked').value, 10);
-    const showBackground = document.getElementById('show-background').checked;
-    Draw(size, showBackground);
-}
-
+// handle dimensions change
 document.querySelectorAll('input[type=radio][name=size]').forEach((rb) => {
     rb.addEventListener('change', () => {
-        settingChange();
+        draw();
     });
 });
 
+// handle show background change
 document.getElementById('show-background').addEventListener('change', () => {
-    // We could just call settingChange() to rebuild the display. Instead we
+    // We could just call draw() to rebuild the display. Instead we
     // choose to do the minimum: change the styling of the affected classes.
     document.querySelectorAll('.z-axis, .y-axis').forEach((elm) => {
         elm.classList.toggle('no-background');
     });
 });
 
-function Draw(size, showBackground) {
+function draw() {
+    const size = parseInt(document.querySelector('input[type=radio][name=size]:checked').value, 10);
+    const showBackground = document.getElementById('show-background').checked;
     const display = document.getElementById('display');
     display.innerHTML = ''; // erase old
     const zAxis = document.createElement('div');
@@ -48,4 +46,4 @@ function Draw(size, showBackground) {
     display.append(zAxis);
 }
 
-settingChange(); // for initial draw
+draw(); // initial draw
