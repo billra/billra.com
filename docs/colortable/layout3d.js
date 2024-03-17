@@ -19,11 +19,18 @@ document.getElementById('show-background').addEventListener('change', () => {
 function Draw(size) {
     const display = document.getElementById('display');
     display.innerHTML = ''; // erase old
+    const noBackground = !document.getElementById('show-background').checked;
     const zAxis = document.createElement('div');
     zAxis.classList.add('z-axis');
+    if (noBackground) {
+        zAxis.classList.add('no-background');
+    }
     for (let z = size - 1; z >= 0; z--) {
         const yAxis = document.createElement('div');
         yAxis.classList.add('y-axis');
+        if (noBackground) {
+            yAxis.classList.add('no-background');
+        }
         for (let y = size - 1; y >= 0; y--) {
             const xAxis = document.createElement('div');
             xAxis.classList.add('x-axis');
