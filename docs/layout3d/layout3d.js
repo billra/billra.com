@@ -1,34 +1,35 @@
-function changeSize(){
+function settingChange() {
     const size = parseInt(document.querySelector('input[type=radio][name=size]:checked').value, 10);
-    Draw(size);
+    const showBackground = document.getElementById('show-background').checked;
+    Draw(size, showBackground);
 }
 
 document.querySelectorAll('input[type=radio][name=size]').forEach((rb) => {
     rb.addEventListener('change', () => {
-        changeSize();
+        settingChange();
     });
 });
 
 document.getElementById('show-background').addEventListener('change', () => {
+    // We could just call settingChange() to rebuild the display. Instead we
+    // choose to do the minimum: change the styling of the affected classes.
     document.querySelectorAll('.z-axis, .y-axis').forEach((elm) => {
         elm.classList.toggle('no-background');
     });
-    // only changing the styling, no Draw() needed
 });
 
-function Draw(size) {
+function Draw(size, showBackground) {
     const display = document.getElementById('display');
     display.innerHTML = ''; // erase old
-    const noBackground = !document.getElementById('show-background').checked;
     const zAxis = document.createElement('div');
     zAxis.classList.add('z-axis');
-    if (noBackground) {
+    if (!showBackground) {
         zAxis.classList.add('no-background');
     }
     for (let z = 0; z < size; z++) {
         const yAxis = document.createElement('div');
         yAxis.classList.add('y-axis');
-        if (noBackground) {
+        if (!showBackground) {
             yAxis.classList.add('no-background');
         }
         for (let y = 0; y < size; y++) {
@@ -47,4 +48,4 @@ function Draw(size) {
     display.append(zAxis);
 }
 
-changeSize(); // for initial draw
+settingChange(); // for initial draw
