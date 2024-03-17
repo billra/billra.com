@@ -25,26 +25,26 @@ function Draw(size) {
     if (noBackground) {
         zAxis.classList.add('no-background');
     }
-    for (let z = size - 1; z >= 0; z--) {
+    for (let z = 0; z < size; z++) {
         const yAxis = document.createElement('div');
         yAxis.classList.add('y-axis');
         if (noBackground) {
             yAxis.classList.add('no-background');
         }
-        for (let y = size - 1; y >= 0; y--) {
+        for (let y = 0; y < size; y++) {
             const xAxis = document.createElement('div');
             xAxis.classList.add('x-axis');
             for (let x = 0; x < size; x++) {
                 const block = document.createElement('div');
                 block.classList.add('block');
                 block.innerText = `(${x},${y},${z})`;
-                xAxis.appendChild(block);
+                xAxis.append(block);
             }
-            yAxis.appendChild(xAxis);
+            yAxis.prepend(xAxis);
         }
-        zAxis.appendChild(yAxis);
+        zAxis.prepend(yAxis);
     }
-    display.appendChild(zAxis);
+    display.append(zAxis);
 }
 
 changeSize(); // for initial draw
