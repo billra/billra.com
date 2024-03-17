@@ -2,20 +2,23 @@
 <head>
     <title>3D Display Layout</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.3">
+    <meta name="version" content="1.4">
     <meta charset="UTF-8">
     <link rel="icon" href="layout3d.ico">
     <link rel="stylesheet" href="layout3d.css">
     <script defer src="layout3d.js"></script>
 </head>
 <body>
-    <h1>Example Contents</h1>
+    <h1>3D Layout Demo</h1>
     <div>
         x,y,z dimensions:
         <label><input type="radio" name="size" value="2">2&times;2&times;2</label>
         <label><input type="radio" name="size" value="3" checked>3&times;3&times;3</label>
         <label><input type="radio" name="size" value="4">4&times;4&times;4</label>
         <label><input type="radio" name="size" value="5">5&times;5&times;5</label>
+    </div>
+    <div>
+        <label><input type="checkbox" id="show-background" checked>show flex box background</label>
     </div>
     <div class="description">Resize window to see layout changes.</div>
     <div id="display"></div>

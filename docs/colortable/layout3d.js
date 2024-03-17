@@ -11,6 +11,16 @@ document.querySelectorAll('input[type=radio][name=size]').forEach((rb) => {
     });
 });
 
+document.getElementById('show-background').addEventListener('change', () => {
+    document.querySelectorAll('.z-axis').forEach((elm) => {
+        elm.classList.toggle('no-background');
+    });
+    document.querySelectorAll('.y-axis').forEach((elm) => {
+        elm.classList.toggle('no-background');
+    });
+    // only changing the styling, no Draw() needed
+});
+
 function Draw() {
     const display = document.getElementById('display');
     display.innerHTML = ''; // erase old
