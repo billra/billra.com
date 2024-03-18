@@ -17,22 +17,22 @@ function draw() {
     const display = document.getElementById('display');
     display.innerHTML = ''; // erase old
     const zAxis = document.createElement('div');
-    zAxis.classList.add('z-axis');
+    zAxis.className = 'z-axis';
     if (showBackground) {
         zAxis.style.backgroundColor = '#555';
     }
     for (let z = 0; z < size; z++) {
         const yAxis = document.createElement('div');
-        yAxis.classList.add('y-axis');
+        yAxis.className = 'y-axis';
         if (showBackground) {
             yAxis.style.backgroundColor = '#888';
         }
         for (let y = 0; y < size; y++) {
             const xAxis = document.createElement('div');
-            xAxis.classList.add('x-axis');
+            xAxis.className = 'x-axis';
             for (let x = 0; x < size; x++) {
                 const block = document.createElement('div');
-                block.classList.add('block');
+                block.className = 'block';
                 block.innerText = `(${x},${y},${z})`;
                 xAxis.append(block);
             }
