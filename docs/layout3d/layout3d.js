@@ -5,6 +5,13 @@ document.querySelectorAll('input[type=radio][name=size]').forEach((rb) => {
     });
 });
 
+// handle z-origin change
+document.querySelectorAll('input[type=radio][name=z-origin]').forEach((rb) => {
+    rb.addEventListener('change', () => {
+        draw();
+    });
+});
+
 // handle show background change
 document.getElementById('show-background').addEventListener('change', () => {
     // We could just call draw() to rebuild the display. Instead we
@@ -16,6 +23,7 @@ document.getElementById('show-background').addEventListener('change', () => {
 
 function draw() {
     const size = parseInt(document.querySelector('input[type=radio][name=size]:checked').value, 10);
+    const zOriginFirst = document.querySelector('input[type=radio][name=z-origin][value=first]').checked;
     const showBackground = document.getElementById('show-background').checked;
     const display = document.getElementById('display');
     display.innerHTML = ''; // erase old
@@ -41,7 +49,11 @@ function draw() {
             }
             yAxis.prepend(xAxis);
         }
-        zAxis.prepend(yAxis);
+        if (zOriginFirst) {
+            zAxis.append(yAxis);
+        } else {
+            zAxis.prepend(yAxis);
+        }
     }
     display.append(zAxis);
 }

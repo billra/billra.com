@@ -2,7 +2,7 @@
 <head>
     <title>3D Display Layout</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.8">
+    <meta name="version" content="1.9">
     <meta charset="UTF-8">
     <link rel="icon" href="layout3d.ico">
     <link rel="stylesheet" href="layout3d.css">
@@ -18,9 +18,14 @@
         <label><input type="radio" name="size" value="5">5&times;5&times;5</label>
     </div>
     <div>
-        <label><input type="checkbox" id="show-background" checked>show flex box background</label>
+        z origin:
+        <label><input type="radio" name="z-origin" value="first">first</label>
+        <label><input type="radio" name="z-origin" value="" checked>last</label>
     </div>
-    <div class="description">Resize window to see layout changes.</div>
+    <div>
+        <label><input type="checkbox" id="show-background">show flex box background</label>
+    </div>
+    <div class="description">Resize window to see dynamic layout.</div>
     <div id="display"></div>
 </body>
 </html>
