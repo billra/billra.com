@@ -1,13 +1,6 @@
-// handle radio button change
-document.querySelectorAll('input[type=radio]').forEach((rb) => {
-    rb.addEventListener('change', () => {
-        draw();
-    });
-});
-
-// handle show background change
-document.getElementById('show-background').addEventListener('change', () => {
-    draw();
+// handle input change
+document.querySelectorAll('input[type=radio], input[type=checkbox]').forEach((input) => {
+    input.addEventListener('change', draw);
 });
 
 function draw() {
