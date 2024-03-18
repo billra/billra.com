@@ -7,11 +7,7 @@ document.querySelectorAll('input[type=radio]').forEach((rb) => {
 
 // handle show background change
 document.getElementById('show-background').addEventListener('change', () => {
-    // We could just call draw() to rebuild the display. Instead we
-    // choose to do the minimum: change the styling of the affected classes.
-    document.querySelectorAll('.z-axis, .y-axis').forEach((elm) => {
-        elm.classList.toggle('no-background');
-    });
+    draw();
 });
 
 function draw() {
@@ -22,14 +18,14 @@ function draw() {
     display.innerHTML = ''; // erase old
     const zAxis = document.createElement('div');
     zAxis.classList.add('z-axis');
-    if (!showBackground) {
-        zAxis.classList.add('no-background');
+    if (showBackground) {
+        zAxis.style.backgroundColor = '#555';
     }
     for (let z = 0; z < size; z++) {
         const yAxis = document.createElement('div');
         yAxis.classList.add('y-axis');
-        if (!showBackground) {
-            yAxis.classList.add('no-background');
+        if (showBackground) {
+            yAxis.style.backgroundColor = '#888';
         }
         for (let y = 0; y < size; y++) {
             const xAxis = document.createElement('div');

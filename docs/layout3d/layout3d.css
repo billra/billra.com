@@ -13,17 +13,12 @@ h1 {
 .description {
     margin: 8px;
 }
-.no-background {
-    background: none !important;
-  }
 .z-axis {
-    background-color: #555;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
 }
 .y-axis {
-    background-color: #888;
     display: flex;
     flex-direction: column;
     /* effect: double gap between x,y block grids */
