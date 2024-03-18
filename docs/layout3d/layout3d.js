@@ -11,15 +11,11 @@ function draw() {
     display.innerHTML = ''; // erase old
     const zAxis = document.createElement('div');
     zAxis.className = 'z-axis';
-    if (showBackground) {
-        zAxis.style.backgroundColor = '#555';
-    }
+    if (showBackground) zAxis.style.backgroundColor = '#555';
     for (let z = 0; z < size; z++) {
         const yAxis = document.createElement('div');
         yAxis.className = 'y-axis';
-        if (showBackground) {
-            yAxis.style.backgroundColor = '#888';
-        }
+        if (showBackground) yAxis.style.backgroundColor = '#888';
         for (let y = 0; y < size; y++) {
             const xAxis = document.createElement('div');
             xAxis.className = 'x-axis';
@@ -31,11 +27,7 @@ function draw() {
             }
             yAxis.prepend(xAxis);
         }
-        if (zOriginFirst) {
-            zAxis.append(yAxis);
-        } else {
-            zAxis.prepend(yAxis);
-        }
+        zOriginFirst ? zAxis.append(yAxis) : zAxis.prepend(yAxis);
     }
     display.append(zAxis);
 }
