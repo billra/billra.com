@@ -1,12 +1,5 @@
-// handle dimensions change
-document.querySelectorAll('input[type=radio][name=size]').forEach((rb) => {
-    rb.addEventListener('change', () => {
-        draw();
-    });
-});
-
-// handle z-origin change
-document.querySelectorAll('input[type=radio][name=z-origin]').forEach((rb) => {
+// handle radio button change
+document.querySelectorAll('input[type=radio]').forEach((rb) => {
     rb.addEventListener('change', () => {
         draw();
     });
