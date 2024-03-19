@@ -34,7 +34,6 @@ function clearCursorDisplay(){
 function showColorChart() {
     const hls = levelsToHex(gLevels); // hex level strings
     console.log(hls);
-    const greyWrap = document.getElementById('id-grey-wrap').checked;
     const shortHex = document.getElementById('id-short-hex').checked;
     const boxSize = boxSizeSlider.value;
     const container = document.getElementById('color-container');
@@ -47,18 +46,13 @@ function showColorChart() {
     for (let red of hls) {
         for (let green of hls) {
             for (let blue of hls) {
-                makeColorBox(container, red, blue, green, greyWrap, shortHex, boxSize);
+                makeColorBox(container, red, blue, green, shortHex, boxSize);
             }
         }
     }
 }
 
-function makeColorBox(container, red, blue, green, greyWrap, shortHex, boxSize) {
-    if (greyWrap && red === blue && blue === green) {
-        const lineBreak = document.createElement('br');
-        container.appendChild(lineBreak);
-    }
-
+function makeColorBox(container, red, blue, green, shortHex, boxSize) {
     const colorBox = document.createElement('div');
     colorBox.style.width = `${boxSize}px`;
     colorBox.style.height = `${boxSize}px`;
