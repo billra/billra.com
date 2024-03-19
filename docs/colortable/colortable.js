@@ -1,3 +1,10 @@
+document.querySelectorAll('input[type="radio"], input[type="checkbox"], input[type="range"]').forEach((input) => {
+    input.addEventListener('change', () => {
+        regenerateLevels(); // not all changes require regeneration, but ok
+        showColorChart();
+    });
+});
+
 function regenerateLevels() {
     const count = parseInt(document.querySelector('input[type=radio][name=count]:checked').value, 10);
     const roundUp = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
@@ -5,30 +12,12 @@ function regenerateLevels() {
 }
 let gLevels;
 
-document.querySelectorAll('input[type=radio][name=count]').forEach((rb) => {
-    rb.addEventListener('change', () => {
-        regenerateLevels();
-        showColorChart();
-    });
-});
-
-document.querySelectorAll('input[type=radio][name=round]').forEach((rb) => {
-    rb.addEventListener('change', () => {
-        regenerateLevels();
-        showColorChart();
-    });
-});
-
 const boxSizeSlider = document.getElementById('box-size');
 const boxSizeValue = document.getElementById('box-size-value');
 
 boxSizeSlider.addEventListener('input', () => {
     boxSizeValue.textContent = boxSizeSlider.value;
 });
-
-document.getElementById('id-grey-wrap').addEventListener('change', showColorChart);
-document.getElementById('id-short-hex').addEventListener('change', showColorChart);
-document.getElementById('box-size').addEventListener('change', showColorChart);
 
 document.addEventListener('DOMContentLoaded', () => {
     regenerateLevels();
