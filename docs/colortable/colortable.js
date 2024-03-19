@@ -1,13 +1,9 @@
-document.querySelectorAll('input[type="radio"], input[type="checkbox"], input[type="range"]').forEach((input) => {
-    input.addEventListener('change', () => {
-        showColorChart();
-    });
-});
+document.querySelectorAll('input[type="radio"], input[type="checkbox"], input[type="range"]').forEach(
+    input => input.addEventListener('change', showColorChart));
 
 // display box size value
-document.getElementById('box-size').addEventListener('input', () => {
-    document.getElementById('box-size-value').textContent = document.getElementById('box-size').value;
-});
+document.getElementById('box-size').addEventListener('input', () =>
+    document.getElementById('box-size-value').textContent = document.getElementById('box-size').value);
 
 function showColorChart() {
     const count = parseInt(document.querySelector('input[type=radio][name=count]:checked').value, 10);
@@ -63,29 +59,17 @@ function makeColorBox(container, red, blue, green, shortHex, boxSize) {
         : `#${longHex}`;
     colorBox.style.backgroundColor = colorString;
     colorBox.classList.add('color-box');
-
     colorBox.style.cursor = 'pointer'; // indicate click action
-
     // click to copy color code to clipboard
-    colorBox.addEventListener('click', () => {
+    colorBox.addEventListener('click', () =>
         navigator.clipboard.writeText(colorString)
-            .then(() => {
-                console.log('Color value copied to clipboard:', colorString);
-            })
-            .catch(err => {
-                console.error('Failed to copy color value to clipboard:', err);
-            });
-    });
+            .then(() => console.log('Color value copied to clipboard:', colorString))
+            .catch(err => console.error('Failed to copy color value to clipboard:', err)));
 
     // Position the color value display next to the cursor
-    colorBox.addEventListener('mousemove', (event) => {
-        makeCursorDisplay(colorString,event.clientX,event.clientY);
-    });
-
-    colorBox.addEventListener('mouseout', (event) => {
-        clearCursorDisplay();
-    });
-
+    colorBox.addEventListener('mousemove',
+        event => makeCursorDisplay(colorString, event.clientX, event.clientY));
+    colorBox.addEventListener('mouseout', clearCursorDisplay);
     container.appendChild(colorBox);
 }
 

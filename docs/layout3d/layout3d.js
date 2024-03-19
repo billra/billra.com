@@ -1,7 +1,6 @@
 // handle input change
-document.querySelectorAll('input[type=radio], input[type=checkbox]').forEach((input) => {
-    input.addEventListener('change', draw);
-});
+document.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(
+    input => input.addEventListener('change', draw));
 
 function draw() {
     const size = parseInt(document.querySelector('input[type=radio][name=size]:checked').value, 10);
