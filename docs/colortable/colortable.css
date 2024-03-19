@@ -4,6 +4,12 @@ body {
     color: white;
     text-align: center;
 }
+h1 {
+    font-size: 150%;
+}
+.description {
+    margin: 8px;
+}
 .color-box {
     display: inline-block;
     width: 100px;
