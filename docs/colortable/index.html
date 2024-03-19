@@ -3,7 +3,7 @@
 <head>
     <title>Color Table</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.8">
+    <meta name="version" content="1.9">
     <meta charset="UTF-8">
     <link rel="icon" href="colortable.ico">
     <link rel="stylesheet" href="colortable.css">
@@ -11,7 +11,7 @@
 </head>
 <body>
     <h1>Color Table</h1>
-    <div>
+    <div class="flex-center">
         Levels:
         <label><input type="radio" name="count" value="2" checked>2</label>
         <label><input type="radio" name="count" value="3">3</label>
@@ -20,16 +20,16 @@
         <label><input type="radio" name="count" value="6">6</label>
         <label><input type="radio" name="count" value="7">7</label>
     </div>
-    <div>
+    <div class="flex-center">
         Round:
         <label><input type="radio" name="round" value="0" checked>down</label>
         <label><input type="radio" name="round" value="1">up</label>
     </div>
-    <div>
+    <div class="flex-center">
         <label><input type="checkbox" id="id-short-hex">Short Hex</label>
     </div>
-    <div>
-        <label for="box-size">Color Box Size:</label>
+    <div class="flex-center">
+        <label for="box-size">Color Box Size: </label>
         <input type="range" id="box-size" min="40" max="200" step="5" value="100">
         <span id="box-size-value">100</span> px
     </div>

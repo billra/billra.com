@@ -10,6 +10,11 @@ h1 {
 .description {
     margin: 8px;
 }
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 .color-box {
     display: inline-block;
     width: 100px;

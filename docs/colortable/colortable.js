@@ -5,6 +5,11 @@ document.querySelectorAll('input[type="radio"], input[type="checkbox"], input[ty
     });
 });
 
+// display box size value
+document.getElementById('box-size').addEventListener('input', () => {
+    document.getElementById('box-size-value').textContent = document.getElementById('box-size').value;
+});
+
 function regenerateLevels() {
     const count = parseInt(document.querySelector('input[type=radio][name=count]:checked').value, 10);
     const roundUp = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
@@ -12,12 +17,6 @@ function regenerateLevels() {
 }
 let gLevels;
 
-const boxSizeSlider = document.getElementById('box-size');
-const boxSizeValue = document.getElementById('box-size-value');
-
-boxSizeSlider.addEventListener('input', () => {
-    boxSizeValue.textContent = boxSizeSlider.value;
-});
 
 document.addEventListener('DOMContentLoaded', () => {
     regenerateLevels();
@@ -35,7 +34,7 @@ function showColorChart() {
     const hls = levelsToHex(gLevels); // hex level strings
     console.log(hls);
     const shortHex = document.getElementById('id-short-hex').checked;
-    const boxSize = boxSizeSlider.value;
+    const boxSize = document.getElementById('box-size').value;
     const container = document.getElementById('color-container');
     container.innerHTML = ''; // clear old values
     // This can be triggered by keyboard control of the size slider.
