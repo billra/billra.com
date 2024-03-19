@@ -13,21 +13,30 @@ function showColorChart() {
     console.log(hls);
     const shortHex = document.getElementById('id-short-hex').checked;
     const boxSize = document.getElementById('box-size').value;
-    const container = document.getElementById('color-container');
-    container.innerHTML = ''; // clear old values
+    const display = document.getElementById('display');
+    display.innerHTML = ''; // clear old values
     // This can be triggered by keyboard control of the size slider.
     // We clear the pointer color value display as there might me a new
     // color under the pointer without an associated mousemove event.
     clearPointerDisplay();
-
-    for (let red of hls) {
-        for (let green of hls) {
-            for (let blue of hls) {
-                const colorBox = makeColorBox(red, blue, green, shortHex, boxSize);
-                container.appendChild(colorBox);
+    const zAxis = document.createElement('div');
+    zAxis.className = 'z-axis';
+    for (let z of hls) {
+        const yAxis = document.createElement('div');
+        yAxis.className = 'y-axis';
+        for (let y of hls) {
+            const xAxis = document.createElement('div');
+            xAxis.className = 'x-axis';
+            for (let x of hls) {
+                // todo: mapping to red, blue, green order for grouping
+                const colorBox = makeColorBox(z, y, x, shortHex, boxSize);
+                xAxis.append(colorBox);
             }
+            yAxis.prepend(xAxis);
         }
+        zAxis.prepend(yAxis);
     }
+    display.append(zAxis);
 }
 
 function makeColorBox(red, blue, green, shortHex, boxSize) {
@@ -39,14 +48,12 @@ function makeColorBox(red, blue, green, shortHex, boxSize) {
         ? `#${red[0]}${green[0]}${blue[0]}`
         : `#${longHex}`;
     colorBox.style.backgroundColor = colorString;
-    colorBox.className = 'color-box';
     colorBox.style.cursor = 'pointer'; // indicate click action
     // click to copy color code to clipboard
     colorBox.addEventListener('click', () =>
         navigator.clipboard.writeText(colorString)
             .then(() => console.log('Color value copied to clipboard:', colorString))
             .catch(err => console.error('Failed to copy color value to clipboard:', err)));
-
     // Position the color value display next to the pointer
     colorBox.addEventListener('mousemove',
         event => makePointerDisplay(colorString, event.clientX, event.clientY));

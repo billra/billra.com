@@ -1,3 +1,6 @@
+:root {
+    --gap-size: 7px;
+}
 body {
     background-color: black;
     font-family: Arial, sans-serif;
@@ -15,16 +18,22 @@ h1 {
     align-items: center;
     justify-content: center;
 }
-.color-box {
-    display: inline-block;
-    width: 100px;
-    height: 100px;
-}
-#color-container {
+.z-axis {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 4px;
+}
+.y-axis {
+    display: flex;
+    flex-direction: column;
+    /* effect: double gap between x,y block grids */
+    margin: var(--gap-size); /* surrounding the x,y block grid */
+    gap: var(--gap-size); /* vertical: in between block rows in a column */
+}
+.x-axis {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-size); /* horizontal: in between blocks in a row */
 }
 .pointer-display {
     background-color: rgba(0, 0, 0, 0.6);
