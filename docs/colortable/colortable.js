@@ -16,9 +16,9 @@ function showColorChart() {
     const container = document.getElementById('color-container');
     container.innerHTML = ''; // clear old values
     // This can be triggered by keyboard control of the size slider.
-    // We clear the cursor color value display as there might me a new
-    // color under the cursor without an associated mousemove event.
-    clearCursorDisplay();
+    // We clear the pointer color value display as there might me a new
+    // color under the pointer without an associated mousemove event.
+    clearPointerDisplay();
 
     for (let red of hls) {
         for (let green of hls) {
@@ -29,24 +29,24 @@ function showColorChart() {
     }
 }
 
-function clearCursorDisplay(){
-    const cursorDisplay = document.querySelector('.cursor-display');
-    if (cursorDisplay) {
-        cursorDisplay.remove();
+function clearPointerDisplay() {
+    const pointerDisplay = document.querySelector('.pointer-display');
+    if (pointerDisplay) {
+        pointerDisplay.remove();
     }
 }
 
-function makeCursorDisplay(colorString,pointerX,pointerY){
-    let cursorDisplay = document.querySelector('.cursor-display');
-    if (!cursorDisplay) {
-        cursorDisplay = document.createElement('div');
-        cursorDisplay.classList.add('cursor-display');
-        document.body.appendChild(cursorDisplay);
-        cursorDisplay.innerText = `${colorString}`;
-        cursorDisplay.style.position = 'fixed';
+function makePointerDisplay(colorString, pointerX, pointerY) {
+    let pointerDisplay = document.querySelector('.pointer-display');
+    if (!pointerDisplay) {
+        pointerDisplay = document.createElement('div');
+        pointerDisplay.classList.add('pointer-display');
+        document.body.appendChild(pointerDisplay);
+        pointerDisplay.innerText = `${colorString}`;
+        pointerDisplay.style.position = 'fixed';
     }
-    cursorDisplay.style.top = (pointerY + 10) + 'px';
-    cursorDisplay.style.left = (pointerX + 10) + 'px';
+    pointerDisplay.style.top = (pointerY + 10) + 'px';
+    pointerDisplay.style.left = (pointerX + 10) + 'px';
 }
 
 function makeColorBox(container, red, blue, green, shortHex, boxSize) {
@@ -66,10 +66,10 @@ function makeColorBox(container, red, blue, green, shortHex, boxSize) {
             .then(() => console.log('Color value copied to clipboard:', colorString))
             .catch(err => console.error('Failed to copy color value to clipboard:', err)));
 
-    // Position the color value display next to the cursor
+    // Position the color value display next to the pointer
     colorBox.addEventListener('mousemove',
-        event => makeCursorDisplay(colorString, event.clientX, event.clientY));
-    colorBox.addEventListener('mouseout', clearCursorDisplay);
+        event => makePointerDisplay(colorString, event.clientX, event.clientY));
+    colorBox.addEventListener('mouseout', clearPointerDisplay);
     container.appendChild(colorBox);
 }
 
