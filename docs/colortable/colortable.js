@@ -23,33 +23,14 @@ function showColorChart() {
     for (let red of hls) {
         for (let green of hls) {
             for (let blue of hls) {
-                makeColorBox(container, red, blue, green, shortHex, boxSize);
+                const colorBox = makeColorBox(red, blue, green, shortHex, boxSize);
+                container.appendChild(colorBox);
             }
         }
     }
 }
 
-function clearPointerDisplay() {
-    const pointerDisplay = document.querySelector('.pointer-display');
-    if (pointerDisplay) {
-        pointerDisplay.remove();
-    }
-}
-
-function makePointerDisplay(colorString, pointerX, pointerY) {
-    let pointerDisplay = document.querySelector('.pointer-display');
-    if (!pointerDisplay) {
-        pointerDisplay = document.createElement('div');
-        pointerDisplay.className = 'pointer-display';
-        document.body.appendChild(pointerDisplay);
-        pointerDisplay.innerText = `${colorString}`;
-        pointerDisplay.style.position = 'fixed';
-    }
-    pointerDisplay.style.top = (pointerY + 10) + 'px';
-    pointerDisplay.style.left = (pointerX + 10) + 'px';
-}
-
-function makeColorBox(container, red, blue, green, shortHex, boxSize) {
+function makeColorBox(red, blue, green, shortHex, boxSize) {
     const colorBox = document.createElement('div');
     colorBox.style.width = `${boxSize}px`;
     colorBox.style.height = `${boxSize}px`;
@@ -70,7 +51,27 @@ function makeColorBox(container, red, blue, green, shortHex, boxSize) {
     colorBox.addEventListener('mousemove',
         event => makePointerDisplay(colorString, event.clientX, event.clientY));
     colorBox.addEventListener('mouseout', clearPointerDisplay);
-    container.appendChild(colorBox);
+    return colorBox;
+}
+
+function makePointerDisplay(colorString, pointerX, pointerY) {
+    let pointerDisplay = document.querySelector('.pointer-display');
+    if (!pointerDisplay) {
+        pointerDisplay = document.createElement('div');
+        pointerDisplay.className = 'pointer-display';
+        document.body.appendChild(pointerDisplay);
+        pointerDisplay.innerText = `${colorString}`;
+        pointerDisplay.style.position = 'fixed';
+    }
+    pointerDisplay.style.top = (pointerY + 10) + 'px';
+    pointerDisplay.style.left = (pointerX + 10) + 'px';
+}
+
+function clearPointerDisplay() {
+    const pointerDisplay = document.querySelector('.pointer-display');
+    if (pointerDisplay) {
+        pointerDisplay.remove();
+    }
 }
 
 function levelsToHex(levels) {
