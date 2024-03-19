@@ -1,6 +1,5 @@
 document.querySelectorAll('input[type="radio"], input[type="checkbox"], input[type="range"]').forEach((input) => {
     input.addEventListener('change', () => {
-        regenerateLevels(); // not all changes require regeneration, but ok
         showColorChart();
     });
 });
@@ -10,28 +9,11 @@ document.getElementById('box-size').addEventListener('input', () => {
     document.getElementById('box-size-value').textContent = document.getElementById('box-size').value;
 });
 
-function regenerateLevels() {
+function showColorChart() {
     const count = parseInt(document.querySelector('input[type=radio][name=count]:checked').value, 10);
     const roundUp = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
-    gLevels = makeLevels(count, roundUp);
-}
-let gLevels;
-
-
-document.addEventListener('DOMContentLoaded', () => {
-    regenerateLevels();
-    showColorChart();
-});
-
-function clearCursorDisplay(){
-    const cursorDisplay = document.querySelector('.cursor-display');
-    if (cursorDisplay) {
-        cursorDisplay.remove();
-    }
-}
-
-function showColorChart() {
-    const hls = levelsToHex(gLevels); // hex level strings
+    levels = makeLevels(count, roundUp);
+    const hls = levelsToHex(levels); // hex level strings
     console.log(hls);
     const shortHex = document.getElementById('id-short-hex').checked;
     const boxSize = document.getElementById('box-size').value;
@@ -49,6 +31,26 @@ function showColorChart() {
             }
         }
     }
+}
+
+function clearCursorDisplay(){
+    const cursorDisplay = document.querySelector('.cursor-display');
+    if (cursorDisplay) {
+        cursorDisplay.remove();
+    }
+}
+
+function makeCursorDisplay(colorString,pointerX,pointerY){
+    let cursorDisplay = document.querySelector('.cursor-display');
+    if (!cursorDisplay) {
+        cursorDisplay = document.createElement('div');
+        cursorDisplay.classList.add('cursor-display');
+        document.body.appendChild(cursorDisplay);
+        cursorDisplay.innerText = `${colorString}`;
+        cursorDisplay.style.position = 'fixed';
+    }
+    cursorDisplay.style.top = (pointerY + 10) + 'px';
+    cursorDisplay.style.left = (pointerX + 10) + 'px';
 }
 
 function makeColorBox(container, red, blue, green, shortHex, boxSize) {
@@ -77,16 +79,7 @@ function makeColorBox(container, red, blue, green, shortHex, boxSize) {
 
     // Position the color value display next to the cursor
     colorBox.addEventListener('mousemove', (event) => {
-        let cursorDisplay = document.querySelector('.cursor-display');
-        if (!cursorDisplay) {
-            cursorDisplay = document.createElement('div');
-            cursorDisplay.classList.add('cursor-display');
-            document.body.appendChild(cursorDisplay);
-            cursorDisplay.innerText = `${colorString}`;
-            cursorDisplay.style.position = 'fixed';
-        }
-        cursorDisplay.style.top = (event.clientY + 10) + 'px';
-        cursorDisplay.style.left = (event.clientX + 10) + 'px';
+        makeCursorDisplay(colorString,event.clientX,event.clientY);
     });
 
     colorBox.addEventListener('mouseout', (event) => {
@@ -95,6 +88,7 @@ function makeColorBox(container, red, blue, green, shortHex, boxSize) {
 
     container.appendChild(colorBox);
 }
+
 function levelsToHex(levels) {
     // create an array of hex value strings from array of integers
     // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
@@ -109,3 +103,5 @@ function makeLevels(count, roundUp) { // count must be > 1
     }
     return result;
 }
+
+showColorChart(); // initial draw
