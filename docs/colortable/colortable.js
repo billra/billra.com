@@ -40,7 +40,7 @@ function makePointerDisplay(colorString, pointerX, pointerY) {
     let pointerDisplay = document.querySelector('.pointer-display');
     if (!pointerDisplay) {
         pointerDisplay = document.createElement('div');
-        pointerDisplay.classList.add('pointer-display');
+        pointerDisplay.className = 'pointer-display';
         document.body.appendChild(pointerDisplay);
         pointerDisplay.innerText = `${colorString}`;
         pointerDisplay.style.position = 'fixed';
@@ -58,7 +58,7 @@ function makeColorBox(container, red, blue, green, shortHex, boxSize) {
         ? `#${red[0]}${green[0]}${blue[0]}`
         : `#${longHex}`;
     colorBox.style.backgroundColor = colorString;
-    colorBox.classList.add('color-box');
+    colorBox.className = 'color-box';
     colorBox.style.cursor = 'pointer'; // indicate click action
     // click to copy color code to clipboard
     colorBox.addEventListener('click', () =>
