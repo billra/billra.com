@@ -5,8 +5,15 @@ document.querySelectorAll('input[type="radio"], input[type="checkbox"], input[ty
 document.getElementById('box-size').addEventListener('input', () =>
     document.getElementById('box-size-value').textContent = document.getElementById('box-size').value);
 
+const orders = { // z = iterates slowest, i.e. grouping
+    R: ['z', 'x', 'y'],
+    G: ['x', 'z', 'y'],
+    B: ['x', 'y', 'z'],
+};
+
 function showColorChart() {
     const count = parseInt(document.querySelector('input[type=radio][name=count]:checked').value, 10);
+    const group = document.querySelector('input[type=radio][name=group]:checked').value;
     const roundUp = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
     levels = makeLevels(count, roundUp);
     const hls = levelsToHex(levels); // hex level strings
@@ -28,8 +35,9 @@ function showColorChart() {
             const xAxis = document.createElement('div');
             xAxis.className = 'x-axis';
             for (let x of hls) {
-                // todo: mapping to red, blue, green order for grouping
-                const colorBox = makeColorBox(z, y, x, shortHex, boxSize);
+                const values = { x: x, y: y, z: z };
+                const [red, green, blue] = orders[group].map(key => values[key]);
+                const colorBox = makeColorBox(red, green, blue, shortHex, boxSize);
                 xAxis.append(colorBox);
             }
             yAxis.prepend(xAxis);
@@ -39,7 +47,7 @@ function showColorChart() {
     display.append(zAxis);
 }
 
-function makeColorBox(red, blue, green, shortHex, boxSize) {
+function makeColorBox(red, green, blue, shortHex, boxSize) {
     const colorBox = document.createElement('div');
     colorBox.style.width = `${boxSize}px`;
     colorBox.style.height = `${boxSize}px`;
