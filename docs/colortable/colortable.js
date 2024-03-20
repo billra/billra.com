@@ -9,6 +9,19 @@ document.getElementById('count').addEventListener('input', () =>
 document.getElementById('box-size').addEventListener('input', () =>
     document.getElementById('box-size-value').textContent = document.getElementById('box-size').value);
 
+// full color background
+document.addEventListener('keydown', event => {
+    event.preventDefault();
+    const pointerDisplay = document.querySelector('.pointer-display');
+    const fullScreenDisplay = document.querySelector('.entire-window');
+    if (pointerDisplay && pointerDisplay.textContent) {
+        fullScreenDisplay.style.backgroundColor = pointerDisplay.innerText;
+        fullScreenDisplay.style.display = 'block';
+    } else {
+        fullScreenDisplay.style.display = 'none';
+    }
+});
+
 const orders = { // z = iterates slowest, i.e. grouping
     R: ['z', 'x', 'y'],
     G: ['x', 'z', 'y'],
