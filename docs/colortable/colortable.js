@@ -35,7 +35,7 @@ function showColorChart() {
             const xAxis = document.createElement('div');
             xAxis.className = 'x-axis';
             for (let x of hls) {
-                const values = { x: x, y: y, z: z };
+                const values = { x, y, z };
                 const [red, green, blue] = orders[group].map(key => values[key]);
                 const colorBox = makeColorBox(red, green, blue, shortHex, boxSize);
                 xAxis.append(colorBox);
