@@ -13,6 +13,12 @@ h1 {
 .description {
     margin: 8px;
 }
+#count {
+    width: 150px;
+}
+#box-size {
+    width: 220px;
+}
 .flex-center {
     display: flex;
     align-items: center;

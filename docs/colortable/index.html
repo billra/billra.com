@@ -3,7 +3,7 @@
 <head>
     <title>Color Table</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.15">
+    <meta name="version" content="1.16">
     <meta charset="UTF-8">
     <link rel="icon" href="colortable.ico">
     <link rel="stylesheet" href="colortable.css">
@@ -12,13 +12,9 @@
 <body>
     <h1>Color Table</h1>
     <div class="flex-center">
-        Levels:
-        <label><input type="radio" name="count" value="2">2</label>
-        <label><input type="radio" name="count" value="3">3</label>
-        <label><input type="radio" name="count" value="4" checked>4</label>
-        <label><input type="radio" name="count" value="5">5</label>
-        <label><input type="radio" name="count" value="6">6</label>
-        <label><input type="radio" name="count" value="7">7</label>
+        <label for="count">Levels: </label>
+        <input type="range" id="count" min="2" max="16" step="1" value="4">
+        <span id="count-value">4</span>
     </div>
     <div class="flex-center">
         Group by value:
@@ -35,8 +31,8 @@
         <label><input type="checkbox" id="id-short-hex" checked>Short Hex</label>
     </div>
     <div class="flex-center">
-        <label for="box-size">Color Box Size: </label>
-        <input type="range" id="box-size" min="40" max="200" step="5" value="100">
+        <label for="box-size">Box: </label>
+        <input type="range" id="box-size" min="10" max="120" step="1" value="100">
         <span id="box-size-value">100</span> px
     </div>
     <div class="description">Click to copy color code to clipboard.</div>

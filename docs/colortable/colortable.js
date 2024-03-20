@@ -1,6 +1,10 @@
 document.querySelectorAll('input[type="radio"], input[type="checkbox"], input[type="range"]').forEach(
     input => input.addEventListener('change', showColorChart));
 
+// display count value
+document.getElementById('count').addEventListener('input', () =>
+    document.getElementById('count-value').textContent = document.getElementById('count').value);
+
 // display box size value
 document.getElementById('box-size').addEventListener('input', () =>
     document.getElementById('box-size-value').textContent = document.getElementById('box-size').value);
@@ -12,7 +16,7 @@ const orders = { // z = iterates slowest, i.e. grouping
 };
 
 function showColorChart() {
-    const count = parseInt(document.querySelector('input[type=radio][name=count]:checked').value, 10);
+    const count = document.getElementById('count').value;
     const group = document.querySelector('input[type=radio][name=group]:checked').value;
     const roundUp = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
     levels = makeLevels(count, roundUp);
