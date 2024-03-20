@@ -11,14 +11,18 @@ document.getElementById('box-size').addEventListener('input', () =>
 
 // full color background
 document.addEventListener('keydown', event => {
-    event.preventDefault();
-    const pointerDisplay = document.querySelector('.pointer-display');
-    const fullScreenDisplay = document.querySelector('.entire-window');
-    if (pointerDisplay && pointerDisplay.textContent) {
-        fullScreenDisplay.style.backgroundColor = pointerDisplay.innerText;
-        fullScreenDisplay.style.display = 'block';
-    } else {
-        fullScreenDisplay.style.display = 'none';
+    const { key } = event;
+    if (key.length === 1 && key.match(/[a-zA-Z0-9 ]/)) {
+        event.preventDefault();
+        const pageContents = document.getElementById('page-contents');
+        const pointerDisplay = document.querySelector('.pointer-display');
+        if (pointerDisplay && pointerDisplay.textContent) {
+            pageContents.style.display = 'none';
+            document.body.style.backgroundColor = pointerDisplay.innerText;
+        } else {
+            pageContents.style.display = 'block';
+            document.body.style.backgroundColor = 'black';
+        }
     }
 });
 
