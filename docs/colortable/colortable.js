@@ -16,15 +16,13 @@ document.addEventListener('keydown', event => {
         event.preventDefault();
         const pageContents = document.getElementById('page-contents');
         const pointerDisplay = document.getElementById('pointer-display');
-        // if showing full screen color
+        // if showing full screen color show normal display
         if (pageContents.style.display == 'none') {
             document.body.style.backgroundColor = 'black';
             pageContents.style.display = 'block';
-             // pointer may not be at original location
-            pointerDisplay.style.display = 'none';
             return;
         }
-        // if hovering over color patch
+        // if hovering over color patch show full screen color
         if (pointerDisplay.style.display == 'block') {
             pageContents.style.display = 'none';
             document.body.style.backgroundColor = pointerDisplay.innerText;
@@ -44,15 +42,12 @@ function showColorChart() {
     const roundUp = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
     levels = makeLevels(count, roundUp);
     const hls = levelsToHex(levels); // hex level strings
-    console.log(hls);
     const shortHex = document.getElementById('id-short-hex').checked;
     const boxSize = document.getElementById('box-size').value;
     const display = document.getElementById('display');
-    display.innerHTML = ''; // clear old values
-    // This can be triggered by keyboard control of the size slider.
-    // We clear the pointer color value display as there might me a new
-    // color under the pointer without an associated mousemove event.
-    clearPointerDisplay();
+    const pointerDisplay = document.getElementById('pointer-display');
+    pointerDisplay.style.display = 'none';
+    display.innerHTML = '';
     const zAxis = document.createElement('div');
     zAxis.className = 'z-axis';
     for (let z of hls) {
@@ -94,25 +89,18 @@ function makeColorBox(red, green, blue, shortHex, boxSize) {
         event => pointerDisplayEnter(pointerDisplay, colorString, event.clientX, event.clientY));
     colorBox.addEventListener('mousemove',
         event => pointerDisplayMove(pointerDisplay, colorString, event.clientX, event.clientY));
-    colorBox.addEventListener('mouseout', clearPointerDisplay);
+    colorBox.addEventListener('mouseout', () => pointerDisplay.style.display = 'none');
     return colorBox;
 }
 
-function setPointerDisplay(pointerDisplay, colorString, pointerX, pointerY) {
-    pointerDisplay.innerText = `${colorString}`;
-    pointerDisplay.style.top = (pointerY + 10) + 'px';
-    pointerDisplay.style.left = (pointerX + 10) + 'px';
-}
 function pointerDisplayEnter(pointerDisplay, colorString, pointerX, pointerY) {
-    setPointerDisplay(pointerDisplay, colorString, pointerX, pointerY);
+    pointerDisplayMove(pointerDisplay, colorString, pointerX, pointerY);
     pointerDisplay.style.display = 'block';
 }
 function pointerDisplayMove(pointerDisplay, colorString, pointerX, pointerY) {
-    setPointerDisplay(pointerDisplay, colorString, pointerX, pointerY);
-}
-function clearPointerDisplay() {
-    const pointerDisplay = document.getElementById('pointer-display');
-    pointerDisplay.style.display = 'none';
+    pointerDisplay.innerText = `${colorString}`;
+    pointerDisplay.style.top = (pointerY + 10) + 'px';
+    pointerDisplay.style.left = (pointerX + 10) + 'px';
 }
 
 function levelsToHex(levels) {
