@@ -89,21 +89,27 @@ function makeColorBox(red, green, blue, shortHex, boxSize) {
         navigator.clipboard.writeText(colorString)
             .then(() => console.log('Color value copied to clipboard:', colorString))
             .catch(err => console.error('Failed to copy color value to clipboard:', err)));
-    // Position the color value display next to the pointer
+    const pointerDisplay = document.getElementById('pointer-display');
+    colorBox.addEventListener('mouseenter',
+        event => pointerDisplayEnter(pointerDisplay, colorString, event.clientX, event.clientY));
     colorBox.addEventListener('mousemove',
-        event => makePointerDisplay(colorString, event.clientX, event.clientY));
+        event => pointerDisplayMove(pointerDisplay, colorString, event.clientX, event.clientY));
     colorBox.addEventListener('mouseout', clearPointerDisplay);
     return colorBox;
 }
 
-function makePointerDisplay(colorString, pointerX, pointerY) {
-    let pointerDisplay = document.getElementById('pointer-display');
+function setPointerDisplay(pointerDisplay, colorString, pointerX, pointerY) {
     pointerDisplay.innerText = `${colorString}`;
     pointerDisplay.style.top = (pointerY + 10) + 'px';
     pointerDisplay.style.left = (pointerX + 10) + 'px';
+}
+function pointerDisplayEnter(pointerDisplay, colorString, pointerX, pointerY) {
+    setPointerDisplay(pointerDisplay, colorString, pointerX, pointerY);
     pointerDisplay.style.display = 'block';
 }
-
+function pointerDisplayMove(pointerDisplay, colorString, pointerX, pointerY) {
+    setPointerDisplay(pointerDisplay, colorString, pointerX, pointerY);
+}
 function clearPointerDisplay() {
     const pointerDisplay = document.getElementById('pointer-display');
     pointerDisplay.style.display = 'none';
