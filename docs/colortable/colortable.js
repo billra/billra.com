@@ -11,22 +11,24 @@ document.getElementById('box-size').addEventListener('input', () =>
 
 // full color background
 document.addEventListener('keydown', event => {
-    const { key } = event;
-    if (key.length === 1 && key.match(/[a-zA-Z ]/)) {
-        event.preventDefault();
-        const pageContents = document.getElementById('page-contents');
-        const pointerDisplay = document.getElementById('pointer-display');
-        // if showing full screen color show normal display
-        if (pageContents.style.display == 'none') {
-            document.body.style.backgroundColor = 'black';
-            pageContents.style.display = 'block';
-            return;
-        }
-        // if hovering over color patch show full screen color
-        if (pointerDisplay.style.display == 'block') {
-            pageContents.style.display = 'none';
-            document.body.style.backgroundColor = pointerDisplay.innerText;
-        }
+    if (event.ctrlKey || event.altKey || event.metaKey ||
+        !event.key.match(/^[\s\S]$/)) { // any single character
+        return;
+    }
+    // we have a normal keypress
+    event.preventDefault();
+    const pageContents = document.getElementById('page-contents');
+    const pointerDisplay = document.getElementById('pointer-display');
+    // if showing full screen color show normal display
+    if (pageContents.style.display == 'none') {
+        document.body.style.backgroundColor = 'black';
+        pageContents.style.display = 'block';
+        return;
+    }
+    // if hovering over color patch show full screen color
+    if (pointerDisplay.style.display == 'block') {
+        pageContents.style.display = 'none';
+        document.body.style.backgroundColor = pointerDisplay.innerText;
     }
 });
 
