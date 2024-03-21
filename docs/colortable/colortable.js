@@ -12,7 +12,7 @@ document.getElementById('box-size').addEventListener('input', () =>
 // full color background
 document.addEventListener('keydown', event => {
     const { key } = event;
-    if (key.length === 1 && key.match(/[a-zA-Z0-9 ]/)) {
+    if (key.length === 1 && key.match(/[a-zA-Z ]/)) {
         event.preventDefault();
         const pageContents = document.getElementById('page-contents');
         const pointerDisplay = document.getElementById('pointer-display');
@@ -118,4 +118,6 @@ function makeLevels(count, roundUp) { // count must be > 1
     return result;
 }
 
+document.getElementById('id-page-title').innerText = document.title;
+document.getElementById('id-version').innerText = 'v' + document.querySelector('meta[name="version"]').content;
 showColorChart(); // initial draw

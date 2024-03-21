@@ -10,6 +10,9 @@ body {
 h1 {
     font-size: 150%;
 }
+#id-version {
+    font-size: 40%;
+}
 .description {
     margin: 8px;
 }
