@@ -17,18 +17,19 @@ document.addEventListener('keydown', event => {
     }
     // we have a normal keypress
     event.preventDefault();
-    const pageContents = document.getElementById('page-contents');
+    const overlay = document.getElementById('overlay');
     const pointerDisplay = document.getElementById('pointer-display');
     // if showing full screen color show normal display
-    if (pageContents.style.display == 'none') {
-        document.body.style.backgroundColor = 'black';
-        pageContents.style.display = 'block';
+    if (overlay.style.display == 'block') {
+        document.body.style.overflow = 'auto';
+        overlay.style.display = 'none';
         return;
     }
     // if hovering over color patch show full screen color
     if (pointerDisplay.style.display == 'block') {
-        pageContents.style.display = 'none';
-        document.body.style.backgroundColor = pointerDisplay.innerText;
+        document.body.style.overflow = 'hidden';
+        overlay.style.backgroundColor = pointerDisplay.innerText;
+        overlay.style.display = 'block';
     }
 });
 

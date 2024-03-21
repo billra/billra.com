@@ -3,39 +3,37 @@
 <head>
     <title>Color Table</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.22">
+    <meta name="version" content="1.23">
     <meta charset="UTF-8">
     <link rel="icon" href="colortable.ico">
     <link rel="stylesheet" href="colortable.css">
     <script defer src="colortable.js"></script>
 </head>
 <body>
-    <div id="page-contents">
-        <h1><span  id="id-page-title"></span> <span id="id-version"></span></h1>
-        <div class="flex-center">
-            <label for="count">Levels per channel: </label>
-            <input type="range" id="count" min="2" max="16" step="1" value="4">
-            <span id="count-value">4</span>
-        </div>
-        <div class="flex-center">
-            <label for="box-size">Box: </label>
-            <input type="range" id="box-size" min="10" max="120" step="1" value="100">
-            <span id="box-size-value">100</span> px
-        </div>
-        <div class="flex-center"> Group by value: <label><input type="radio" name="group" value="R">R</label>
-            <label><input type="radio" name="group" value="G">G</label>
-            <label><input type="radio" name="group" value="B" checked>B</label>
-        </div>
-        <div class="flex-center"> Round: <label><input type="radio" name="round" value="0" checked>down</label>
-            <label><input type="radio" name="round" value="1">up</label>
-        </div>
-        <div class="flex-center">
-            <label><input type="checkbox" id="id-short-hex" checked>Short Hex</label>
-        </div>
-        <div class="description">Click to copy color code to clipboard. Press any key for full window color display.
-        </div>
-        <div id="display"></div>
+    <h1><span id="id-page-title"></span> <span id="id-version"></span></h1>
+    <div class="flex-center">
+        <label for="count">Levels per channel: </label>
+        <input type="range" id="count" min="2" max="16" step="1" value="4">
+        <span id="count-value">4</span>
     </div>
+    <div class="flex-center">
+        <label for="box-size">Box: </label>
+        <input type="range" id="box-size" min="10" max="120" step="1" value="100">
+        <span id="box-size-value">100</span> px
+    </div>
+    <div class="flex-center"> Group by value: <label><input type="radio" name="group" value="R">R</label>
+        <label><input type="radio" name="group" value="G">G</label>
+        <label><input type="radio" name="group" value="B" checked>B</label>
+    </div>
+    <div class="flex-center"> Round: <label><input type="radio" name="round" value="0" checked>down</label>
+        <label><input type="radio" name="round" value="1">up</label>
+    </div>
+    <div class="flex-center">
+        <label><input type="checkbox" id="id-short-hex" checked>Short Hex</label>
+    </div>
+    <div class="description">Click to copy color code to clipboard. Press any key for full window color display. </div>
+    <div id="display"></div>
+    <div id="overlay"></div>
     <div id="pointer-display"></div>
 </body>
 </html>
