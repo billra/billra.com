@@ -15,13 +15,19 @@ document.addEventListener('keydown', event => {
     if (key.length === 1 && key.match(/[a-zA-Z0-9 ]/)) {
         event.preventDefault();
         const pageContents = document.getElementById('page-contents');
-        const pointerDisplay = document.querySelector('.pointer-display');
-        if (pointerDisplay && pointerDisplay.textContent) {
+        const pointerDisplay = document.getElementById('pointer-display');
+        // if showing full screen color
+        if (pageContents.style.display == 'none') {
+            document.body.style.backgroundColor = 'black';
+            pageContents.style.display = 'block';
+             // pointer may not be at original location
+            pointerDisplay.style.display = 'none';
+            return;
+        }
+        // if hovering over color patch
+        if (pointerDisplay.style.display == 'block') {
             pageContents.style.display = 'none';
             document.body.style.backgroundColor = pointerDisplay.innerText;
-        } else {
-            pageContents.style.display = 'block';
-            document.body.style.backgroundColor = 'black';
         }
     }
 });
@@ -91,23 +97,16 @@ function makeColorBox(red, green, blue, shortHex, boxSize) {
 }
 
 function makePointerDisplay(colorString, pointerX, pointerY) {
-    let pointerDisplay = document.querySelector('.pointer-display');
-    if (!pointerDisplay) {
-        pointerDisplay = document.createElement('div');
-        pointerDisplay.className = 'pointer-display';
-        document.body.appendChild(pointerDisplay);
-        pointerDisplay.innerText = `${colorString}`;
-        pointerDisplay.style.position = 'fixed';
-    }
+    let pointerDisplay = document.getElementById('pointer-display');
+    pointerDisplay.innerText = `${colorString}`;
     pointerDisplay.style.top = (pointerY + 10) + 'px';
     pointerDisplay.style.left = (pointerX + 10) + 'px';
+    pointerDisplay.style.display = 'block';
 }
 
 function clearPointerDisplay() {
-    const pointerDisplay = document.querySelector('.pointer-display');
-    if (pointerDisplay) {
-        pointerDisplay.remove();
-    }
+    const pointerDisplay = document.getElementById('pointer-display');
+    pointerDisplay.style.display = 'none';
 }
 
 function levelsToHex(levels) {
