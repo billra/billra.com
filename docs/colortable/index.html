@@ -3,14 +3,14 @@
 <head>
     <title>Color Table</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.24">
+    <meta name="version" content="1.25">
     <meta charset="UTF-8">
     <link rel="icon" href="colortable.ico">
     <link rel="stylesheet" href="colortable.css">
     <script defer src="colortable.js"></script>
 </head>
 <body>
-    <h1><span id="id-page-title"></span> <span id="id-version"></span></h1>
+    <h1><span id="page-title"></span> <span id="version"></span></h1>
     <div class="flex-center">
         <label for="count">Levels per channel: </label>
         <input type="range" id="count" min="2" max="16" step="1" value="4">
@@ -29,7 +29,7 @@
         <label><input type="radio" name="round" value="1">up</label>
     </div>
     <div class="flex-center">
-        <label><input type="checkbox" id="id-short-hex" checked>Short Hex</label>
+        <label><input type="checkbox" id="short-hex" checked>Short Hex</label>
     </div>
     <div class="description">Click to copy color code to clipboard. Press any key for full window color display. </div>
     <div id="display"></div>

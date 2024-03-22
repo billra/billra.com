@@ -49,7 +49,7 @@ function showColorChart() {
     const roundUp = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
     levels = makeLevels(ui.count.value, roundUp);
     const hls = levelsToHex(levels); // hex level strings
-    const shortHex = ui.idShortHex.checked;
+    const shortHex = ui.shortHex.checked;
     const boxSize = ui.boxSize.value;
     ui.pointerDisplay.style.display = 'none';
     ui.display.innerHTML = '';
@@ -122,6 +122,6 @@ function makeLevels(count, roundUp) { // count must be > 1
     return result;
 }
 
-ui.idPageTitle.innerText = document.title;
-ui.idVersion.innerText = 'v' + document.querySelector('meta[name="version"]').content;
+ui.pageTitle.innerText = document.title;
+ui.version.innerText = 'v' + document.querySelector('meta[name="version"]').content;
 showColorChart(); // initial draw
