@@ -1,13 +1,20 @@
+
+const ui = {}; // provide nice syntax for element access
+function kebabToCamel(str) {
+    return str.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase());
+}
+document.querySelectorAll('[id]').forEach(element => {
+    ui[kebabToCamel(element.id)] = document.getElementById(element.id);
+});
+
 document.querySelectorAll('input[type="radio"], input[type="checkbox"], input[type="range"]').forEach(
     input => input.addEventListener('change', showColorChart));
 
 // display count value
-document.getElementById('count').addEventListener('input', () =>
-    document.getElementById('count-value').textContent = document.getElementById('count').value);
+ui.count.addEventListener('input', () => ui.countValue.textContent = ui.count.value);
 
 // display box size value
-document.getElementById('box-size').addEventListener('input', () =>
-    document.getElementById('box-size-value').textContent = document.getElementById('box-size').value);
+ui.boxSize.addEventListener('input', () => ui.boxSizeValue.textContent = ui.boxSize.value);
 
 // full color background
 document.addEventListener('keydown', event => {
@@ -17,19 +24,17 @@ document.addEventListener('keydown', event => {
     }
     // we have a normal keypress
     event.preventDefault();
-    const overlay = document.getElementById('overlay');
-    const pointerDisplay = document.getElementById('pointer-display');
     // if showing full screen color show normal display
-    if (overlay.style.display == 'block') {
+    if (ui.overlay.style.display == 'block') {
         document.body.style.overflow = 'auto';
-        overlay.style.display = 'none';
+        ui.overlay.style.display = 'none';
         return;
     }
     // if hovering over color patch show full screen color
-    if (pointerDisplay.style.display == 'block') {
+    if (ui.pointerDisplay.style.display == 'block') {
         document.body.style.overflow = 'hidden';
-        overlay.style.backgroundColor = pointerDisplay.innerText;
-        overlay.style.display = 'block';
+        ui.overlay.style.backgroundColor = ui.pointerDisplay.innerText;
+        ui.overlay.style.display = 'block';
     }
 });
 
@@ -40,17 +45,14 @@ const orders = { // z = iterates slowest, i.e. grouping
 };
 
 function showColorChart() {
-    const count = document.getElementById('count').value;
     const group = document.querySelector('input[type=radio][name=group]:checked').value;
     const roundUp = parseInt(document.querySelector('input[type=radio][name=round]:checked').value, 10);
-    levels = makeLevels(count, roundUp);
+    levels = makeLevels(ui.count.value, roundUp);
     const hls = levelsToHex(levels); // hex level strings
-    const shortHex = document.getElementById('id-short-hex').checked;
-    const boxSize = document.getElementById('box-size').value;
-    const display = document.getElementById('display');
-    const pointerDisplay = document.getElementById('pointer-display');
-    pointerDisplay.style.display = 'none';
-    display.innerHTML = '';
+    const shortHex = ui.idShortHex.checked;
+    const boxSize = ui.boxSize.value;
+    ui.pointerDisplay.style.display = 'none';
+    ui.display.innerHTML = '';
     const zAxis = document.createElement('div');
     zAxis.className = 'z-axis';
     for (let z of hls) {
@@ -69,7 +71,7 @@ function showColorChart() {
         }
         zAxis.prepend(yAxis);
     }
-    display.append(zAxis);
+    ui.display.append(zAxis);
 }
 
 function makeColorBox(red, green, blue, shortHex, boxSize) {
@@ -87,23 +89,22 @@ function makeColorBox(red, green, blue, shortHex, boxSize) {
         navigator.clipboard.writeText(colorString)
             .then(() => console.log('Color value copied to clipboard:', colorString))
             .catch(err => console.error('Failed to copy color value to clipboard:', err)));
-    const pointerDisplay = document.getElementById('pointer-display');
     colorBox.addEventListener('mouseenter',
-        event => pointerDisplayEnter(pointerDisplay, colorString, event.clientX, event.clientY));
+        event => pointerDisplayEnter(colorString, event.clientX, event.clientY));
     colorBox.addEventListener('mousemove',
-        event => pointerDisplayMove(pointerDisplay, colorString, event.clientX, event.clientY));
-    colorBox.addEventListener('mouseout', () => pointerDisplay.style.display = 'none');
+        event => pointerDisplayMove(colorString, event.clientX, event.clientY));
+    colorBox.addEventListener('mouseout', () => ui.pointerDisplay.style.display = 'none');
     return colorBox;
 }
 
-function pointerDisplayEnter(pointerDisplay, colorString, pointerX, pointerY) {
-    pointerDisplayMove(pointerDisplay, colorString, pointerX, pointerY);
-    pointerDisplay.style.display = 'block';
+function pointerDisplayEnter(colorString, pointerX, pointerY) {
+    pointerDisplayMove(colorString, pointerX, pointerY);
+    ui.pointerDisplay.style.display = 'block';
 }
-function pointerDisplayMove(pointerDisplay, colorString, pointerX, pointerY) {
-    pointerDisplay.innerText = `${colorString}`;
-    pointerDisplay.style.top = (pointerY + 10) + 'px';
-    pointerDisplay.style.left = (pointerX + 10) + 'px';
+function pointerDisplayMove(colorString, pointerX, pointerY) {
+    ui.pointerDisplay.innerText = `${colorString}`;
+    ui.pointerDisplay.style.top = (pointerY + 10) + 'px';
+    ui.pointerDisplay.style.left = (pointerX + 10) + 'px';
 }
 
 function levelsToHex(levels) {
@@ -121,6 +122,6 @@ function makeLevels(count, roundUp) { // count must be > 1
     return result;
 }
 
-document.getElementById('id-page-title').innerText = document.title;
-document.getElementById('id-version').innerText = 'v' + document.querySelector('meta[name="version"]').content;
+ui.idPageTitle.innerText = document.title;
+ui.idVersion.innerText = 'v' + document.querySelector('meta[name="version"]').content;
 showColorChart(); // initial draw
