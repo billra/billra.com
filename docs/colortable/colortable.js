@@ -1,4 +1,3 @@
-
 const ui = {}; // provide nice syntax for element access
 function kebabToCamel(str) {
     return str.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase());
@@ -10,10 +9,8 @@ document.querySelectorAll('[id]').forEach(element => {
 document.querySelectorAll('input[type="radio"], input[type="checkbox"], input[type="range"]').forEach(
     input => input.addEventListener('change', showColorChart));
 
-// display count value
+// display slider values
 ui.count.addEventListener('input', () => ui.countValue.textContent = ui.count.value);
-
-// display box size value
 ui.boxSize.addEventListener('input', () => ui.boxSizeValue.textContent = ui.boxSize.value);
 
 // full color background
@@ -112,7 +109,6 @@ function levelsToHex(levels) {
     // e.g. [0, 127, 255] -> ['00', '7F', 'FF']
     return levels.map(num => num.toString(16).toUpperCase().padStart(2, '0'));
 }
-
 function makeLevels(count, roundUp) { // count must be > 1
     let step = 255 / (count - 1);
     let result = [];
