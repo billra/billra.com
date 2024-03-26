@@ -3,10 +3,11 @@ document.getElementById('id-version').innerText = document.querySelector('meta[n
 // persist editor contents across F5 refresh
 const editDiv = document.getElementById('id-edit');
 const contentsKey = 'contents';
-window.addEventListener('beforeunload', () => {
+function saveEditorContents() {
     localStorage.setItem(contentsKey, editDiv.innerHTML);
     console.log('editor state saved');
-});
+}
+window.addEventListener('beforeunload', saveEditorContents);
 const savedState = localStorage.getItem(contentsKey);
 if (savedState) {
     editDiv.innerHTML = savedState;
@@ -55,17 +56,30 @@ btnDiv.addEventListener('keydown', event => {
         // btnDiv will never have focus when helpDiv is displayed
     }
 });
+let timer;
 editDiv.addEventListener('keydown', event => {
     // show contented specific help for F1
     if (event.key === 'F1') {
         event.preventDefault();
         swapView();
+        return;
     }
     // wrap focus, avoiding browser items
     if (event.key === 'Tab' && event.shiftKey) {
         event.preventDefault();
         btnDiv.focus();
+        return;
     }
+    // assume we typed a character, editor is dirty
+    if(document.title.slice(-1)!='*'){
+        document.title += ' *';
+    }
+    clearTimeout(timer); // reset timer on each keydown
+    timer = setTimeout(() => {
+        saveEditorContents();
+        document.title = document.title.slice(0,-2);
+    }, 5000);
+
 });
 // preserve editor cursor and selection
 editDiv.focus(); // focus starts on editor
