@@ -71,13 +71,13 @@ editDiv.addEventListener('keydown', event => {
         return;
     }
     // assume we typed a character, editor is dirty
-    if(document.title.slice(-1)!='*'){
+    if (document.title.slice(-1) != '*') {
         document.title += ' *';
     }
     clearTimeout(timer); // reset timer on each keydown
     timer = setTimeout(() => {
         saveEditorContents();
-        document.title = document.title.slice(0,-2);
+        document.title = document.title.slice(0, -2);
     }, 5000);
 
 });
