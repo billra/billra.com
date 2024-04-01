@@ -19,14 +19,12 @@ const helpDiv = document.getElementById('id-help');
 const btnDiv = document.getElementById('id-button');
 function swapView() {
     // swap help and editor display
-    if (editDiv.style.zIndex === '0') {
-        editDiv.style.zIndex = '1';
+    if (helpDiv.style.zIndex === '0') {
+        helpDiv.style.zIndex = '2';
+        helpDiv.focus();
+    } else {
         helpDiv.style.zIndex = '0';
         editDiv.focus();
-    } else {
-        editDiv.style.zIndex = '0';
-        helpDiv.style.zIndex = '1';
-        helpDiv.focus();
     }
 }
 helpDiv.addEventListener('keydown', event => {
@@ -52,7 +50,7 @@ btnDiv.addEventListener('mousedown', event => {
 btnDiv.addEventListener('keydown', event => {
     if (event.key === 'Tab') {
         event.preventDefault();
-        (editDiv.style.zIndex == '1' ? editDiv : helpDiv).focus();
+        (helpDiv.style.zIndex == '0' ? editDiv : helpDiv).focus();
         return;
     }
     if (event.key.match(/^[\s\S]$/)) { // any single character

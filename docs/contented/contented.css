@@ -38,11 +38,11 @@ h2 {
     background-color: black;
 }
 #id-help {
-    z-index: 0;
+    z-index: 0; /* toggles between 0 and 2 */
     background-color: #000030;
 }
 #id-button {
-    z-index: 2; /* always on top */
+    z-index: 3; /* always on top */
     position: fixed;
     top: 4px;
     right: 20px;
