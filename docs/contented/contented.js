@@ -15,24 +15,30 @@ if (savedState) {
 }
 // help section
 const helpDiv = document.getElementById('id-help');
-helpDiv.style.display = 'none'; // starts not displayed
 // button handling
 const btnDiv = document.getElementById('id-button');
 function swapView() {
     // swap help and editor display
-    if (editDiv.style.display === 'none') {
-        helpDiv.style.display = 'none';
-        editDiv.style.display = 'block';
+    if (editDiv.style.zIndex === '0') {
+        editDiv.style.zIndex = '1';
+        helpDiv.style.zIndex = '0';
         editDiv.focus();
     } else {
-        editDiv.style.display = 'none';
-        helpDiv.style.display = 'block';
+        editDiv.style.zIndex = '0';
+        helpDiv.style.zIndex = '1';
         helpDiv.focus();
     }
 }
 helpDiv.addEventListener('keydown', event => {
-    event.preventDefault();
-    swapView(); // any key: return to editor
+    if (event.key === 'Tab') {
+        event.preventDefault();
+        btnDiv.focus();
+        return;
+    }
+    if (event.key.match(/^[\s\S]$/)) { // any single character
+        event.preventDefault();
+        swapView(); // return to editor
+    }
 });
 btnDiv.addEventListener('click', event => {
     event.preventDefault();
@@ -44,16 +50,14 @@ btnDiv.addEventListener('mousedown', event => {
     event.preventDefault();
 });
 btnDiv.addEventListener('keydown', event => {
-    // enter and space swaps between help and editor
-    if (event.key === 'Enter' || event.key === ' ') {
+    if (event.key === 'Tab') {
+        event.preventDefault();
+        (editDiv.style.zIndex == '1' ? editDiv : helpDiv).focus();
+        return;
+    }
+    if (event.key.match(/^[\s\S]$/)) { // any single character
         event.preventDefault();
         swapView();
-    }
-    // wrap focus, avoiding browser items
-    if (event.key === 'Tab' && !event.shiftKey) {
-        event.preventDefault();
-        editDiv.focus(); // only handle editDiv
-        // btnDiv will never have focus when helpDiv is displayed
     }
 });
 let timer;
@@ -64,8 +68,7 @@ editDiv.addEventListener('keydown', event => {
         swapView();
         return;
     }
-    // wrap focus, avoiding browser items
-    if (event.key === 'Tab' && event.shiftKey) {
+    if (event.key === 'Tab') {
         event.preventDefault();
         btnDiv.focus();
         return;
