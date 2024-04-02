@@ -1,15 +1,13 @@
 # Contented
 
-Web based text editor. Name derived from a contenteditable div, which this editor is based on.
+Web based text editor. Name derived from a contenteditable div, upon which this editor is based.
 
 ## Task List
 
 - empty content hint
 - settings: spell check, start in editor
-- move to billra for publishing
 - use 'light-dark(white, black)' css syntax and settings dialog to select color scheme
 - browser tab text gets filename
-- experiment with page color and editor margin 2px
 
 ## Quick Start
 
