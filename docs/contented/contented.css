@@ -35,13 +35,13 @@ h2 {
     outline: none;
     border-color: #888;
 }
+#id-help {
+    /* z-index: 0; set in JavaScript toggles between 0 and 2 */
+    background-color: #003;
+}
 #id-edit {
     z-index: 1;
     background-color: black;
-}
-#id-help {
-    z-index: 0; /* toggles between 0 and 2 */
-    background-color: #003;
 }
 #id-button {
     z-index: 3; /* always on top */

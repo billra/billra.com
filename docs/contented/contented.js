@@ -15,6 +15,7 @@ if (savedState) {
 }
 // help section
 const helpDiv = document.getElementById('id-help');
+helpDiv.style.zIndex = '0'; // so we don't need getComputedStyle
 // button handling
 const btnDiv = document.getElementById('id-button');
 function swapView() {
