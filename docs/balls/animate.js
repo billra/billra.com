@@ -128,6 +128,24 @@ function doCollisions(balls) {
     }
 }
 
+window.addEventListener("click", event => {
+    const rect = gAnimation.canvas.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const clickY = event.clientY - rect.top;
+
+    for (let ball of gAnimation.balls) {
+        const velocity = Math.sqrt(ball.vx ** 2 + ball.vy ** 2);
+        // vector from the ball to the click point
+        const dx = clickX - ball.x;
+        const dy = clickY - ball.y;
+        // angle of the vector
+        const angle = Math.atan2(dy, dx);
+        // ball aimed at click point, no change in velocity
+        ball.vx = Math.cos(angle) * velocity;
+        ball.vy = Math.sin(angle) * velocity;
+    }
+});
+
 class Animation {
     constructor(ballCount, frameCount) {
         this.drawCorners = false;
