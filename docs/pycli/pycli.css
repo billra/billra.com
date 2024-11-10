@@ -1,0 +1,20 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #111;
+}
+#code {
+    position: fixed;
+    inset: 10px;
+    padding: 10px;
+    background: #000;
+    color: #fff;
+    font: 120% monospace;
+    border: 2px solid #444;
+    border-radius: 10px;
+    overflow: auto;
+}
+#code:focus {
+    outline: none;
+}

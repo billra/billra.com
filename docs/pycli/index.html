@@ -3,31 +3,12 @@
 <head>
     <title>Python REPL</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.0">
+    <meta name="version" content="1.1">
     <meta charset="UTF-8">
     <link rel="icon" href="pycli.ico">
+    <link rel="stylesheet" href="pycli.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.13/brython.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.13/brython_stdlib.js"></script>
-    <style>
-        body {
-            background-color: #111;
-            margin: 10px;
-        }
-        #code {
-            background-color: #000;
-            color: #fff;
-            font-family: monospace;
-            font-size: 120%;
-            min-height: 300px;
-            height: auto;
-            overflow: auto;
-            padding: 10px;
-            border-radius: 10px;
-        }
-        #code:focus {
-            outline: none;
-        }
-    </style>
 </head>
 <body onload="brython()">
 <div id="code" contenteditable spellcheck="false"></div>
