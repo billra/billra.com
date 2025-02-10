@@ -43,6 +43,9 @@ class Pendulum {
         this.pivotY = this.canvas.height / 2;
         this.dragging = false;
 
+        // don't attempt to calculate positions for fps < 30, just slow simulation down
+        this.maxDeltaTime=1/30;
+
         window.addEventListener('resize', () => this.resizeCanvas());
     }
 
@@ -179,7 +182,7 @@ function init() {
     function animate() {
         requestAnimationFrame(animate);
         const now = performance.now();
-        const deltaTime = (now - pendulum.lastTime) / 1000;
+        const deltaTime = Math.min(pendulum.maxDeltaTime, (now - pendulum.lastTime) / 1000);
         pendulum.lastTime = now;
 
         pendulum.update(deltaTime);
