@@ -220,26 +220,24 @@ class Animation {
     }
 }
 
+const keyActions = {
+    'k': () => { gAnimation.drawCorners = true; },
+    'w': () => { gAnimation.wrapEdge = !gAnimation.wrapEdge; },
+    'e': () => { gAnimation.eraseCanvas = !gAnimation.eraseCanvas; },
+    ' ': () => { gAnimation.toggleAnimation(); },
+    'F1': () => { showInfo(true); },
+    'Escape': () => { showInfo(false); }
+};
+
 window.addEventListener("keydown", event => {
-    // console.log(event.key);
-    if (event.key === 'k') { // draw corner markers (debugging canvas size)
-        gAnimation.drawCorners = true;
-    } else if (event.key === 'w') { // balls bounce or wrap around edge
-        gAnimation.wrapEdge = !gAnimation.wrapEdge;
-    } else if (event.key === 'e') { // erase canvas or leave ball trails
-        gAnimation.eraseCanvas = !gAnimation.eraseCanvas;
-    } else if (event.key === ' ') { // pause/resume animation
-        gAnimation.toggleAnimation();
+    const keyAction = keyActions[event.key];
+    if (keyAction) {
+        event.preventDefault();
+        keyAction();
     } else if (gEnterNumber.complete(event.key)) { // change number of balls
         gAnimation.stopAnimation();
         gAnimation = new Animation(gEnterNumber.value, gFPS.frameCount);
         gEnterNumber = new EnterNumber();
-    } else if (event.key === 'F1') { // show documentation
-        event.preventDefault();
-        showInfo(true);
-    } else if (event.key === 'Escape') { // hide modal on escape key press
-        event.preventDefault();
-        showInfo(false);
     }
 });
 
