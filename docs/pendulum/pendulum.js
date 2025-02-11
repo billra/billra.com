@@ -1,12 +1,13 @@
 class FPS {
     constructor() {
         this.fpsDisplay = document.getElementById("fps-display");
-        this.intervalId;
-        this.frameCount = 0;
-        this.countFrames;
+        this.running = false;
     }
     start() {
+        if (this.running) { return; }
+        this.running = true;
         this.startTime = performance.now();
+        this.frameCount = 0;
         // update FPS display every second
         this.intervalId = setInterval(() => {
             const currentTime = performance.now();
@@ -16,21 +17,18 @@ class FPS {
             this.startTime = performance.now();
             this.fpsDisplay.textContent = `${fps.toFixed(2)}`;
         }, 1000);
-        this.frameCount = 0;
-        this.countFrames = true;
-        requestAnimationFrame(() => this.animate()); // arrow to maintain context
+        this.frameRequest = requestAnimationFrame(() => this.animate()); // arrow to maintain context
     }
     stop() {
+        if (!this.running) { return; }
+        this.running = false;
         clearInterval(this.intervalId);
-        this.intervalId = 0;
         this.fpsDisplay.textContent = '';
-        this.countFrames = false;
+        cancelAnimationFrame(this.frameRequest);
     }
     animate() {
         this.frameCount++;
-        if (this.countFrames) {
-            requestAnimationFrame(() => this.animate()); // arrow to maintain context
-        }
+        this.frameRequest = requestAnimationFrame(() => this.animate()); // arrow to maintain context
     }
 }
 
@@ -190,7 +188,7 @@ class Pendulum {
 
 // Main application.
 let pendulum;
-let fps = new FPS();
+const fps = new FPS();
 
 function init() {
     pendulum = new Pendulum();
