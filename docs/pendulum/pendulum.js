@@ -58,9 +58,12 @@ class Pendulum {
         this.dragging = false;
 
         // don't attempt to calculate positions for fps < 30, just slow simulation down
-        this.maxDeltaTime=1/30;
+        this.maxDeltaTime = 1 / 30;
 
         window.addEventListener('resize', () => this.resizeCanvas());
+
+        this.lastTime = performance.now();
+        this.animate();
     }
 
     resizeCanvas() {
@@ -184,39 +187,29 @@ class Pendulum {
     endDrag() {
         this.dragging = false;
     }
+
+    animate() {
+        const now = performance.now();
+        const deltaTime = Math.min(this.maxDeltaTime, (now - this.lastTime) / 1000);
+        this.lastTime = now;
+        this.update(deltaTime);
+        this.draw();
+        requestAnimationFrame(() => this.animate()); // arrow to maintain context
+    }
 }
 
 // Main application.
-let pendulum;
-const fps = new FPS();
-
-function init() {
-    pendulum = new Pendulum();
-
-    function animate() {
-        requestAnimationFrame(animate);
-        const now = performance.now();
-        const deltaTime = Math.min(pendulum.maxDeltaTime, (now - pendulum.lastTime) / 1000);
-        pendulum.lastTime = now;
-
-        pendulum.update(deltaTime);
-        pendulum.draw();
-    }
-
-    pendulum.lastTime = performance.now();
-    animate();
-}
 
 // Event handlers.
 document.addEventListener('mousedown', e => {
-    pendulum.tryStartDrag(e.clientX, e.clientY);
+    gPendulum.tryStartDrag(e.clientX, e.clientY);
 });
 
-document.addEventListener('mouseup', () => pendulum.endDrag());
+document.addEventListener('mouseup', () => gPendulum.endDrag());
 
 document.addEventListener('mousemove', e => {
-    if (pendulum.dragging) {
-        pendulum.updateDrag(e.clientX, e.clientY);
+    if (gPendulum.dragging) {
+        gPendulum.updateDrag(e.clientX, e.clientY);
     }
 });
 
@@ -224,12 +217,18 @@ document.addEventListener('keydown', e => {
     if (e.key === 'F1') {
         e.preventDefault();
         document.getElementById('popup').style.display = 'block';
-        fps.start();
+        gFPS.start();
     }
     if (e.key === 'Escape') {
         document.getElementById('popup').style.display = 'none';
-        fps.stop();
+        gFPS.stop();
     }
 });
 
-window.addEventListener('load', init);
+let gFPS;
+let gPendulum;
+
+window.addEventListener("load", () => {
+    gFPS = new FPS();
+    gPendulum = new Pendulum();
+});
