@@ -23,25 +23,34 @@ class EnterNumber {
 class FPS {
     constructor() {
         this.fpsDisplay = document.getElementById("fps-display");
-        this.intervalId = 0;
-        this.frameCount = { value: 0 }; // allow frameCount.value pass by reference
+        this.running = false;
     }
     start() {
-        this.frameCount.value = 0;
+        if (this.running) { return; }
+        this.running = true;
         this.startTime = performance.now();
+        this.frameCount = 0;
+        // update FPS display every second
         this.intervalId = setInterval(() => {
             const currentTime = performance.now();
             const elapsedTime = currentTime - this.startTime;
-            const fps = 1000 * this.frameCount.value / elapsedTime;
-            this.frameCount.value = 0;
+            const fps = 1000 * this.frameCount / elapsedTime;
+            this.frameCount = 0;
             this.startTime = performance.now();
             this.fpsDisplay.textContent = `${fps.toFixed(2)}`;
         }, 1000);
+        this.frameRequest = requestAnimationFrame(() => this.animate()); // arrow to maintain context
     }
     stop() {
+        if (!this.running) { return; }
+        this.running = false;
         clearInterval(this.intervalId);
-        this.intervalId = 0;
         this.fpsDisplay.textContent = '';
+        cancelAnimationFrame(this.frameRequest);
+    }
+    animate() {
+        this.frameCount++;
+        this.frameRequest = requestAnimationFrame(() => this.animate()); // arrow to maintain context
     }
 }
 
@@ -147,14 +156,13 @@ window.addEventListener("click", event => {
 });
 
 class Animation {
-    constructor(ballCount, frameCount) {
+    constructor(ballCount) {
         this.drawCorners = false;
         this.wrapEdge = false; // wrap or bounce
         this.eraseCanvas = true;
         this.canvas = document.getElementById("my_canvas");
         this.ctx = this.canvas.getContext("2d");
         this.setupCanvasAndContext();
-        this.frameCount = frameCount; // external object to update
         this.balls = Array.from({ length: ballCount }, () => new Ball(this.canvas));
         this.animate = this.animate.bind(this);
         this.startAnimation();
@@ -197,7 +205,6 @@ class Animation {
     }
 
     animate() {
-        this.frameCount.value++;
         if (this.eraseCanvas) {
             // take into account the original translate
             this.ctx.clearRect(-0.5, -0.5, this.canvas.width, this.canvas.height);
@@ -225,8 +232,14 @@ const keyActions = {
     'w': () => { gAnimation.wrapEdge = !gAnimation.wrapEdge; },
     'e': () => { gAnimation.eraseCanvas = !gAnimation.eraseCanvas; },
     ' ': () => { gAnimation.toggleAnimation(); },
-    'F1': () => { showInfo(true); },
-    'Escape': () => { showInfo(false); }
+    'F1': () => {
+        document.getElementById('popup').style.display = 'block';
+        gFPS.start();
+     },
+    'Escape': () => {
+        document.getElementById('popup').style.display = 'none';
+        gFPS.stop();
+     }
 };
 
 window.addEventListener("keydown", event => {
@@ -236,26 +249,10 @@ window.addEventListener("keydown", event => {
         keyAction();
     } else if (gEnterNumber.complete(event.key)) { // change number of balls
         gAnimation.stopAnimation();
-        gAnimation = new Animation(gEnterNumber.value, gFPS.frameCount);
+        gAnimation = new Animation(gEnterNumber.value);
         gEnterNumber = new EnterNumber();
     }
 });
-
-function showInfo(flip) {
-    const popup = document.getElementById("popup");
-    const from = getComputedStyle(popup).display;
-    const to = flip ? (from === "none" ? "block" : "none") : "none";
-    if (from === to) {
-        return;
-    }
-    if (to === 'none') {
-        popup.style.display = "none";
-        gFPS.stop();
-        return;
-    }
-    popup.style.display = "block";
-    gFPS.start();
-}
 
 window.addEventListener("resize", () => {
     gAnimation.setupCanvasAndContext();
@@ -263,7 +260,7 @@ window.addEventListener("resize", () => {
 
 window.addEventListener("load", () => {
     gFPS = new FPS();
-    gAnimation = new Animation(120, gFPS.frameCount);
+    gAnimation = new Animation(120);
     gEnterNumber = new EnterNumber();
 });
 
