@@ -1,19 +1,35 @@
 class FPS {
     constructor() {
         this.fpsDisplay = document.getElementById("fps-display");
-        this.lastFrame = performance.now();
+        this.intervalId;
         this.frameCount = 0;
+        this.countFrames;
     }
-
-    update() {
-        const now = performance.now();
-        this.frameCount++;
-
-        if (now - this.lastFrame >= 1000) {
-            const fps = this.frameCount * 1000 / (now - this.lastFrame);
-            this.fpsDisplay.textContent = fps.toFixed(1);
+    start() {
+        this.startTime = performance.now();
+        // update FPS display every second
+        this.intervalId = setInterval(() => {
+            const currentTime = performance.now();
+            const elapsedTime = currentTime - this.startTime;
+            const fps = 1000 * this.frameCount / elapsedTime;
             this.frameCount = 0;
-            this.lastFrame = now;
+            this.startTime = performance.now();
+            this.fpsDisplay.textContent = `${fps.toFixed(2)}`;
+        }, 1000);
+        this.frameCount = 0;
+        this.countFrames = true;
+        requestAnimationFrame(() => this.animate()); // arrow to maintain context
+    }
+    stop() {
+        clearInterval(this.intervalId);
+        this.intervalId = 0;
+        this.fpsDisplay.textContent = '';
+        this.countFrames = false;
+    }
+    animate() {
+        this.frameCount++;
+        if (this.countFrames) {
+            requestAnimationFrame(() => this.animate()); // arrow to maintain context
         }
     }
 }
@@ -187,7 +203,6 @@ function init() {
 
         pendulum.update(deltaTime);
         pendulum.draw();
-        fps.update();
     }
 
     pendulum.lastTime = performance.now();
@@ -210,11 +225,12 @@ document.addEventListener('mousemove', e => {
 document.addEventListener('keydown', e => {
     if (e.key === 'F1') {
         e.preventDefault();
-        document.getElementById('popup').style.display =
-            document.getElementById('popup').style.display === 'none' ? 'block' : 'none';
+        document.getElementById('popup').style.display = 'block';
+        fps.start();
     }
     if (e.key === 'Escape') {
         document.getElementById('popup').style.display = 'none';
+        fps.stop();
     }
 });
 
