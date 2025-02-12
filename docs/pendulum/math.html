@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Double Pendulum Calculation</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body);"></script>
+    <style>
+        body {
+            font-family: Verdana, Arial, sans-serif;
+        }
+        h1, h2, h3 {
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <h1>Double Pendulum Calculation</h1>
+    <p>
+        The double pendulum is a classical system known for its chaotic
+        dynamics. Two mathematical tools allow us to model and simulate its
+        motion:
+    </p>
+    <ul>
+        <li><strong>Lagrangian Mechanics</strong> - a reformulation of classical mechanics based on energy.</li>
+        <li><strong>Runge-Kutta 4 (RK4) Integration</strong> - a numerical method to solve differential equations.</li>
+    </ul>
+
+    <h2>Lagrangian Mechanics</h2>
+    <p>
+        <strong>Lagrangian mechanics</strong> was developed in the 18th century
+        by Joseph-Louis Lagrange. Rather than focusing on forces (as in Newton's
+        laws), it concentrates on energy. The central quantity is the
+        <em>Lagrangian</em>, \( L \), defined
+    </p>
+    <p>
+        \[
+            L = T - V,
+        \]
+    </p>
+    <p>
+        where \( T \) is the kinetic energy and \( V \) is the potential energy of the system.
+    </p>
+    <p>
+        The path taken by the system between two points in time is such that the
+        <em>action</em> \( S \) is stationary (typically a minimum):
+
+        \[
+            S = \int_{t_1}^{t_2} L\, dt.
+        \]
+        Requiring that small variations in the path do not change \( S \) leads to the Euler-Lagrange equations:
+        \[
+            \frac{d}{dt}\left(\frac{\partial L}{\partial \dot{q}_i}\right) - \frac{\partial L}{\partial q_i} = 0,
+        \]
+
+        where \( q_i \) are the generalized coordinates (for a double pendulum,
+        these are the angles \( \theta_1 \) and \( \theta_2 \)), and \(
+        \dot{q}_i \) their time derivatives.
+    </p>
+    <p>
+        This approach captures the dynamics of the system and leads to the
+        derivation of the coupled differential equations that describe the
+        motion of each pendulum.
+    </p>
+
+    <h2>Runge-Kutta 4 (RK4) Integration</h2>
+    <p>
+        The differential equations obtained via the Lagrangian method for a
+        double pendulum are nonlinear and generally lack closed-form
+        solutions. To simulate the system, we use numerical integration.
+        One of the most popular methods is the fourth-order Runge-Kutta (RK4)
+        integration.
+    </p>
+    <p>
+        Given a state vector \( \mathbf{y}(t) \) and its time derivative \(
+        f(\mathbf{y}(t)) \), RK4 approximates the state after a small time step
+        \( \Delta t \) by computing intermediate slopes:
+
+        \[
+        \begin{aligned}
+            k_1 &= f(\mathbf{y}(t)), \\\
+            k_2 &= f\Big(\mathbf{y}(t) + \frac{\Delta t}{2} \, k_1\Big), \\\
+            k_3 &= f\Big(\mathbf{y}(t) + \frac{\Delta t}{2} \, k_2\Big), \\\
+            k_4 &= f\Big(\mathbf{y}(t) + \Delta t \; k_3\Big).
+        \end{aligned}
+        \]
+    </p>
+    <p>
+        The new state is then given by:
+        \[
+            \mathbf{y}(t + \Delta t) = \mathbf{y}(t) + \frac{\Delta t}{6} \left( k_1 + 2k_2 + 2k_3 + k_4 \right).
+        \]
+    </p>
+    <p>
+        RK4 is widely used because it strikes an excellent balance between
+        computational efficiency and accuracy, particularly in systems with
+        sensitive dynamics like the double pendulum.
+    </p>
+
+    <h2>Theory to Simulation</h2>
+    <p>
+        In a simulation, the state of the double pendulum is represented by:
+        \[
+            \mathbf{y} = \begin{bmatrix} \theta_1 \\\ \theta_2 \\\ \omega_1 \\\ \omega_2 \end{bmatrix},
+        \]
+
+        where \( \theta_1 \) and \( \theta_2 \) are the angles and \( \omega_1,
+        \omega_2 \) their angular velocities. The time evolution of this state
+        is computed using the RK4 method.
+    </p>
+    <p>
+        Damping (to simulate energy loss due to friction or air resistance) is
+        included. This is implemented by multiplying the angular velocities by a
+        damping factor after each integration step.
+    </p>
+</body>
+</html>
