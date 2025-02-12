@@ -65,17 +65,27 @@ class Pendulum {
         document.addEventListener('mousedown', e => {
             this.beginDrag(e.clientX, e.clientY);
         });
-        document.addEventListener('touchstart', e => { // mobile
-            this.beginDrag(e.clientX, e.clientY);
-        });
         document.addEventListener('mousemove', e => {
             if (this.dragging) {
                 this.updateDrag(e.clientX, e.clientY);
             }
         });
         document.addEventListener('mouseup', () => this.endDrag());
-        document.addEventListener('touchend', () => this.endDrag()); // mobile
         window.addEventListener('resize', () => this.resizeCanvas());
+
+        // touch ui events
+        document.addEventListener('touchstart', e => {
+            this.beginDrag(e.clientX, e.clientY);
+        });
+        element.addEventListener('touchmove', function (event) {
+            if (!this.dragging) {
+                return;
+            }
+            event.preventDefault(); // avoid scrolling when dragging
+            const touch = event.touches[0]; // Get the first touch point
+            this.updateDrag(touch.clientX, touch.clientY);
+        });
+        document.addEventListener('touchend', () => this.endDrag());
     }
 
     derivatives(state) {
