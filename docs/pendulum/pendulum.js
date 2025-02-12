@@ -44,8 +44,8 @@ class Pendulum {
         this.damping = 0.9999;
 
         // Initial state [θ₁, θ₂, ω₁, ω₂]. With equilibrium at π.
-        this.theta1 = Math.PI;
-        this.theta2 = Math.PI;
+        this.theta1 = Math.PI - 0.2; // Small offsets so there is
+        this.theta2 = Math.PI + 0.4; // some movement at start.
         this.omega1 = 0;
         this.omega2 = 0;
 
@@ -64,7 +64,7 @@ class Pendulum {
         this.animate();
 
         document.addEventListener('mousedown', e => {
-            this.tryStartDrag(e.clientX, e.clientY);
+            this.beginDrag(e.clientX, e.clientY);
         });
         document.addEventListener('mousemove', e => {
             if (this.dragging) {
@@ -157,7 +157,7 @@ class Pendulum {
     }
 
     // When the user presses the mouse, start dragging regardless of click position
-    tryStartDrag(x, y) {
+    beginDrag(x, y) {
         this.dragging = true;
         // Immediately update the state so the end follows the cursor
         this.updateDrag(x, y);
@@ -205,11 +205,11 @@ const keyActions = {
     'F1': () => {
         document.getElementById('popup').style.display = 'block';
         gFPS.start();
-     },
+    },
     'Escape': () => {
         document.getElementById('popup').style.display = 'none';
         gFPS.stop();
-     }
+    }
 };
 
 window.addEventListener("keydown", event => {
