@@ -156,18 +156,11 @@ class Pendulum {
         this.ctx.fill();
     }
 
-    // When the user presses the mouse, check if the click is near the second mass.
+    // When the user presses the mouse, start dragging regardless of click position
     tryStartDrag(x, y) {
-        const x1 = this.pivotX + this.l1 * this.scale * Math.sin(this.theta1);
-        const y1 = this.pivotY - this.l1 * this.scale * Math.cos(this.theta1);
-        const x2 = x1 + this.l2 * this.scale * Math.sin(this.theta2);
-        const y2 = y1 - this.l2 * this.scale * Math.cos(this.theta2);
-
-        if (Math.hypot(x - x2, y - y2) < 20) {
-            this.dragging = true;
-            // Immediately update the state so the end follows the cursor.
-            this.updateDrag(x, y);
-        }
+        this.dragging = true;
+        // Immediately update the state so the end follows the cursor
+        this.updateDrag(x, y);
     }
 
     // Inverse kinematics to set the angles so that the pendulum’s end reaches the mouse.
