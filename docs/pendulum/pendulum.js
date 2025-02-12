@@ -40,7 +40,7 @@ class Pendulum {
         this.m2 = 2;       // kg
         this.l1 = 5;       // meters
         this.l2 = 5;       // meters
-        this.scale = 30;   // Will be recalculated in resizeCanvas().
+        this.scale;        // calculated in resizeCanvas()
         this.damping = 0.9999;
 
         // Initial state [θ₁, θ₂, ω₁, ω₂]. With equilibrium at π.
@@ -49,20 +49,19 @@ class Pendulum {
         this.omega1 = 0;
         this.omega2 = 0;
 
-        this.canvas = document.getElementById('canvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.resizeCanvas();
-        // Center the pivot both horizontally and vertically.
-        this.pivotX = this.canvas.width / 2;
-        this.pivotY = this.canvas.height / 2;
-        this.dragging = false;
-
         // don't attempt to calculate positions for fps < 30, just slow simulation down
         this.maxDeltaTime = 1 / 30;
 
+        this.canvas = document.getElementById('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.resizeCanvas();
+        this.dragging = false;
+
+        // start animation
         this.lastTime = performance.now();
         this.animate();
 
+        // ui events
         document.addEventListener('mousedown', e => {
             this.beginDrag(e.clientX, e.clientY);
         });
@@ -72,18 +71,7 @@ class Pendulum {
             }
         });
         document.addEventListener('mouseup', () => this.endDrag());
-
         window.addEventListener('resize', () => this.resizeCanvas());
-    }
-
-    resizeCanvas() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-        this.pivotX = this.canvas.width / 2;
-        this.pivotY = this.canvas.height / 2;
-        // Scale for pendulum to fit in screen.
-        const minDimension = Math.min(this.canvas.width, this.canvas.height);
-        this.scale = (7 / 16 * minDimension) / (this.l1 + this.l2);
     }
 
     derivatives(state) {
@@ -156,6 +144,15 @@ class Pendulum {
         this.ctx.fill();
     }
 
+    animate() {
+        const now = performance.now();
+        const deltaTime = Math.min(this.maxDeltaTime, (now - this.lastTime) / 1000);
+        this.lastTime = now;
+        this.update(deltaTime);
+        this.draw();
+        requestAnimationFrame(() => this.animate()); // arrow to maintain context
+    }
+
     // When the user presses the mouse, start dragging regardless of click position
     beginDrag(x, y) {
         this.dragging = true;
@@ -191,13 +188,14 @@ class Pendulum {
         this.dragging = false;
     }
 
-    animate() {
-        const now = performance.now();
-        const deltaTime = Math.min(this.maxDeltaTime, (now - this.lastTime) / 1000);
-        this.lastTime = now;
-        this.update(deltaTime);
-        this.draw();
-        requestAnimationFrame(() => this.animate()); // arrow to maintain context
+    resizeCanvas() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.pivotX = this.canvas.width / 2;
+        this.pivotY = this.canvas.height / 2;
+        // Scale for pendulum to fit in screen.
+        const minDimension = Math.min(this.canvas.width, this.canvas.height);
+        this.scale = (7 / 16 * minDimension) / (this.l1 + this.l2);
     }
 }
 
