@@ -60,10 +60,20 @@ class Pendulum {
         // don't attempt to calculate positions for fps < 30, just slow simulation down
         this.maxDeltaTime = 1 / 30;
 
-        window.addEventListener('resize', () => this.resizeCanvas());
-
         this.lastTime = performance.now();
         this.animate();
+
+        document.addEventListener('mousedown', e => {
+            this.tryStartDrag(e.clientX, e.clientY);
+        });
+        document.addEventListener('mousemove', e => {
+            if (this.dragging) {
+                this.updateDrag(e.clientX, e.clientY);
+            }
+        });
+        document.addEventListener('mouseup', () => this.endDrag());
+
+        window.addEventListener('resize', () => this.resizeCanvas());
     }
 
     resizeCanvas() {
@@ -198,30 +208,22 @@ class Pendulum {
     }
 }
 
-// Main application.
-
-// Event handlers.
-document.addEventListener('mousedown', e => {
-    gPendulum.tryStartDrag(e.clientX, e.clientY);
-});
-
-document.addEventListener('mouseup', () => gPendulum.endDrag());
-
-document.addEventListener('mousemove', e => {
-    if (gPendulum.dragging) {
-        gPendulum.updateDrag(e.clientX, e.clientY);
-    }
-});
-
-document.addEventListener('keydown', e => {
-    if (e.key === 'F1') {
-        e.preventDefault();
+const keyActions = {
+    'F1': () => {
         document.getElementById('popup').style.display = 'block';
         gFPS.start();
-    }
-    if (e.key === 'Escape') {
+     },
+    'Escape': () => {
         document.getElementById('popup').style.display = 'none';
         gFPS.stop();
+     }
+};
+
+window.addEventListener("keydown", event => {
+    const keyAction = keyActions[event.key];
+    if (keyAction) {
+        event.preventDefault();
+        keyAction();
     }
 });
 
