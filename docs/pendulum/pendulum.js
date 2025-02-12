@@ -65,12 +65,16 @@ class Pendulum {
         document.addEventListener('mousedown', e => {
             this.beginDrag(e.clientX, e.clientY);
         });
+        document.addEventListener('touchstart', e => { // mobile
+            this.beginDrag(e.clientX, e.clientY);
+        });
         document.addEventListener('mousemove', e => {
             if (this.dragging) {
                 this.updateDrag(e.clientX, e.clientY);
             }
         });
         document.addEventListener('mouseup', () => this.endDrag());
+        document.addEventListener('touchend', () => this.endDrag()); // mobile
         window.addEventListener('resize', () => this.resizeCanvas());
     }
 
