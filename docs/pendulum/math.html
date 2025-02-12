@@ -2,6 +2,9 @@
 <html>
 <head>
     <title>Double Pendulum Calculation</title>
+    <meta charset="utf-8">
+    <meta name="author" content="Bill Ola Rasmussen">
+    <meta name="keywords" content="double pendulum Lagrangian Lagrange Runge Kutta RK4 Integration">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
@@ -23,8 +26,8 @@
         motion:
     </p>
     <ul>
-        <li><strong>Lagrangian Mechanics</strong> - a reformulation of classical mechanics based on energy.</li>
-        <li><strong>Runge-Kutta 4 (RK4) Integration</strong> - a numerical method to solve differential equations.</li>
+        <li><strong>Lagrangian Mechanics</strong> — a reformulation of classical mechanics based on energy.</li>
+        <li><strong>Runge-Kutta 4 (RK4) Integration</strong> — a numerical method to solve differential equations.</li>
     </ul>
 
     <h2>Lagrangian Mechanics</h2>
@@ -44,7 +47,7 @@
     </p>
     <p>
         The path taken by the system between two points in time is such that the
-        <em>action</em> \( S \) is stationary (typically a minimum):
+        <em>action</em> \( S \) is stationary (often a minimum in classical systems):
 
         \[
             S = \int_{t_1}^{t_2} L\, dt.
@@ -63,6 +66,9 @@
         derivation of the coupled differential equations that describe the
         motion of each pendulum.
     </p>
+    <p>
+        More information: <a href="https://en.wikipedia.org/wiki/Lagrangian_mechanics">Lagrangian mechanics</a> on Wikipedia.
+    </p>
 
     <h2>Runge-Kutta 4 (RK4) Integration</h2>
     <p>
@@ -79,10 +85,10 @@
 
         \[
         \begin{aligned}
-            k_1 &= f(\mathbf{y}(t)), \\\
-            k_2 &= f\Big(\mathbf{y}(t) + \frac{\Delta t}{2} \, k_1\Big), \\\
-            k_3 &= f\Big(\mathbf{y}(t) + \frac{\Delta t}{2} \, k_2\Big), \\\
-            k_4 &= f\Big(\mathbf{y}(t) + \Delta t \; k_3\Big).
+            k_1 &= f(\mathbf{y}(t)), \\
+            k_2 &= f\left(\mathbf{y}(t) + \frac{\Delta t}{2} \, k_1\right), \\
+            k_3 &= f\left(\mathbf{y}(t) + \frac{\Delta t}{2} \, k_2\right), \\
+            k_4 &= f\left(\mathbf{y}(t) + \Delta t \, k_3\right).
         \end{aligned}
         \]
     </p>
@@ -97,12 +103,15 @@
         computational efficiency and accuracy, particularly in systems with
         sensitive dynamics like the double pendulum.
     </p>
+    <p>
+        More information: <a href="https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods">Runge-Kutta methods</a> on Wikipedia.
+    </p>
 
     <h2>Theory to Simulation</h2>
     <p>
-        In a simulation, the state of the double pendulum is represented by:
+        In the simulation, the state of the double pendulum is represented by:
         \[
-            \mathbf{y} = \begin{bmatrix} \theta_1 \\\ \theta_2 \\\ \omega_1 \\\ \omega_2 \end{bmatrix},
+            \mathbf{y} = \begin{bmatrix} \theta_1 \\ \theta_2 \\ \omega_1 \\ \omega_2 \end{bmatrix},
         \]
 
         where \( \theta_1 \) and \( \theta_2 \) are the angles and \( \omega_1,
@@ -113,6 +122,9 @@
         Damping (to simulate energy loss due to friction or air resistance) is
         included. This is implemented by multiplying the angular velocities by a
         damping factor after each integration step.
+    </p>
+    <p>
+        The <a href=".">double pendulum</a> simulation.
     </p>
 </body>
 </html>
