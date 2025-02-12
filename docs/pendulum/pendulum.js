@@ -71,21 +71,21 @@ class Pendulum {
             }
         });
         document.addEventListener('mouseup', () => this.endDrag());
-        window.addEventListener('resize', () => this.resizeCanvas());
 
         // touch ui events
         document.addEventListener('touchstart', e => {
-            this.beginDrag(e.clientX, e.clientY);
+            const touch = e.touches[0]; // Get first touch point
+            this.beginDrag(touch.clientX, touch.clientY);
         });
-        element.addEventListener('touchmove', function (event) {
-            if (!this.dragging) {
-                return;
-            }
-            event.preventDefault(); // avoid scrolling when dragging
-            const touch = event.touches[0]; // Get the first touch point
+        document.addEventListener('touchmove', e => {
+            if (!this.dragging) return;
+            e.preventDefault(); // Prevent scrolling
+            const touch = e.touches[0];
             this.updateDrag(touch.clientX, touch.clientY);
-        });
+        }, { passive: false });
         document.addEventListener('touchend', () => this.endDrag());
+
+        window.addEventListener('resize', () => this.resizeCanvas());
     }
 
     derivatives(state) {
