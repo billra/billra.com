@@ -243,6 +243,8 @@ function defaultBallCount() {
 
 function ballAnimation() {
     const numBalls = document.getElementById('numBalls').value;
+    // prevent previous animation being kept alive by requestAnimationFrame calls
+    gAnimation?.stopAnimation();
     gAnimation = new Animation(numBalls);
 }
 
