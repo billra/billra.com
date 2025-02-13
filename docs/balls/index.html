@@ -20,8 +20,13 @@
                 <li><strong>w</strong> - toggle: bounce or wrap around edge</li>
                 <li><strong>e</strong> - toggle: erase canvas or leave ball trails</li>
                 <li><strong>space</strong> - toggle: pause or resume animation</li>
-                <li><strong>{digits} enter</strong> - specify number of balls</li>
             </ul>
+            <div id="ballControl">
+                <label for="numBalls">Balls:</label>
+                <input type="number" id="numBalls"/>
+                <button onclick="ballAnimation()">Apply</button>
+                <button onclick="defaultBallCount()">Default</button>
+            </div>
             <p>Click on screen to attract balls.</p>
             <p><strong>Esc</strong> to exit</p>
         </div>

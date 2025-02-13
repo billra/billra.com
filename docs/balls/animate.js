@@ -1,25 +1,3 @@
-// animate.js
-
-let gAnimation;
-let gEnterNumber;
-let gFPS;
-
-class EnterNumber {
-    constructor() {
-        this.value = 0;
-    }
-    complete(key) {
-        if (/^[0-9]$/.test(key)) { // number of balls digit by digit
-            this.value = this.value * 10 + parseInt(key);
-            return false;
-        }
-        if (key === 'Enter') { // change number of balls
-            return this.value;
-        }
-        return false;
-    }
-}
-
 class FPS {
     constructor() {
         this.fpsDisplay = document.getElementById("fps-display");
@@ -235,11 +213,11 @@ const keyActions = {
     'F1': () => {
         document.getElementById('popup').style.display = 'block';
         gFPS.start();
-     },
+    },
     'Escape': () => {
         document.getElementById('popup').style.display = 'none';
         gFPS.stop();
-     }
+    }
 };
 
 window.addEventListener("keydown", event => {
@@ -247,10 +225,6 @@ window.addEventListener("keydown", event => {
     if (keyAction) {
         event.preventDefault();
         keyAction();
-    } else if (gEnterNumber.complete(event.key)) { // change number of balls
-        gAnimation.stopAnimation();
-        gAnimation = new Animation(gEnterNumber.value);
-        gEnterNumber = new EnterNumber();
     }
 });
 
@@ -258,10 +232,27 @@ window.addEventListener("resize", () => {
     gAnimation.setupCanvasAndContext();
 });
 
+// prevent ball control click from propagating
+document.getElementById('ballControl').addEventListener('click', function (event) {
+    event.stopPropagation();
+});
+
+function defaultBallCount() {
+    document.getElementById('numBalls').value = 120;
+}
+
+function ballAnimation() {
+    const numBalls = document.getElementById('numBalls').value;
+    gAnimation = new Animation(numBalls);
+}
+
+let gFPS;
+let gAnimation;
+
 window.addEventListener("load", () => {
     gFPS = new FPS();
-    gAnimation = new Animation(120);
-    gEnterNumber = new EnterNumber();
+    defaultBallCount();
+    ballAnimation();
 });
 
 // todo:
