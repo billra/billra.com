@@ -152,33 +152,20 @@ class Animation {
         this.ctx.translate(.5, .5); // coordinates centered on pixel
     }
 
-    startAnimation() { // should only be called if there is no existing frame request
-        if (this.frameRequest) {
-            throw new Error('frameRequest already exists');
-        }
-        this.startAnimationUnchecked();
-    }
-
-    stopAnimation() { // can be called even without an outstanding frame request
-        if (this.frameRequest) {
-            this.stopAnimationUnchecked();
-        }
-    }
-
-    startAnimationUnchecked() { // for internal use
+    startAnimation() {
         this.frameRequest = requestAnimationFrame(this.animate);
     }
 
-    stopAnimationUnchecked() { // for internal use
+    stopAnimation() {
         cancelAnimationFrame(this.frameRequest);
         this.frameRequest = undefined;
     }
 
     toggleAnimation() {
         if (this.frameRequest) {
-            this.stopAnimationUnchecked();
+            this.stopAnimation();
         } else {
-            this.startAnimationUnchecked();
+            this.startAnimation();
         }
     }
 
