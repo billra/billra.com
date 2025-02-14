@@ -59,7 +59,7 @@ class Pendulum {
 
         // start animation
         this.lastTime = performance.now();
-        this.animate();
+        this.startAnimation();
 
         // ui events
         document.addEventListener('mousedown', e => {
@@ -158,13 +158,33 @@ class Pendulum {
         this.ctx.fill();
     }
 
+    startAnimation() {
+        console.log('start');
+        this.frameRequest = requestAnimationFrame(() => this.animate()); // arrow to maintain context
+    }
+
+    stopAnimation() {
+        console.log('stop');
+        cancelAnimationFrame(this.frameRequest);
+        this.frameRequest = undefined;
+    }
+
+    toggleAnimation() {
+        console.log('toggle');
+        if (this.frameRequest) {
+            this.stopAnimation();
+        } else {
+            this.startAnimation();
+        }
+    }
+
     animate() {
         const now = performance.now();
         const deltaTime = Math.min(this.maxDeltaTime, (now - this.lastTime) / 1000);
         this.lastTime = now;
         this.update(deltaTime);
         this.draw();
-        requestAnimationFrame(() => this.animate()); // arrow to maintain context
+        this.frameRequest = requestAnimationFrame(() => this.animate()); // arrow to maintain context
     }
 
     // When the user presses the mouse, start dragging regardless of click position
@@ -214,6 +234,7 @@ class Pendulum {
 }
 
 const keyActions = {
+    ' ': () => { gPendulum.toggleAnimation(); },
     'F1': () => {
         document.getElementById('popup').style.display = 'block';
         gFPS.start();
