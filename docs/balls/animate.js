@@ -138,7 +138,7 @@ class Animation {
         this.drawCorners = false;
         this.wrapEdge = false; // wrap or bounce
         this.eraseCanvas = true;
-        this.canvas = document.getElementById("my_canvas");
+        this.canvas = document.querySelector("canvas");
         this.ctx = this.canvas.getContext("2d");
         this.setupCanvasAndContext();
         this.balls = Array.from({ length: ballCount }, () => new Ball(this.canvas));

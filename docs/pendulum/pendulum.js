@@ -52,7 +52,7 @@ class Pendulum {
         // don't attempt to calculate positions for fps < 30, just slow simulation down
         this.maxDeltaTime = 1 / 30;
 
-        this.canvas = document.getElementById('canvas');
+        this.canvas = document.querySelector("canvas");
         this.ctx = this.canvas.getContext('2d');
         this.resizeCanvas();
         this.dragging = false;
@@ -159,18 +159,15 @@ class Pendulum {
     }
 
     startAnimation() {
-        console.log('start');
         this.frameRequest = requestAnimationFrame(() => this.animate()); // arrow to maintain context
     }
 
     stopAnimation() {
-        console.log('stop');
         cancelAnimationFrame(this.frameRequest);
         this.frameRequest = undefined;
     }
 
     toggleAnimation() {
-        console.log('toggle');
         if (this.frameRequest) {
             this.stopAnimation();
         } else {
