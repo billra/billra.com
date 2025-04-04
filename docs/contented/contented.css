@@ -42,6 +42,7 @@ h2 {
 #id-edit {
     z-index: 1;
     background-color: black;
+    white-space: pre-wrap;
 }
 #id-button {
     z-index: 3; /* always on top */

@@ -90,10 +90,7 @@ function getText() {
     const initialRange = selection.getRangeAt(0);
     // the editDiv will get a focus event here if it does not already have focus
     selection.selectAllChildren(editDiv);
-    // The contenteditable div uses &nbsp; to preserve display spacing.
-    // Replace: html '&nbsp' text retrieval correctly returns '\u00A0'
-    // (unicode non-breaking space). We almost always want spaces.
-    const text = selection.toString().replaceAll('\u00A0', ' ');
+    const text = selection.toString();
     // restore selection
     selection.removeAllRanges();
     selection.addRange(initialRange);
@@ -157,12 +154,5 @@ function doLoad(str) {
         editDiv.innerHTML = html;
         return;
     }
-    // text files: undo the getText html '&nbsp' to space conversion
-    // see git\aichatcli\prototypes\nbsp.html for test cases
-    const strFixed = str
-        .replace(/  /g, '\u00A0 ') // in general
-        .replace(/  /g, ' \u00A0') // odd count leftovers
-        .replace(/(^|\n) /g, '$1\u00A0') // first must be nbsp
-        .replace(/ ($|\n)/g, '\u00A0$1'); // last must be nbsp
-    editDiv.innerText = strFixed;
+    editDiv.innerText = str;
 }
