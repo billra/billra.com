@@ -3,9 +3,8 @@
 <head>
     <title>Hamiltonian Snake</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.1">
+    <meta name="version" content="1.2">
     <meta charset="UTF-8">
-    <!-- <link rel="icon" href="ham.ico"> -->
     <link rel="stylesheet" href="ham.css">
     <script defer src="ham.js"></script>
 </head>
@@ -24,6 +23,9 @@
     <div id="canvas-wrap">
         <canvas id="snake" width="520" height="420"></canvas>
     </div>
-    <div id="status"></div>
+    <div id="status-wrap" class="flex-center" style="margin-top: 18px;">
+        <div id="status"></div>
+        <button id="cancel" style="margin-left: 16px; display: none;">Cancel</button>
+    </div>
 </body>
 </html>
