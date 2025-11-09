@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hamiltonian Snake</title>
+    <meta name="author" content="Bill Ola Rasmussen">
+    <meta name="version" content="1.0">
+    <meta charset="UTF-8">
+    <!-- <link rel="icon" href="ham.ico"> -->
+    <link rel="stylesheet" href="ham.css">
+    <script defer src="ham.js"></script>
+</head>
+<body>
+    <h1><span id="page-title"></span> <span id="version"></span></h1>
+    <div class="flex-center">
+        <label for="width">Width:</label>
+        <input type="number" id="width" min="2" max="30" value="6">
+        <label for="height">Height:</label>
+        <input type="number" id="height" min="2" max="30" value="6">
+        <button id="generate">Generate</button>
+    </div>
+    <div class="description">
+        <span>Creates a random Hamiltonian path (snake) that visits each grid cell exactly once.</span>
+    </div>
+    <div id="canvas-wrap">
+        <canvas id="snake" width="520" height="420"></canvas>
+    </div>
+    <div id="status"></div>
+</body>
+</html>

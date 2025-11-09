@@ -1,0 +1,79 @@
+:root {
+    --snake-color: #1f5;
+    --snake-glow: #3f3;
+}
+
+body {
+    background: black;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+h1 {
+    font-size: 150%;
+}
+
+#version {
+    font-size: 40%;
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.description {
+    margin: 10px 0;
+}
+
+input[type="number"] {
+    width: 60px;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #444;
+    margin: 0 16px 0 0;
+    background: #222;
+    color: #eee;
+    font-size: 1em;
+}
+
+button {
+    padding: 6px 20px;
+    font-size: 1em;
+    border-radius: 8px;
+    border: none;
+    background: #222;
+    color: #6f6;
+    box-shadow: 0 1px 5px #000b;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+button:hover {
+    background: #333;
+}
+
+#canvas-wrap {
+    margin: 24px auto 14px auto;
+    background: #111;
+    border-radius: 15px;
+    box-shadow: 0 0 24px #000c;
+    padding: 10px;
+    display: inline-block;
+}
+
+canvas {
+    display: block;
+    background: #181818;
+    border-radius: 10px;
+    margin: auto;
+}
+
+#status {
+    margin-top: 18px;
+    font-size: 1em;
+    color: #8f8;
+    min-height: 1.2em;
+    text-align: center;
+}
