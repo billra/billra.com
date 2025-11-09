@@ -91,12 +91,14 @@ function generateSnake() {
 
     updateStatus('Working...');
     ui.cancel.style.display = "inline";
+    ui.generate.disabled = true;
 
     worker = new Worker('worker.js');
     worker.postMessage({ width, height, maxTries: 2500 });
 
     worker.onmessage = function(e) {
         ui.cancel.style.display = "none";
+        ui.generate.disabled = false;
         let path = e.data.path;
         if (path) {
             drawSnake(ctx, path, width, height);
@@ -110,6 +112,7 @@ function generateSnake() {
 
     worker.onerror = function(e) {
         ui.cancel.style.display = "none";
+        ui.generate.disabled = false;
         updateStatus("Error or canceled.", false);
         worker.terminate();
         worker = null;
@@ -122,6 +125,7 @@ ui.cancel.addEventListener('click', () => {
         worker.terminate();
         worker = null;
         ui.cancel.style.display = "none";
+        ui.generate.disabled = false;
         updateStatus("Canceled.", false);
     }
 });
