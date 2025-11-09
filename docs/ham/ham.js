@@ -14,13 +14,11 @@ const CELL_MAX_SIZE = 60;          // Maximum grid cell size in pixels
 const SNAKE_MIN_RADIUS = 5;        // Minimum snake head/tail radius (px)
 const SNAKE_MAX_RADIUS = 14;       // Maximum snake head/tail radius (px)
 const SNAKE_RADIUS_FACTOR = 0.42;  // Fraction of cell size for snake's thickness
-const SNAKE_SHADOW_BLUR = 10;      // Amount of glow/blur for the snake (px)
 const STATUS_DELAY_MS = 60;        // Milliseconds to wait before generating path (lets UI update first)
 
 // Cached CSS variables for snake styles
 const rootStyle = getComputedStyle(document.documentElement);
 const SNAKE_COLOR = rootStyle.getPropertyValue('--snake-color');
-const SNAKE_GLOW = rootStyle.getPropertyValue('--snake-glow');
 
 // set title and version
 ui.pageTitle.innerText = document.title;
@@ -65,10 +63,7 @@ function drawSnake(ctx, path, width, height) {
         ctx.lineTo(x, y);
     }
     ctx.strokeStyle = SNAKE_COLOR;
-    ctx.shadowColor = SNAKE_GLOW;
-    ctx.shadowBlur = SNAKE_SHADOW_BLUR;
     ctx.stroke();
-    ctx.shadowBlur = 0;
     ctx.fillStyle = SNAKE_COLOR;
     ctx.beginPath();
     let [hx, hy] = cellCenter(path[0]);
