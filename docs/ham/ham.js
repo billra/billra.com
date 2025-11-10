@@ -38,13 +38,13 @@ function drawSnake(ctx, path, width, height) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     if (!path) return;
 
-    let cellSizeX = Math.max(CELL_MIN_SIZE, Math.min(CELL_MAX_SIZE, (ctx.canvas.width - 2 * CANVAS_MARGIN) / width));
-    let cellSizeY = Math.max(CELL_MIN_SIZE, Math.min(CELL_MAX_SIZE, (ctx.canvas.height - 2 * CANVAS_MARGIN) / height));
-    let cellSize = Math.floor(Math.min(cellSizeX, cellSizeY));
-    let offsetX = Math.floor((ctx.canvas.width - cellSize * width) / 2);
-    let offsetY = Math.floor((ctx.canvas.height - cellSize * height) / 2);
+    const cellSizeX = Math.max(CELL_MIN_SIZE, Math.min(CELL_MAX_SIZE, (ctx.canvas.width - 2 * CANVAS_MARGIN) / width));
+    const cellSizeY = Math.max(CELL_MIN_SIZE, Math.min(CELL_MAX_SIZE, (ctx.canvas.height - 2 * CANVAS_MARGIN) / height));
+    const cellSize = Math.floor(Math.min(cellSizeX, cellSizeY));
+    const offsetX = Math.floor((ctx.canvas.width - cellSize * width) / 2);
+    const offsetY = Math.floor((ctx.canvas.height - cellSize * height) / 2);
 
-    let snakeRad = Math.max(SNAKE_MIN_RADIUS, Math.min(SNAKE_MAX_RADIUS, cellSize * SNAKE_RADIUS_FACTOR));
+    const snakeRad = Math.max(SNAKE_MIN_RADIUS, Math.min(SNAKE_MAX_RADIUS, cellSize * SNAKE_RADIUS_FACTOR));
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.lineWidth = snakeRad * 2;
@@ -56,21 +56,21 @@ function drawSnake(ctx, path, width, height) {
         ];
     }
     ctx.beginPath();
-    let [sx, sy] = cellCenter(path[0]);
+    const [sx, sy] = cellCenter(path[0]);
     ctx.moveTo(sx, sy);
     for (let i = 1; i < path.length; ++i) {
-        let [x, y] = cellCenter(path[i]);
+        const [x, y] = cellCenter(path[i]);
         ctx.lineTo(x, y);
     }
     ctx.strokeStyle = SNAKE_COLOR;
     ctx.stroke();
     ctx.fillStyle = SNAKE_COLOR;
     ctx.beginPath();
-    let [hx, hy] = cellCenter(path[0]);
+    const [hx, hy] = cellCenter(path[0]);
     ctx.arc(hx, hy, snakeRad, 0, 2 * Math.PI);
     ctx.fill();
     ctx.beginPath();
-    let [tx, ty] = cellCenter(path[path.length - 1]);
+    const [tx, ty] = cellCenter(path[path.length - 1]);
     ctx.arc(tx, ty, snakeRad, 0, 2 * Math.PI);
     ctx.fill();
 }
@@ -83,10 +83,10 @@ function generateSnake() {
         worker = null;
     }
 
-    let width = parseInt(ui.width.value, 10),
+    const width = parseInt(ui.width.value, 10),
         height = parseInt(ui.height.value, 10);
-    let canvas = ui.snake;
-    let ctx = canvas.getContext('2d');
+    const canvas = ui.snake;
+    const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     updateStatus('Working...');
@@ -103,7 +103,7 @@ function generateSnake() {
         }
         ui.cancel.style.display = "none";
         ui.generate.disabled = false;
-        let path = e.data.path;
+        const path = e.data.path;
         if (path) {
             drawSnake(ctx, path, width, height);
             updateStatus(`Found path: ${width} x ${height}`);
@@ -136,7 +136,7 @@ ui.cancel.addEventListener('click', () => {
 
 // Responsive canvas
 function autoResizeCanvas() {
-    let w = parseInt(ui.width.value, 10),
+    const w = parseInt(ui.width.value, 10),
         h = parseInt(ui.height.value, 10),
         size = Math.max(25, Math.min(70, Math.floor(600 / Math.max(w, h))));
     ui.snake.width = w * size + 48;
