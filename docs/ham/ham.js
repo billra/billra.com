@@ -28,7 +28,7 @@ ui.version.innerText = 'v' + document.querySelector('meta[name="version"]').cont
 let worker = null;
 
 // UI functions
-function updateStatus(msg, ok=true) {
+function updateStatus(msg, ok = true) {
     ui.status.textContent = msg;
     ui.status.style.color = ok ? '#7f7' : '#f66';
 }
@@ -41,8 +41,8 @@ function drawSnake(ctx, path, width, height) {
     let cellSizeX = Math.max(CELL_MIN_SIZE, Math.min(CELL_MAX_SIZE, (ctx.canvas.width - 2 * CANVAS_MARGIN) / width));
     let cellSizeY = Math.max(CELL_MIN_SIZE, Math.min(CELL_MAX_SIZE, (ctx.canvas.height - 2 * CANVAS_MARGIN) / height));
     let cellSize = Math.floor(Math.min(cellSizeX, cellSizeY));
-    let moffsetX = Math.floor((ctx.canvas.width - cellSize * width) / 2);
-    let moffsetY = Math.floor((ctx.canvas.height - cellSize * height) / 2);
+    let offsetX = Math.floor((ctx.canvas.width - cellSize * width) / 2);
+    let offsetY = Math.floor((ctx.canvas.height - cellSize * height) / 2);
 
     let snakeRad = Math.max(SNAKE_MIN_RADIUS, Math.min(SNAKE_MAX_RADIUS, cellSize * SNAKE_RADIUS_FACTOR));
     ctx.lineJoin = 'round';
@@ -51,8 +51,8 @@ function drawSnake(ctx, path, width, height) {
 
     function cellCenter(c) {
         return [
-            moffsetX + cellSize * (c.x + 0.5),
-            moffsetY + cellSize * (c.y + 0.5)
+            offsetX + cellSize * (c.x + 0.5),
+            offsetY + cellSize * (c.y + 0.5)
         ];
     }
     ctx.beginPath();
@@ -94,9 +94,13 @@ function generateSnake() {
     ui.generate.disabled = true;
 
     worker = new Worker('worker.js');
-    worker.postMessage({ width, height, maxTries: 2500 });
+    worker.postMessage({ width, height, version: ui.version.innerText });
 
-    worker.onmessage = function(e) {
+    worker.onmessage = function (e) {
+        if (e.data.debug) {
+            console.log('from worker: ' + e.data.debug);
+            return;
+        }
         ui.cancel.style.display = "none";
         ui.generate.disabled = false;
         let path = e.data.path;
@@ -104,13 +108,13 @@ function generateSnake() {
             drawSnake(ctx, path, width, height);
             updateStatus(`Found path: ${width} x ${height}`);
         } else {
-            updateStatus("Failed: no Hamiltonian path found??", false);
+            updateStatus("Failed: no Hamiltonian path found", false);
         }
         worker.terminate();
         worker = null;
     };
 
-    worker.onerror = function(e) {
+    worker.onerror = function (e) {
         ui.cancel.style.display = "none";
         ui.generate.disabled = false;
         updateStatus("Error or canceled.", false);
