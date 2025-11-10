@@ -4,9 +4,10 @@ onmessage = function (e) {
     const { width, height, version } = e.data;
     postMessage({ debug: `width: ${width}, height: ${height}, version: ${version}` });
 
+    // Fisher–Yates shuffle
     function shuffle(arr) {
-        for (let i = arr.length - 1; i > 0; --i) {
-            const j = Math.floor(Math.random() * (i + 1));
+        for (let i = 0; i < arr.length; i++) {
+            const j = Math.floor(Math.random() * (i + 1)); // 0 ≤ j ≤ i
             [arr[i], arr[j]] = [arr[j], arr[i]];
         }
     }
