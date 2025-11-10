@@ -115,6 +115,7 @@ function generateSnake() {
     };
 
     worker.onerror = function (e) {
+        console.error(`Worker exception "${e.message}" at line ${e.lineno}`);
         ui.cancel.style.display = "none";
         ui.generate.disabled = false;
         updateStatus("Error or canceled.", false);
