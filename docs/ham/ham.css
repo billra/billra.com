@@ -21,7 +21,6 @@
     --color-status-ok: #8f8;
     --color-status-error: #f66;
 }
-
 body {
     background: var(--bg-main);
     color: var(--color-main);
@@ -56,8 +55,8 @@ input[type="number"] {
     color: var(--color-input);
     font-size: 1em;
 }
-/* Buttons (common styles) */
-button {
+/* Buttons */
+.button {
     margin-left: 4px;
     margin-right: 4px;
     padding: 6px 20px;
@@ -69,24 +68,21 @@ button {
     cursor: pointer;
     transition: background 0.2s;
 }
-
-#cancel {
-    color: var(--color-cancel);
-}
-
-button:hover,
-#cancel:hover {
+.button:hover {
     background: var(--bg-button-hover);
 }
-
-button:disabled,
-#cancel:disabled {
+.button:focus {
+    outline: 2px solid var(--color-button);
+}
+.button:disabled {
     background: var(--bg-button);
     color: var(--color-button-disabled);
     cursor: auto;
     opacity: var(--opacity-button-disabled);
 }
-
+.cancel-button {
+    color: var(--color-cancel);
+}
 /* Canvas and wrapping */
 #canvas-wrap {
     margin: 24px auto 14px auto;
