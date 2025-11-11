@@ -90,8 +90,8 @@ function generateSnake() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     updateStatus('Working...');
-    ui.cancel.style.display = "inline";
-    ui.generate.disabled = true;
+    ui.cancel.disabled = false;   // Enable Cancel button (user can cancel)
+    ui.generate.disabled = true;  // Disable Generate (prevent multiple starts)
 
     worker = new Worker('worker.js');
     worker.postMessage({ width, height, version: ui.version.innerText });
@@ -101,8 +101,8 @@ function generateSnake() {
             console.log('from worker: ' + e.data.debug);
             return;
         }
-        ui.cancel.style.display = "none";
-        ui.generate.disabled = false;
+        ui.cancel.disabled = true;      // Disable Cancel when done
+        ui.generate.disabled = false;   // Enable Generate button again
         const path = e.data.path;
         if (path) {
             drawSnake(ctx, path, width, height);
@@ -116,7 +116,7 @@ function generateSnake() {
 
     worker.onerror = function (e) {
         console.error(`Worker exception "${e.message}" at line ${e.lineno}`);
-        ui.cancel.style.display = "none";
+        ui.cancel.disabled = true;
         ui.generate.disabled = false;
         updateStatus("Error or canceled.", false);
         worker.terminate();
@@ -129,7 +129,7 @@ ui.cancel.addEventListener('click', () => {
     if (worker) {
         worker.terminate();
         worker = null;
-        ui.cancel.style.display = "none";
+        ui.cancel.disabled = true;
         ui.generate.disabled = false;
         updateStatus("Canceled.", false);
     }
