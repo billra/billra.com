@@ -7,15 +7,12 @@ document.querySelectorAll('[id]').forEach(element => {
     ui[kebabToCamel(element.id)] = document.getElementById(element.id);
 });
 
-// Constants for magic numbers
-const CANVAS_MARGIN = 22;          // Outer margin (in pixels) around the drawn grid on the canvas
-const CELL_MIN_SIZE = 22;          // Minimum grid cell size in pixels
-const CELL_MAX_SIZE = 60;          // Maximum grid cell size in pixels
+// Fixed values
+const CANVAS_MARGIN = 22;       // Margin in pixels
+const CELL_SIZE = 22;           // Grid cell size in pixels
 const SNAKE_COLOR = '#1f5';
-const SNAKE_MIN_RADIUS = 5;        // Minimum snake head/tail radius (px)
-const SNAKE_MAX_RADIUS = 14;       // Maximum snake head/tail radius (px)
-const SNAKE_RADIUS_FACTOR = 0.42;  // Fraction of cell size for snake's thickness
-const STATUS_DELAY_MS = 60;        // Milliseconds to wait before generating path (lets UI update first)
+const SNAKE_RADIUS = 5;         // Snake head/tail radius (px)
+const SNAKE_THICKNESS = 10;     // Snake body thickness
 
 // set title and version
 ui.pageTitle.innerText = document.title;
@@ -35,21 +32,17 @@ function drawSnake(ctx, path, width, height) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     if (!path) return;
 
-    const cellSizeX = Math.max(CELL_MIN_SIZE, Math.min(CELL_MAX_SIZE, (ctx.canvas.width - 2 * CANVAS_MARGIN) / width));
-    const cellSizeY = Math.max(CELL_MIN_SIZE, Math.min(CELL_MAX_SIZE, (ctx.canvas.height - 2 * CANVAS_MARGIN) / height));
-    const cellSize = Math.floor(Math.min(cellSizeX, cellSizeY));
-    const offsetX = Math.floor((ctx.canvas.width - cellSize * width) / 2);
-    const offsetY = Math.floor((ctx.canvas.height - cellSize * height) / 2);
+    const offsetX = Math.floor((ctx.canvas.width - CELL_SIZE * width) / 2);
+    const offsetY = Math.floor((ctx.canvas.height - CELL_SIZE * height) / 2);
 
-    const snakeRad = Math.max(SNAKE_MIN_RADIUS, Math.min(SNAKE_MAX_RADIUS, cellSize * SNAKE_RADIUS_FACTOR));
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
-    ctx.lineWidth = snakeRad * 2;
+    ctx.lineWidth = SNAKE_THICKNESS;
 
     function cellCenter(c) {
         return [
-            offsetX + cellSize * (c.x + 0.5),
-            offsetY + cellSize * (c.y + 0.5)
+            offsetX + CELL_SIZE * (c.x + 0.5),
+            offsetY + CELL_SIZE * (c.y + 0.5)
         ];
     }
     ctx.beginPath();
@@ -64,11 +57,11 @@ function drawSnake(ctx, path, width, height) {
     ctx.fillStyle = SNAKE_COLOR;
     ctx.beginPath();
     const [hx, hy] = cellCenter(path[0]);
-    ctx.arc(hx, hy, snakeRad, 0, 2 * Math.PI);
+    ctx.arc(hx, hy, SNAKE_RADIUS, 0, 2 * Math.PI);
     ctx.fill();
     ctx.beginPath();
     const [tx, ty] = cellCenter(path[path.length - 1]);
-    ctx.arc(tx, ty, snakeRad, 0, 2 * Math.PI);
+    ctx.arc(tx, ty, SNAKE_RADIUS, 0, 2 * Math.PI);
     ctx.fill();
 }
 
@@ -87,8 +80,8 @@ function generateSnake() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     updateStatus('Working...');
-    ui.cancel.disabled = false;   // Enable Cancel button (user can cancel)
-    ui.generate.disabled = true;  // Disable Generate (prevent multiple starts)
+    ui.cancel.disabled = false;   // Enable Cancel button
+    ui.generate.disabled = true;  // Disable Generate
 
     worker = new Worker('worker.js');
     worker.postMessage({ width, height, version: ui.version.innerText });
@@ -98,8 +91,8 @@ function generateSnake() {
             console.log('from worker: ' + e.data.debug);
             return;
         }
-        ui.cancel.disabled = true;      // Disable Cancel when done
-        ui.generate.disabled = false;   // Enable Generate button again
+        ui.cancel.disabled = true;
+        ui.generate.disabled = false;
         const path = e.data.path;
         if (path) {
             drawSnake(ctx, path, width, height);
@@ -132,13 +125,12 @@ ui.cancel.addEventListener('click', () => {
     }
 });
 
-// Responsive canvas
+// Responsive canvas - always size canvas proportional to grid with fixed cell size
 function autoResizeCanvas() {
     const w = parseInt(ui.width.value, 10),
-        h = parseInt(ui.height.value, 10),
-        size = Math.max(25, Math.min(70, Math.floor(600 / Math.max(w, h))));
-    ui.snake.width = w * size + 48;
-    ui.snake.height = h * size + 48;
+        h = parseInt(ui.height.value, 10);
+    ui.snake.width = w * CELL_SIZE + 2 * CANVAS_MARGIN;
+    ui.snake.height = h * CELL_SIZE + 2 * CANVAS_MARGIN;
 }
 ui.width.addEventListener('input', autoResizeCanvas);
 ui.height.addEventListener('input', autoResizeCanvas);
