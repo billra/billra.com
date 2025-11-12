@@ -1,109 +1,111 @@
 :root {
-    /* Main colors */
-    --bg-main: #000;
-    --color-main: #fff;
-    /* Snake and path */
-    --snake-color: #1f5;
-    /* Inputs and canvas */
-    --bg-canvas-wrap: #111;
-    --bg-canvas: #181818;
-    --bg-input: #222;
-    --color-input: #eee;
-    --color-border-input: #444;
-    /* UI Buttons */
-    --bg-button: #222;
-    --bg-button-hover: #333;
-    --color-button: #6f6;
-    --color-button-disabled: #444;
-    --color-cancel: #f66;
-    --opacity-button-disabled: 0.52;
-    /* Status colors */
-    --color-status-ok: #8f8;
-    --color-status-error: #f66;
+  /* Main colors */
+  --bg-main:                  #000;
+  --color-main:               #fff;
+  --bg-canvas:                #222;
+  /* Inputs */
+  --bg-input:                 #222;
+  --color-input:              #eee;
+  --color-border-input:       #444;
+  /* Buttons */
+  --bg-button:                #222;
+  --bg-button-hover:          #333;
+  --color-button:             #6f6;
+  --color-cancel:             #f66;
+  --color-button-disabled:    #444;
+  /* Status colors */
+  --color-status-ok:          #8f8;
+  --color-status-error:       #f66;
 }
+
+/* reset */
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+/* page base */
 body {
-    background: var(--bg-main);
-    color: var(--color-main);
-    font-family: Arial, sans-serif;
-    text-align: center;
+  background: var(--bg-main);
+  color: var(--color-main);
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 1rem;
 }
+
+/* heading + version */
 h1 {
-    font-size: 150%;
+  margin-bottom: 0.5em;
+  font-size: 1.5rem;
 }
 #version {
     font-size: 40%;
 }
-.flex-center {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+
+/* controls row */
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
-.flex-center.button-row {
-    margin-top: 12px;
+.controls label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
 }
-.description {
-    margin: 10px 0;
-}
-/* Inputs */
+
+/* number inputs */
 input[type="number"] {
-    width: 60px;
-    padding: 5px;
-    border-radius: 5px;
-    border: 1px solid var(--color-border-input);
-    margin: 0 16px 0 0;
-    background: var(--bg-input);
-    color: var(--color-input);
-    font-size: 1em;
+  background: var(--bg-input);
+  color: var(--color-input);
+  border: 1px solid var(--color-border-input);
+  border-radius: 4px;
+  width: 3em;
+  padding: 0.2em 0.4em;
 }
-/* Buttons */
-.button {
-    margin-left: 4px;
-    margin-right: 4px;
-    padding: 6px 20px;
-    font-size: 1em;
-    border-radius: 8px;
-    border: none;
-    background: var(--bg-button);
-    color: var(--color-button);
-    cursor: pointer;
-    transition: background 0.2s;
+
+/* buttons */
+button {
+  background: var(--bg-button);
+  color: var(--color-button);
+  border: none;
+  border-radius: 6px;
+  padding: 0.5em 1em;
+  cursor: pointer;
+  transition: background 0.2s;
 }
-.button:hover {
-    background: var(--bg-button-hover);
+button:hover:not(:disabled) {
+  background: var(--bg-button-hover);
 }
-.button:focus {
-    outline: 2px solid var(--color-button);
+button:disabled {
+  color: var(--color-button-disabled);
+  cursor: default;
 }
-.button:disabled {
-    background: var(--bg-button);
-    color: var(--color-button-disabled);
-    cursor: auto;
-    opacity: var(--opacity-button-disabled);
+button#cancel {
+  color: var(--color-cancel);
 }
-.cancel-button {
-    color: var(--color-cancel);
+
+/* description */
+.description {
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
 }
-/* Canvas and wrapping */
-#canvas-wrap {
-    margin: 24px auto 14px auto;
-    background: var(--bg-canvas-wrap);
-    border-radius: 15px;
-    padding: 10px;
-    display: inline-block;
-}
+
+/* canvas styling */
 canvas {
-    display: block;
-    background: var(--bg-canvas);
-    border-radius: 10px;
-    margin: auto;
+  display: block;
+  margin: 0 auto;
+  background: var(--bg-canvas);
+  border-radius: 8px;
 }
-/* Status Display */
-#status-wrap {
-    margin-top: 18px;
-}
+
+/* status line */
 #status {
-    font-size: 1em;
-    color: var(--color-status-ok);
-    min-height: 1.2em;
-    text-align: center;
+  margin-top: 1rem;
+  min-height: 1.2em;
+  color: var(--color-status-ok);
+}
+#status.error {
+  color: var(--color-status-error);
 }

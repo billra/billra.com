@@ -11,14 +11,11 @@ document.querySelectorAll('[id]').forEach(element => {
 const CANVAS_MARGIN = 22;          // Outer margin (in pixels) around the drawn grid on the canvas
 const CELL_MIN_SIZE = 22;          // Minimum grid cell size in pixels
 const CELL_MAX_SIZE = 60;          // Maximum grid cell size in pixels
+const SNAKE_COLOR = '#1f5';
 const SNAKE_MIN_RADIUS = 5;        // Minimum snake head/tail radius (px)
 const SNAKE_MAX_RADIUS = 14;       // Maximum snake head/tail radius (px)
 const SNAKE_RADIUS_FACTOR = 0.42;  // Fraction of cell size for snake's thickness
 const STATUS_DELAY_MS = 60;        // Milliseconds to wait before generating path (lets UI update first)
-
-// Cached CSS variables for snake styles
-const rootStyle = getComputedStyle(document.documentElement);
-const SNAKE_COLOR = rootStyle.getPropertyValue('--snake-color');
 
 // set title and version
 ui.pageTitle.innerText = document.title;
@@ -29,8 +26,8 @@ let worker = null;
 
 // UI functions
 function updateStatus(msg, ok = true) {
-    ui.status.textContent = msg;
-    ui.status.style.color = ok ? '#7f7' : '#f66';
+  ui.status.textContent = msg;
+  ui.status.classList.toggle('error', !ok);
 }
 
 // drawing
