@@ -11,7 +11,6 @@ document.querySelectorAll('[id]').forEach(element => {
 const CELL_SIZE = 22;           // Grid cell size in pixels
 const CANVAS_MARGIN = 22;       // Outer margin in pixels
 const SNAKE_COLOR = '#1f5';
-const SNAKE_RADIUS = 5;         // Snake head/tail radius (px)
 const SNAKE_THICKNESS = 10;     // Snake body thickness
 
 // set title and version
@@ -35,8 +34,8 @@ function drawSnake(ctx, path, width, height) {
     const offsetX = Math.floor((ctx.canvas.width - CELL_SIZE * width) / 2);
     const offsetY = Math.floor((ctx.canvas.height - CELL_SIZE * height) / 2);
 
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';    // Smooth corners
+    ctx.lineCap = 'round';     // Smooth ends
     ctx.lineWidth = SNAKE_THICKNESS;
 
     function cellCenter(c) {
@@ -54,15 +53,6 @@ function drawSnake(ctx, path, width, height) {
     }
     ctx.strokeStyle = SNAKE_COLOR;
     ctx.stroke();
-    ctx.fillStyle = SNAKE_COLOR;
-    ctx.beginPath();
-    const [hx, hy] = cellCenter(path[0]);
-    ctx.arc(hx, hy, SNAKE_RADIUS, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.beginPath();
-    const [tx, ty] = cellCenter(path[path.length - 1]);
-    ctx.arc(tx, ty, SNAKE_RADIUS, 0, 2 * Math.PI);
-    ctx.fill();
 }
 
 // Main path generation logic using a Web Worker
