@@ -8,10 +8,11 @@
   --color-input:              #eee;
   --color-border-input:       #444;
   /* Buttons */
-  --bg-button:                #222;
-  --bg-button-hover:          #333;
   --color-button:             #6f6;
   --color-cancel:             #f66;
+  --bg-button:                #222;
+  --bg-button-hover:          #333;
+  --bg-button-disabled:       #111;
   --color-button-disabled:    #444;
   /* Status colors */
   --color-status-ok:          #8f8;
@@ -75,15 +76,16 @@ button {
   cursor: pointer;
   transition: background 0.2s;
 }
+button#cancel {
+  color: var(--color-cancel);
+}
 button:hover:not(:disabled) {
   background: var(--bg-button-hover);
 }
 button:disabled {
-  color: var(--color-button-disabled);
+  color: var(--color-button-disabled) !important;
+  background: var(--bg-button-disabled);
   cursor: default;
-}
-button#cancel {
-  color: var(--color-cancel);
 }
 
 /* description */
