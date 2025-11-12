@@ -8,8 +8,8 @@ document.querySelectorAll('[id]').forEach(element => {
 });
 
 // Fixed values
-const CANVAS_MARGIN = 22;       // Margin in pixels
 const CELL_SIZE = 22;           // Grid cell size in pixels
+const CANVAS_MARGIN = 22;       // Outer margin in pixels
 const SNAKE_COLOR = '#1f5';
 const SNAKE_RADIUS = 5;         // Snake head/tail radius (px)
 const SNAKE_THICKNESS = 10;     // Snake body thickness
@@ -67,7 +67,6 @@ function drawSnake(ctx, path, width, height) {
 
 // Main path generation logic using a Web Worker
 function generateSnake() {
-    // Abort any running worker
     if (worker) {
         worker.terminate();
         worker = null;
@@ -75,13 +74,18 @@ function generateSnake() {
 
     const width = parseInt(ui.width.value, 10),
         height = parseInt(ui.height.value, 10);
+
+    // Set canvas size based on the number of cells and margin
+    ui.snake.width = width * CELL_SIZE + 2 * CANVAS_MARGIN;
+    ui.snake.height = height * CELL_SIZE + 2 * CANVAS_MARGIN;
+
     const canvas = ui.snake;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     updateStatus('Working...');
-    ui.cancel.disabled = false;   // Enable Cancel button
-    ui.generate.disabled = true;  // Disable Generate
+    ui.cancel.disabled = false;
+    ui.generate.disabled = true;
 
     worker = new Worker('worker.js');
     worker.postMessage({ width, height, version: ui.version.innerText });
@@ -125,21 +129,10 @@ ui.cancel.addEventListener('click', () => {
     }
 });
 
-// Responsive canvas - always size canvas proportional to grid with fixed cell size
-function autoResizeCanvas() {
-    const w = parseInt(ui.width.value, 10),
-        h = parseInt(ui.height.value, 10);
-    ui.snake.width = w * CELL_SIZE + 2 * CANVAS_MARGIN;
-    ui.snake.height = h * CELL_SIZE + 2 * CANVAS_MARGIN;
-}
-ui.width.addEventListener('input', autoResizeCanvas);
-ui.height.addEventListener('input', autoResizeCanvas);
-
 // "Generate" button logic
 ui.generate.addEventListener('click', generateSnake);
 
 // initial setup
 window.onload = () => {
-    autoResizeCanvas();
     generateSnake();
 };
