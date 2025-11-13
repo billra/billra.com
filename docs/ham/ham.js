@@ -7,11 +7,12 @@ document.querySelectorAll('[id]').forEach(element => {
     ui[kebabToCamel(element.id)] = document.getElementById(element.id);
 });
 
-// Fixed values
-const CELL_SIZE = 22;           // Grid cell size in pixels
-const CANVAS_MARGIN = 22;       // Outer margin in pixels
+// Constants
 const SNAKE_COLOR = '#1f5';
-const SNAKE_THICKNESS = 10;     // Snake body thickness
+const SNAKE_WIDTH = 30;                  // Snake body width
+const SPACE = 2;                         // Available space relative to width
+const CELL_SIZE = SNAKE_WIDTH * SPACE;   // Grid cell size in pixels
+const CANVAS_MARGIN = SNAKE_WIDTH * 0.8; // Outer margin in pixels
 
 // set title and version
 ui.pageTitle.innerText = document.title;
@@ -36,7 +37,7 @@ function drawSnake(ctx, path, width, height) {
 
     ctx.lineJoin = 'round';    // Smooth corners
     ctx.lineCap = 'round';     // Smooth ends
-    ctx.lineWidth = SNAKE_THICKNESS;
+    ctx.lineWidth = SNAKE_WIDTH;
 
     function cellCenter(c) {
         return [
@@ -65,11 +66,12 @@ function generateSnake() {
     const width = parseInt(ui.width.value, 10),
         height = parseInt(ui.height.value, 10);
 
-    // Set canvas size based on the number of cells and margin
-    ui.snake.width = width * CELL_SIZE + 2 * CANVAS_MARGIN;
-    ui.snake.height = height * CELL_SIZE + 2 * CANVAS_MARGIN;
+    const canvas = ui.drawing;
 
-    const canvas = ui.snake;
+    // Set canvas size based on the number of cells and margin
+    canvas.width = width * CELL_SIZE + 2 * CANVAS_MARGIN;
+    canvas.height = height * CELL_SIZE + 2 * CANVAS_MARGIN;
+
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
