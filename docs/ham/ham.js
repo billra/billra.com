@@ -22,10 +22,10 @@ ui.version.innerText   = 'v' + document.querySelector('meta[name="version"]').co
 let worker = null;
 
 // UI update
-// msg  – text placed in the status element (string)
-// ok   – true ⇒ normal status, false ⇒ error status   (boolean)
-// busy – true ⇒ generation in progress, false ⇒ idle (boolean)
-function updateUI(msg = '', ok = true, busy = false) {
+// msg  – text placed in the status element
+// ok   – true ⇒ normal status, false ⇒ error status
+// busy – true ⇒ generation in progress, false ⇒ idle
+function updateUI(msg, { ok = true, busy = false } = {}) {
     // status line
     ui.status.textContent = msg;
     ui.status.classList.toggle('error', !ok);
@@ -82,7 +82,7 @@ function generateSnake() {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    updateUI('Working...', true, true);
+    updateUI('Working...', { busy: true });
 
     worker = new Worker('worker.js');
     worker.postMessage({ width, height, version: ui.version.innerText });
@@ -96,9 +96,9 @@ function generateSnake() {
         const path = e.data.path;
         if (path) {
             drawSnake(ctx, path, width, height);
-            updateUI(`Found path: ${width} x ${height}`, true, false);
+            updateUI(`Found path: ${width} x ${height}`);
         } else {
-            updateUI('Failed: no Hamiltonian path found', false, false);
+            updateUI('Failed: no Hamiltonian path found', { ok: false });
         }
 
         worker.terminate();
@@ -107,7 +107,7 @@ function generateSnake() {
 
     worker.onerror = e => {
         console.error(`Worker exception "${e.message}" at line ${e.lineno}`);
-        updateUI('Error or canceled.', false, false);
+        updateUI('Error or canceled.', { ok: false });
         worker.terminate();
         worker = null;
     };
@@ -119,7 +119,7 @@ ui.cancel.addEventListener('click', () => {
         worker.terminate();
         worker = null;
     }
-    updateUI('Canceled.', false, false);
+    updateUI('Canceled.', { ok: false });
 });
 
 // "Generate" button logic
