@@ -22,9 +22,14 @@ ui.version.innerText = 'v' + document.querySelector('meta[name="version"]').cont
 let worker = null;
 
 // UI functions
+function updateButtonsBusy(busy) {
+    ui.generate.disabled = busy;
+    ui.cancel.disabled = !busy;
+}
+
 function updateStatus(msg, ok = true) {
-  ui.status.textContent = msg;
-  ui.status.classList.toggle('error', !ok);
+    ui.status.textContent = msg;
+    ui.status.classList.toggle('error', !ok);
 }
 
 // drawing
@@ -35,8 +40,8 @@ function drawSnake(ctx, path, width, height) {
     const offsetX = Math.floor((ctx.canvas.width - CELL_SIZE * width) / 2);
     const offsetY = Math.floor((ctx.canvas.height - CELL_SIZE * height) / 2);
 
-    ctx.lineJoin = 'round';    // Smooth corners
-    ctx.lineCap = 'round';     // Smooth ends
+    ctx.lineJoin = 'round';  // Smooth corners
+    ctx.lineCap = 'round';   // Smooth ends
     ctx.lineWidth = SNAKE_WIDTH;
 
     function cellCenter(c) {
@@ -45,6 +50,7 @@ function drawSnake(ctx, path, width, height) {
             offsetY + CELL_SIZE * (c.y + 0.5)
         ];
     }
+
     ctx.beginPath();
     const [sx, sy] = cellCenter(path[0]);
     ctx.moveTo(sx, sy);
@@ -75,9 +81,8 @@ function generateSnake() {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    updateButtonsBusy(true);
     updateStatus('Working...');
-    ui.cancel.disabled = false;
-    ui.generate.disabled = true;
 
     worker = new Worker('worker.js');
     worker.postMessage({ width, height, version: ui.version.innerText });
@@ -87,8 +92,9 @@ function generateSnake() {
             console.log('from worker: ' + e.data.debug);
             return;
         }
-        ui.cancel.disabled = true;
-        ui.generate.disabled = false;
+
+        updateButtonsBusy(false);
+
         const path = e.data.path;
         if (path) {
             drawSnake(ctx, path, width, height);
@@ -102,8 +108,7 @@ function generateSnake() {
 
     worker.onerror = function (e) {
         console.error(`Worker exception "${e.message}" at line ${e.lineno}`);
-        ui.cancel.disabled = true;
-        ui.generate.disabled = false;
+        updateButtonsBusy(false);
         updateStatus("Error or canceled.", false);
         worker.terminate();
         worker = null;
@@ -115,8 +120,7 @@ ui.cancel.addEventListener('click', () => {
     if (worker) {
         worker.terminate();
         worker = null;
-        ui.cancel.disabled = true;
-        ui.generate.disabled = false;
+        updateButtonsBusy(false);
         updateStatus("Canceled.", false);
     }
 });
