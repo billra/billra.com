@@ -84,7 +84,7 @@ function generateSnake() {
 
     updateUI('Working...', { busy: true });
 
-    worker = new Worker('worker.js');
+    worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
     worker.postMessage({ width, height, version: ui.version.innerText });
 
     worker.onmessage = e => {
