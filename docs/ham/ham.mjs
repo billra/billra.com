@@ -9,10 +9,10 @@ document.querySelectorAll('[id]').forEach(el => {
 
 // Constants
 const SNAKE_COLOR   = '#1f5';
-const SNAKE_WIDTH   = 30;                  // Snake body width
+const SNAKE_WIDTH   = 45;                  // Snake body width  (device pixels)
 const SPACE         = 2;                   // Available space relative to width
-const CELL_SIZE     = SNAKE_WIDTH * SPACE; // Grid cell size in pixels
-const CANVAS_MARGIN = SNAKE_WIDTH * 0.8;   // Outer margin in pixels
+const CELL_SIZE     = SNAKE_WIDTH * SPACE; // Grid cell size    (device pixels)
+const CANVAS_MARGIN = SNAKE_WIDTH * 0.8;   // Outer margin      (device pixels)
 
 // set title and version
 ui.pageTitle.innerText = document.title;
@@ -37,18 +37,15 @@ function updateUI(msg, { ok = true, busy = false } = {}) {
 
 // Drawing
 function drawSnake(ctx, path, width, height) {
-    const dpr = window.devicePixelRatio || 1;
-
-    // Clear using CSS-pixel coordinates (context is already scaled)
-    ctx.clearRect(0, 0, ctx.canvas.width  / dpr,
-                         ctx.canvas.height / dpr);
+    // clear whole bitmap (device-pixel units)
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     if (!path) return;
 
-    const offsetX = Math.floor((ctx.canvas.width  / dpr - CELL_SIZE * width)  / 2);
-    const offsetY = Math.floor((ctx.canvas.height / dpr - CELL_SIZE * height) / 2);
+    const offsetX = Math.floor((ctx.canvas.width  - CELL_SIZE * width)  / 2);
+    const offsetY = Math.floor((ctx.canvas.height - CELL_SIZE * height) / 2);
 
-    ctx.lineJoin = 'round';
-    ctx.lineCap  = 'round';
+    ctx.lineJoin  = 'round';
+    ctx.lineCap   = 'round';
     ctx.lineWidth = SNAKE_WIDTH;
 
     const cellCenter = c => [
@@ -80,23 +77,19 @@ function generateSnake() {
     const height = parseInt(ui.height.value, 10);
 
     const canvas = ui.drawing;
+    const dpr    = window.devicePixelRatio || 1;
 
-    // ----- Hi-DPI / retina support -----
-    const dpr = window.devicePixelRatio || 1;
+    // Canvas size in DEVICE pixels
+    const devWidth  = width  * CELL_SIZE + 2 * CANVAS_MARGIN;
+    const devHeight = height * CELL_SIZE + 2 * CANVAS_MARGIN;
 
-    const cssWidth  = width  * CELL_SIZE + 2 * CANVAS_MARGIN;
-    const cssHeight = height * CELL_SIZE + 2 * CANVAS_MARGIN;
-
-    // Size backing store and element separately
-    canvas.width  = cssWidth  * dpr;   // internal bitmap resolution
-    canvas.height = cssHeight * dpr;
-    canvas.style.width  = cssWidth  + 'px'; // on-page size
-    canvas.style.height = cssHeight + 'px';
+    canvas.width  = devWidth;                 // backing store (device px)
+    canvas.height = devHeight;
+    canvas.style.width  = (devWidth  / dpr) + 'px'; // CSS pixels on page
+    canvas.style.height = (devHeight / dpr) + 'px';
 
     const ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // reset + scale to CSS units
-    ctx.clearRect(0, 0, cssWidth, cssHeight);
-    // -----------------------------------
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     updateUI('Working...', { busy: true });
 
