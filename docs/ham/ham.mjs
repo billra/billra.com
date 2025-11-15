@@ -37,20 +37,18 @@ function updateUI(msg, { ok = true, busy = false } = {}) {
 
 // Drawing
 function drawSnake(ctx, path, width, height) {
-    const canvas = ctx.canvas;
+    const dpr = window.devicePixelRatio || 1;
 
-    // CSS-pixel size of the element (string like "400px" → number 400)
-    const cssWidth  = parseFloat(canvas.style.width)  || 0;
-    const cssHeight = parseFloat(canvas.style.height) || 0;
-
-    ctx.clearRect(0, 0, cssWidth, cssHeight);
+    // Clear using CSS-pixel coordinates (context is already scaled)
+    ctx.clearRect(0, 0, ctx.canvas.width  / dpr,
+                         ctx.canvas.height / dpr);
     if (!path) return;
 
-    const offsetX = Math.floor((cssWidth  - CELL_SIZE * width)  / 2);
-    const offsetY = Math.floor((cssHeight - CELL_SIZE * height) / 2);
+    const offsetX = Math.floor((ctx.canvas.width  / dpr - CELL_SIZE * width)  / 2);
+    const offsetY = Math.floor((ctx.canvas.height / dpr - CELL_SIZE * height) / 2);
 
-    ctx.lineJoin  = 'round';
-    ctx.lineCap   = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineCap  = 'round';
     ctx.lineWidth = SNAKE_WIDTH;
 
     const cellCenter = c => [
@@ -90,13 +88,13 @@ function generateSnake() {
     const cssHeight = height * CELL_SIZE + 2 * CANVAS_MARGIN;
 
     // Size backing store and element separately
-    canvas.width  = cssWidth  * dpr;   // internal bitmap
+    canvas.width  = cssWidth  * dpr;   // internal bitmap resolution
     canvas.height = cssHeight * dpr;
-    canvas.style.width  = cssWidth  + 'px';
+    canvas.style.width  = cssWidth  + 'px'; // on-page size
     canvas.style.height = cssHeight + 'px';
 
     const ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // scale drawing units to CSS pixels
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // reset + scale to CSS units
     ctx.clearRect(0, 0, cssWidth, cssHeight);
     // -----------------------------------
 
