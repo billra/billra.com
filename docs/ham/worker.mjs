@@ -8,12 +8,13 @@ function shuffle(arr) {
     }
 }
 
+const DIRS = [[0, 1], [1, 0], [0, -1], [-1, 0]];
 function dfs(x, y, visited, path, left, width, height) {
     visited[y][x] = true;
     path.push({ x, y });
     if (left === 1) return true;
     const frontier = [];
-    for (const [dx, dy] of [[0, 1], [1, 0], [0, -1], [-1, 0]]) {
+    for (const [dx, dy] of DIRS) {
         const nx = x + dx, ny = y + dy;
         if (nx >= 0 && nx < width && ny >= 0 && ny < height && !visited[ny][nx]) {
             frontier.push([nx, ny]);
