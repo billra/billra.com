@@ -94,12 +94,17 @@ button:disabled {
   font-size: 0.9rem;
 }
 
-/* canvas styling */
-canvas {
-  display: block;
-  margin: 0 auto;
-  background: var(--bg-canvas);
-  border-radius: 8px;
+/* drawing contains svg */
+#drawing {
+    display: block; /* keep it a block so margin:auto centres it */
+    width: fit-content; /* shrink to the SVG’s intrinsic width  */
+    margin: 0 auto;
+    background: var(--bg-canvas);
+    border-radius: 8px;
+}
+/* remove inline baseline gap by making the injected SVG a block*/
+#drawing svg {
+    display: block;
 }
 
 /* status line */

@@ -1,8 +1,3 @@
-// ham.mjs
-// ────────── Hamiltonian-snake demo (Hi-DPI aware) ──────────
-// Geometry is expressed exclusively in *CSS pixels*.
-// The canvas context is scaled once per draw call → no per-value conversions.
-
 // ────────── tiny DOM helpers ──────────
 const $  = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -20,47 +15,40 @@ const CELL_SIZE     = SNAKE_WIDTH * SPACE;
 const CANVAS_MARGIN = SNAKE_WIDTH * 0.8;
 const SNAKE_COLOR   = '#1f5';
 
-// ────────── canvas helper ──────────
-const setupCanvas = (canvas, cssW, cssH) => {
-    const dpr = window.devicePixelRatio;
-    console.log(`dpr: ${dpr}`);
+// ────────── SVG helpers ──────────
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
-    // element size (CSS px)
-    canvas.style.width  = `${cssW}px`;
-    canvas.style.height = `${cssH}px`;
-
-    // bitmap size (device px)
-    canvas.width  = cssW * dpr;
-    canvas.height = cssH * dpr;
-
-    const ctx = canvas.getContext('2d');
-    ctx.resetTransform(); // fresh state
-    ctx.scale(dpr, dpr);  // 1 CSS-px → dpr device-px
-    ctx.clearRect(0, 0, cssW, cssH);
-    return ctx;
+// Replace the content of `container` with a fresh <svg> element and returns that element.
+const setupSvg = (container, cssW, cssH) => {
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('width',  cssW);
+    svg.setAttribute('height', cssH);
+    svg.setAttribute('viewBox', `0 0 ${cssW} ${cssH}`);
+    container.replaceChildren(svg);
+    return svg;
 };
-
-// ────────── drawing ──────────
-const drawSnake = (ctx, path, cols, rows, cssW, cssH) => {
+// Draw the Hamiltonian snake as a single <polyline>.
+const drawSnake = (svg, path, cols, rows, cssW, cssH) => {
     if (!path) return;
 
     const offX = (cssW - cols * CELL_SIZE) / 2;
     const offY = (cssH - rows * CELL_SIZE) / 2;
 
-    const center = ({ x, y }) => [
-        offX + CELL_SIZE * (x + 0.5),
-        offY + CELL_SIZE * (y + 0.5)
-    ];
+    const points = path
+        .map(({ x, y }) =>
+            `${offX + CELL_SIZE * (x + 0.5)},${offY + CELL_SIZE * (y + 0.5)}`
+        )
+        .join(' ');
 
-    ctx.lineJoin    = 'round';
-    ctx.lineCap     = 'round';
-    ctx.lineWidth   = SNAKE_WIDTH;
-    ctx.strokeStyle = SNAKE_COLOR;
+    const polyline = document.createElementNS(SVG_NS, 'polyline');
+    polyline.setAttribute('points',          points);
+    polyline.setAttribute('fill',            'none');
+    polyline.setAttribute('stroke',          SNAKE_COLOR);
+    polyline.setAttribute('stroke-width',    SNAKE_WIDTH);
+    polyline.setAttribute('stroke-linecap',  'round');
+    polyline.setAttribute('stroke-linejoin', 'round');
 
-    ctx.beginPath();
-    ctx.moveTo(...center(path[0]));
-    for (let i = 1; i < path.length; ++i) ctx.lineTo(...center(path[i]));
-    ctx.stroke();
+    svg.append(polyline);
 };
 
 // ────────── status line & buttons ──────────
@@ -86,19 +74,19 @@ const generateSnake = () => {
     const cssW = cols * CELL_SIZE + 2 * CANVAS_MARGIN;
     const cssH = rows * CELL_SIZE + 2 * CANVAS_MARGIN;
 
-    const ctx = setupCanvas(ui.drawing, cssW, cssH);
+    const svg = setupSvg(ui.drawing, cssW, cssH);
     updateUI('Working …', { busy: true });
 
     worker = new Worker(WORKER_URL, { type: 'module' });
     worker.postMessage({ width: cols, height: rows, version: ui.version.textContent });
 
     worker.onmessage = ({ data }) => {
-        if (data.debug) {                          // debug chatter
+        if (data.debug) {
             console.log('%cworker:', 'color:grey', data.debug);
             return;
         }
 
-        drawSnake(ctx, data.path, cols, rows, cssW, cssH);
+        drawSnake(svg, data.path, cols, rows, cssW, cssH);
 
         updateUI(
             data.path ? `Found path: ${cols} × ${rows}`
