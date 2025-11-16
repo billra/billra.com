@@ -52,9 +52,9 @@ const drawSnake = (ctx, path, cols, rows, cssW, cssH) => {
         offY + CELL_SIZE * (y + 0.5)
     ];
 
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    ctx.lineWidth = SNAKE_WIDTH;
+    ctx.lineJoin    = 'round';
+    ctx.lineCap     = 'round';
+    ctx.lineWidth   = SNAKE_WIDTH;
     ctx.strokeStyle = SNAKE_COLOR;
 
     ctx.beginPath();
@@ -69,10 +69,11 @@ const updateUI = (msg, { ok = true, busy = false } = {}) => {
     ui.status.classList.toggle('error', !ok);
 
     ui.generate.disabled = busy;
-    ui.cancel.disabled = !busy;
+    ui.cancel.disabled   = !busy;
 };
 
 // ────────── worker glue ──────────
+const WORKER_URL = new URL('./worker.mjs', import.meta.url); // single instance
 let worker = null;
 
 const generateSnake = () => {
@@ -88,7 +89,7 @@ const generateSnake = () => {
     const ctx = setupCanvas(ui.drawing, cssW, cssH);
     updateUI('Working …', { busy: true });
 
-    worker = new Worker(new URL('./worker.mjs', import.meta.url), { type: 'module' });
+    worker = new Worker(WORKER_URL, { type: 'module' });
     worker.postMessage({ width: cols, height: rows, version: ui.version.textContent });
 
     worker.onmessage = ({ data }) => {
@@ -101,7 +102,7 @@ const generateSnake = () => {
 
         updateUI(
             data.path ? `Found path: ${cols} × ${rows}`
-                : 'Failed: no Hamiltonian path',
+                      : 'Failed: no Hamiltonian path',
             { ok: Boolean(data.path) }
         );
 
@@ -126,8 +127,8 @@ ui.cancel.addEventListener('click', () => {
 });
 
 // ────────── bootstrap ──────────
-window.addEventListener('load', () => {
+document.addEventListener('DOMContentLoaded', () => {
     ui.pageTitle.textContent = document.title;
-    ui.version.textContent = 'v' + $('meta[name="version"]').content;
+    ui.version.textContent   = 'v' + $('meta[name="version"]').content;
     generateSnake();
 });
