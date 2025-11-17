@@ -9,11 +9,10 @@ $$('[id]').forEach(el =>
 );
 
 // ────────── constants (CSS px) ──────────
-const SNAKE_WIDTH   = 30;
-const SPACE         = 2;
-const CELL_SIZE     = SNAKE_WIDTH * SPACE;
-const CANVAS_MARGIN = SNAKE_WIDTH * 0.8;
-const SNAKE_COLOR   = '#1f5';
+const SNAKE_WIDTH = 30;
+const CELL_SIZE   = SNAKE_WIDTH * 2;
+const MARGIN      = SNAKE_WIDTH * 0.8;
+const SNAKE_COLOR = '#1f5';
 
 // ────────── SVG helpers ──────────
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -71,8 +70,8 @@ const generateSnake = () => {
     const cols = +ui.cols.value; // unary + → number
     const rows = +ui.rows.value;
 
-    const width  = cols * CELL_SIZE + 2 * CANVAS_MARGIN;
-    const height = rows * CELL_SIZE + 2 * CANVAS_MARGIN;
+    const width  = cols * CELL_SIZE + 2 * MARGIN;
+    const height = rows * CELL_SIZE + 2 * MARGIN;
 
     const svg = setupSvg(ui.drawing, width, height);
     updateUI('Working …', { busy: true });
