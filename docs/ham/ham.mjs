@@ -19,20 +19,20 @@ const SNAKE_COLOR   = '#1f5';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 // Replace the content of `container` with a fresh <svg> element and returns that element.
-const setupSvg = (container, cssW, cssH) => {
+const setupSvg = (container, width, height) => {
     const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('width',  cssW);
-    svg.setAttribute('height', cssH);
-    svg.setAttribute('viewBox', `0 0 ${cssW} ${cssH}`);
+    svg.setAttribute('width',  width);
+    svg.setAttribute('height', height);
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
     container.replaceChildren(svg);
     return svg;
 };
 // Draw the Hamiltonian snake as a single <polyline>.
-const drawSnake = (svg, path, cols, rows, cssW, cssH) => {
+const drawSnake = (svg, path, cols, rows, width, height) => {
     if (!path) return;
 
-    const offX = (cssW - cols * CELL_SIZE) / 2;
-    const offY = (cssH - rows * CELL_SIZE) / 2;
+    const offX = (width  - cols * CELL_SIZE) / 2;
+    const offY = (height - rows * CELL_SIZE) / 2;
 
     const points = path
         .map(({ x, y }) =>
@@ -68,13 +68,13 @@ const generateSnake = () => {
     worker?.terminate(); // abort an existing run
     worker = null;
 
-    const cols = +ui.width.value; // unary + → number
-    const rows = +ui.height.value;
+    const cols = +ui.cols.value; // unary + → number
+    const rows = +ui.rows.value;
 
-    const cssW = cols * CELL_SIZE + 2 * CANVAS_MARGIN;
-    const cssH = rows * CELL_SIZE + 2 * CANVAS_MARGIN;
+    const width  = cols * CELL_SIZE + 2 * CANVAS_MARGIN;
+    const height = rows * CELL_SIZE + 2 * CANVAS_MARGIN;
 
-    const svg = setupSvg(ui.drawing, cssW, cssH);
+    const svg = setupSvg(ui.drawing, width, height);
     updateUI('Working …', { busy: true });
 
     worker = new Worker(WORKER_URL, { type: 'module' });
@@ -86,7 +86,7 @@ const generateSnake = () => {
             return;
         }
 
-        drawSnake(svg, data.path, cols, rows, cssW, cssH);
+        drawSnake(svg, data.path, cols, rows, width, height);
 
         updateUI(
             data.path ? `Found path: ${cols} × ${rows}`
