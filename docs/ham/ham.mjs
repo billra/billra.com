@@ -78,7 +78,7 @@ const generateSnake = () => {
     updateUI('Working …', { busy: true });
 
     worker = new Worker(WORKER_URL, { type: 'module' });
-    worker.postMessage({ width: cols, height: rows, version: ui.version.textContent });
+    worker.postMessage({ cols, rows, version: ui.version.textContent });
 
     worker.onmessage = ({ data }) => {
         if (data.debug) {
