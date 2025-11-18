@@ -12,6 +12,8 @@ $$('[id]').forEach(el =>
 const SNAKE_WIDTH = 30;
 const CELL_SIZE   = SNAKE_WIDTH * 2; // match negative and positive space width: 2
 const SNAKE_COLOR = '#1f5';
+// background gets same radius as snake
+document.documentElement.style.setProperty('--snake-radius', SNAKE_WIDTH / 2 + 'px');
 
 // ────────── SVG helpers ──────────
 const SVG_NS = 'http://www.w3.org/2000/svg';

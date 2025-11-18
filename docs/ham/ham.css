@@ -100,7 +100,7 @@ button:disabled {
     width: fit-content; /* shrink to the SVG’s intrinsic width  */
     margin: 0 auto;
     background: var(--bg-canvas);
-    border-radius: 8px;
+    border-radius: var(--snake-radius, 8px);
 }
 /* remove inline baseline gap by making the injected SVG a block*/
 #drawing svg {
