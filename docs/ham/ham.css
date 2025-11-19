@@ -90,26 +90,26 @@ button:disabled {
 
 /* description */
 .description {
-  margin-bottom: 1rem;
   font-size: 0.9rem;
 }
 
 /* drawing contains svg */
-#drawing {
+#drawing,
+#drawingQ {
     display: block; /* keep it a block so margin:auto centres it */
     width: fit-content; /* shrink to the SVG’s intrinsic width  */
-    margin: 0 auto;
+    margin: 0.5rem auto;
     background: var(--bg-canvas);
     border-radius: var(--snake-radius, 8px);
 }
 /* remove inline baseline gap by making the injected SVG a block*/
-#drawing svg {
+#drawing svg,
+#drawingQ svg {
     display: block;
 }
 
 /* status line */
 #status {
-  margin-top: 1rem;
   min-height: 1.2em;
   color: var(--color-status-ok);
 }

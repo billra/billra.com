@@ -51,6 +51,20 @@ const drawSnake = (svg, path, cols, rows, width, height) => {
     svg.append(polyline);
 };
 
+// placeholder for the upcoming implementation
+const drawSnakeQ = (svg, path, cols, rows, width, height) => {
+    if (!path) return;
+    const rect = document.createElementNS(SVG_NS, 'rect');
+    rect.setAttribute('x', 20);
+    rect.setAttribute('y', 20);
+    rect.setAttribute('width',  width-40);
+    rect.setAttribute('height', height-40);
+    rect.setAttribute('fill', 'none');
+    rect.setAttribute('stroke', '#555');
+    rect.setAttribute('stroke-width', 2);
+    svg.append(rect);
+};
+
 // ────────── status line & buttons ──────────
 const updateUI = (msg, { ok = true, busy = false } = {}) => {
     ui.status.textContent = msg;
@@ -75,6 +89,8 @@ const generateSnake = () => {
     const height = rows * CELL_SIZE + CELL_SIZE - SNAKE_WIDTH;
 
     const svg = setupSvg(ui.drawing, width, height);
+    const svgQ = setupSvg(ui.drawingQ, width, height);
+
     updateUI('Working …', { busy: true });
 
     worker = new Worker(WORKER_URL, { type: 'module' });
@@ -87,6 +103,7 @@ const generateSnake = () => {
         }
 
         drawSnake(svg, data.path, cols, rows, width, height);
+        drawSnakeQ(svgQ, data.path, cols, rows, width, height);
 
         updateUI(
             data.path ? `Found path: ${cols} × ${rows}`
