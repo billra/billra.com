@@ -51,100 +51,91 @@ const drawSnake = (svg, path, cols, rows, width, height) => {
     svg.append(polyline);
 };
 
+// ───────────────── helpers ─────────────────
+const dir   = (p, q) => ({ x: Math.sign(q.x - p.x), y: Math.sign(q.y - p.y) });
+const left  = ({x, y}) => ({ x:  y, y: -x });
+const right = ({x, y}) => ({ x: -y, y:  x });
+
+/*────────────────── one wall ──────────────────
+ * centers → wall path fragment
+ *
+ * includeMove === true   ▶  “M x y …”
+ * includeMove === false  ▶  “L x y …”
+ */
+function buildWall(centers, R, includeMove = true) {
+    const dir   = (p, q) => ({ x: Math.sign(q.x - p.x),
+                               y: Math.sign(q.y - p.y) });
+    const left  = ({x, y}) => ({ x:  y, y: -x });
+
+    const D = centers.slice(1).map((c, i) => dir(centers[i], c));
+
+    const startOff = left(D[0]);
+    const start    = {
+        x: centers[0].x + startOff.x * R,
+        y: centers[0].y + startOff.y * R
+    };
+
+    let cmd = `${includeMove ? 'M' : 'L'} ${start.x} ${start.y}`;
+
+    for (let i = 1; i < centers.length - 1; ++i) {
+        const dp = D[i - 1], dn = D[i];
+        if (dp.x === dn.x && dp.y === dn.y) continue;        // straight
+
+        const prev = {
+            x: centers[i].x + left(dp).x * R,
+            y: centers[i].y + left(dp).y * R
+        };
+        cmd += ` L ${prev.x} ${prev.y}`;
+
+        const next = {
+            x: centers[i].x + left(dn).x * R,
+            y: centers[i].y + left(dn).y * R
+        };
+        const sweep = (dp.x * dn.y - dp.y * dn.x) > 0 ? 1 : 0;
+        cmd += ` A ${R} ${R} 0 0 ${sweep} ${next.x} ${next.y}`;
+    }
+
+    const endOff = left(D[D.length - 1]);
+    const end    = {
+        x: centers[centers.length - 1].x + endOff.x * R,
+        y: centers[centers.length - 1].y + endOff.y * R
+    };
+    cmd += ` L ${end.x} ${end.y}`;
+
+    return { d: cmd, start, end };
+}
+// ───────────────────────────────────────────
+
 // ────────── Filled Outline Snake ──────────
 const drawSnakeQ = (svg, path, cols, rows, width, height) => {
-    if (!path) return;
+    if (!path || path.length < 2) return;
 
-    const R      = SNAKE_WIDTH / 2; // geometric radius
-    const DEBUG  = true;            // true ⇒ outline only
+    const R     = SNAKE_WIDTH / 2;
+    const DEBUG = true;
 
-    // coordinate helpers
+    // Cell center → pixel
     const offX = (width  - cols * CELL_SIZE) / 2;
     const offY = (height - rows * CELL_SIZE) / 2;
-    const toPx = ({ x, y }) => ({ // cell → px center
+    const toPx = ({x, y}) => ({
         x: offX + CELL_SIZE * (x + 0.5),
-        y: offY + CELL_SIZE * (y + 0.5),
+        y: offY + CELL_SIZE * (y + 0.5)
     });
-
     const centers = path.map(toPx);
-    const count   = centers.length;
 
-    const dir   = (p, q) => ({ // reduced direction
-        x: Math.sign(q.x - p.x),
-        y: Math.sign(q.y - p.y),
-    });
-    const left  = ({ x, y }) => ({ x:  y, y: -x });
-    const right = ({ x, y }) => ({ x: -y, y:  x });
+    // left wall (head → tail)  – starts with ‘M’
+    const leftWall  = buildWall(centers, R, true);
 
-    // SVG path emitters
-    let cmd = '';
-    const L = p                 => cmd += ` L ${p.x} ${p.y}`;
-    const A = (p, sweep, large) => cmd += ` A ${R} ${R} 0 ${large} ${sweep} ${p.x} ${p.y}`;
+    // right wall (tail → head) – starts with ‘L’
+    const rightWall = buildWall([...centers].reverse(), R, false);
 
-    // direction vectors of the center line
-    const D = [];
-    for (let i = 0; i < count - 1; ++i) D.push(dir(centers[i], centers[i + 1]));
+    // two 180° semicircles that close the outline
+    const tailCap = ` A ${R} ${R} 0 1 1 ${rightWall.start.x} ${rightWall.start.y}`;
+    const headCap = ` A ${R} ${R} 0 1 1 ${leftWall.start.x}  ${leftWall.start.y}`;
 
-    // LEFT WALL (head ➜ tail)
-    const NL0   = left(D[0]);
-    const start = { x: centers[0].x + NL0.x * R, y: centers[0].y + NL0.y * R };
-    cmd = `M ${start.x} ${start.y}`;
+    const d = `${leftWall.d}${tailCap}${rightWall.d}${headCap}Z`;
 
-    for (let i = 1; i <= count - 2; ++i) {
-        const dp = D[i - 1], dn = D[i];
-        if (dp.x === dn.x && dp.y === dn.y) continue; // straight
-
-        const prev = { x: centers[i].x + left(dp).x * R,
-                       y: centers[i].y + left(dp).y * R };
-        L(prev);
-
-        const next = { x: centers[i].x + left(dn).x * R,
-                       y: centers[i].y + left(dn).y * R };
-        const cross = dp.x * dn.y - dp.y * dn.x;
-
-        A(next, cross > 0 ? 1 : 0, 0);
-    }
-
-    const tailLeft = { x: centers[count - 1].x + left(D[count - 2]).x * R,
-                       y: centers[count - 1].y + left(D[count - 2]).y * R };
-    L(tailLeft);
-
-    // TAIL CAP (left ➜ right)
-    const tailRight = { x: centers[count - 1].x + right(D[count - 2]).x * R,
-                        y: centers[count - 1].y + right(D[count - 2]).y * R };
-
-    A(tailRight, 1, 1); // 180°, CW
-
-    // RIGHT WALL (tail ➜ head)
-    const centersR = centers.slice().reverse();
-    const DR = [];
-    for (let i = 0; i < count - 1; ++i) DR.push(dir(centersR[i], centersR[i + 1]));
-
-    for (let i = 1; i <= count - 2; ++i) {
-        const dp = DR[i - 1], dn = DR[i];
-        if (dp.x === dn.x && dp.y === dn.y) continue;
-
-        const prev = { x: centersR[i].x + left(dp).x * R,
-                       y: centersR[i].y + left(dp).y * R };
-        L(prev);
-
-        const next = { x: centersR[i].x + left(dn).x * R,
-                       y: centersR[i].y + left(dn).y * R };
-        const cross = dp.x * dn.y - dp.y * dn.x;
-        A(next, cross > 0 ? 1 : 0, 0);
-    }
-
-    const headRight = { x: centers[0].x + right(D[0]).x * R,
-                        y: centers[0].y + right(D[0]).y * R };
-    L(headRight);
-
-    // HEAD CAP (right ➜ left)  +  close
-    A(start, 1, 1); // 180°, CW
-    cmd += ' Z';
-
-    // inject into the SVG
     const outline = document.createElementNS(SVG_NS, 'path');
-    outline.setAttribute('d', cmd);
+    outline.setAttribute('d', d);
 
     if (DEBUG) {
         outline.setAttribute('fill', 'none');
