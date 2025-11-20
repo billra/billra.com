@@ -51,18 +51,131 @@ const drawSnake = (svg, path, cols, rows, width, height) => {
     svg.append(polyline);
 };
 
-// placeholder for the upcoming implementation
+// ────────── NEW – filled snake with true inner radius ──────────
 const drawSnakeQ = (svg, path, cols, rows, width, height) => {
-    if (!path) return;
-    const rect = document.createElementNS(SVG_NS, 'rect');
-    rect.setAttribute('x', 20);
-    rect.setAttribute('y', 20);
-    rect.setAttribute('width',  width-40);
-    rect.setAttribute('height', height-40);
-    rect.setAttribute('fill', 'none');
-    rect.setAttribute('stroke', '#555');
-    rect.setAttribute('stroke-width', 2);
-    svg.append(rect);
+    if (!path) return;                                  // nothing to draw
+
+    const n = path.length;
+    const R = SNAKE_WIDTH / 2;                          // geometric radius
+
+    /* ── helpers ──────────────────────────────────────────────── */
+    const offX = (width  - cols * CELL_SIZE) / 2;
+    const offY = (height - rows * CELL_SIZE) / 2;
+
+    // centre of a cell  →  SVG px coordinates
+    const toPx = ({ x, y }) => ({
+        x: offX + CELL_SIZE * (x + 0.5),
+        y: offY + CELL_SIZE * (y + 0.5),
+    });
+
+    const centres = path.map(toPx);
+
+    // direction between two neighbouring points, reduced to ±1,0
+    const dir = (p, q) => {
+        const dx = Math.sign(q.x - p.x);
+        const dy = Math.sign(q.y - p.y);
+        return { x: dx, y: dy };
+    };
+
+    // left / right unit normals
+    const left  = ({ x, y }) => ({ x: -y, y:  x });
+    const right = ({ x, y }) => ({ x:  y, y: -x });
+
+    // short hands that append commands to the path-data string
+    let d = '';
+    const lineTo = p              =>  d += ` L ${p.x} ${p.y}`;
+    const arc    = (p, sweep, LA) =>  d += ` A ${R} ${R} 0 ${LA} ${sweep} ${p.x} ${p.y}`;
+
+    /* ── degenerate board 1 × 1 → just a disk ─────────────────── */
+    if (n === 1) {
+        const c = centres[0];
+        const circle = document.createElementNS(SVG_NS, 'circle');
+        circle.setAttribute('cx',   c.x);
+        circle.setAttribute('cy',   c.y);
+        circle.setAttribute('r',    R);
+        circle.setAttribute('fill', SNAKE_COLOR);
+        svg.append(circle);
+        return;
+    }
+
+    /* ── direction vectors of the centre line ─────────────────── */
+    const dirs = [];
+    for (let i = 0; i < n - 1; ++i) dirs.push(dir(centres[i], centres[i + 1]));
+
+    /* ── 1.  left wall  (head → tail) ─────────────────────────── */
+    const NL0   = left(dirs[0]);
+    const start = { x: centres[0].x + NL0.x * R, y: centres[0].y + NL0.y * R };
+    d = `M ${start.x} ${start.y}`;
+
+    for (let i = 1; i <= n - 2; ++i) {
+        const dp = dirs[i - 1], dn = dirs[i];
+        if (dp.x === dn.x && dp.y === dn.y) continue;   // still straight
+
+        const Pprev = {
+            x: centres[i].x + left(dp).x * R,
+            y: centres[i].y + left(dp).y * R
+        };
+        lineTo(Pprev);
+
+        const Pnext = {
+            x: centres[i].x + left(dn).x * R,
+            y: centres[i].y + left(dn).y * R
+        };
+        const cross = dp.x * dn.y - dp.y * dn.x;
+        arc(Pnext, cross > 0 ? 1 : 0, 0);               // quarter arc
+    }
+
+    const tailLeft = {
+        x: centres[n - 1].x + left(dirs[n - 2]).x * R,
+        y: centres[n - 1].y + left(dirs[n - 2]).y * R
+    };
+    lineTo(tailLeft);
+
+    /* ── 2.  180° cap head←→tail (left → right) ───────────────── */
+    const tailRight = {
+        x: centres[n - 1].x + right(dirs[n - 2]).x * R,
+        y: centres[n - 1].y + right(dirs[n - 2]).y * R
+    };
+    arc(tailRight, 1, 1);                               // half-circle, CW
+
+    /* ── 3.  right wall  (tail → head, walk reversed) ─────────── */
+    const centresR = centres.slice().reverse();
+    const dirsR = [];
+    for (let i = 0; i < n - 1; ++i) dirsR.push(dir(centresR[i], centresR[i + 1]));
+
+    for (let i = 1; i <= n - 2; ++i) {
+        const dp = dirsR[i - 1], dn = dirsR[i];
+        if (dp.x === dn.x && dp.y === dn.y) continue;
+
+        const Pprev = {
+            x: centresR[i].x + left(dp).x * R,
+            y: centresR[i].y + left(dp).y * R
+        };
+        lineTo(Pprev);
+
+        const Pnext = {
+            x: centresR[i].x + left(dn).x * R,
+            y: centresR[i].y + left(dn).y * R
+        };
+        const cross = dp.x * dn.y - dp.y * dn.x;
+        arc(Pnext, cross > 0 ? 1 : 0, 0);               // quarter arc
+    }
+
+    const headRight = {
+        x: centres[0].x + right(dirs[0]).x * R,
+        y: centres[0].y + right(dirs[0]).y * R
+    };
+    lineTo(headRight);
+
+    /* ── 4.  180° cap right→left  + close path ───────────────── */
+    arc(start, 1, 1);                                   // half-circle, CW
+    d += ' Z';
+
+    /* ── inject into the SVG ──────────────────────────────────── */
+    const outline = document.createElementNS(SVG_NS, 'path');
+    outline.setAttribute('d',    d);
+    outline.setAttribute('fill', SNAKE_COLOR);
+    svg.append(outline);
 };
 
 // ────────── status line & buttons ──────────
