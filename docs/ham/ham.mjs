@@ -55,16 +55,13 @@ const drawSnake = (svg, path, cols, rows, width, height) => {
 const drawSnakeQ = (svg, path, cols, rows, width, height) => {
     if (!path || path.length === 0) return;
 
-    /* ───────────────── settings ───────────────────────────── */
     const R      = SNAKE_WIDTH / 2;        // geometric radius
-    const DEBUG  = true;                  // true ⇒ only stroke outline
+    const DEBUG  = true;                  // true ⇒ outline only
 
-    /* ───────────────── helpers ────────────────────────────── */
+    /* ─── coordinate helpers ───────────────────────────────── */
     const offX = (width  - cols * CELL_SIZE) / 2;
     const offY = (height - rows * CELL_SIZE) / 2;
-
-    // centre of a cell  →  SVG px coordinates
-    const toPx = ({ x, y }) => ({
+    const toPx = ({ x, y }) => ({           // cell → px centre
         x: offX + CELL_SIZE * (x + 0.5),
         y: offY + CELL_SIZE * (y + 0.5),
     });
@@ -72,28 +69,19 @@ const drawSnakeQ = (svg, path, cols, rows, width, height) => {
     const centres = path.map(toPx);
     const n       = centres.length;
 
-    // direction   q − p  (components are −1, 0, +1)
-    const dir = (p, q) => ({
+    const dir   = (p, q) => ({              // reduced direction
         x: Math.sign(q.x - p.x),
         y: Math.sign(q.y - p.y),
     });
-
-    // 90° normals  — screen coordinates (y ↘)
     const left  = ({ x, y }) => ({ x:  y, y: -x });
     const right = ({ x, y }) => ({ x: -y, y:  x });
 
-    // quarter-arc sweep:  cross>0 ⇒ right turn (CW) in screen space
-    const sweepQuarter = cross => (cross > 0 ? 0 : 1); // 0 = CCW, 1 = CW
-
-    // half-circle sweep:  East | South  ⇒  CW (1) , West | North ⇒ CCW (0)
-    const sweepHalf = d => (d.x + d.y > 0 ? 1 : 0);
-
-    /* string buffer for the SVG path ------------------------ */
+    /* ─── SVG path emitters ───────────────────────────────── */
     let d = '';
-    const L = p                    => d += ` L ${p.x} ${p.y}`;
-    const A = (p, sweep, large)    => d += ` A ${R} ${R} 0 ${large} ${sweep} ${p.x} ${p.y}`;
+    const L = p                 => d += ` L ${p.x} ${p.y}`;
+    const A = (p, sweep, large) => d += ` A ${R} ${R} 0 ${large} ${sweep} ${p.x} ${p.y}`;
 
-    /* ───────────────── degenerate 1×1 board ──────────────── */
+    /* ─── 1 × 1 board : just a filled circle ─────────────── */
     if (n === 1) {
         const c = centres[0];
         const circle = document.createElementNS(SVG_NS, 'circle');
@@ -105,20 +93,20 @@ const drawSnakeQ = (svg, path, cols, rows, width, height) => {
         return;
     }
 
-    /* ───────────────── directions of the centre line ─────── */
+    /* ─── direction vectors of the centre line ───────────── */
     const D = [];
     for (let i = 0; i < n - 1; ++i) D.push(dir(centres[i], centres[i + 1]));
 
-    /* ========================================================
-       1.  LEFT WALL  (head ➜ tail)
-       ======================================================== */
+    /* ======================================================
+         LEFT WALL   (head ➜ tail)
+       ====================================================== */
     const NL0   = left(D[0]);
     const start = { x: centres[0].x + NL0.x * R, y: centres[0].y + NL0.y * R };
     d = `M ${start.x} ${start.y}`;
 
     for (let i = 1; i <= n - 2; ++i) {
         const dp = D[i - 1], dn = D[i];
-        if (dp.x === dn.x && dp.y === dn.y) continue;        // straight
+        if (dp.x === dn.x && dp.y === dn.y) continue;     // straight
 
         const prev = { x: centres[i].x + left(dp).x * R,
                        y: centres[i].y + left(dp).y * R };
@@ -127,23 +115,29 @@ const drawSnakeQ = (svg, path, cols, rows, width, height) => {
         const next = { x: centres[i].x + left(dn).x * R,
                        y: centres[i].y + left(dn).y * R };
         const cross = dp.x * dn.y - dp.y * dn.x;
-        A(next, sweepQuarter(cross), 0);                     // 90°
+
+        /* FIX #1 ─ quarter-arc sweep:
+           left-wall needs  CW   if cross>0   (left turn)
+                            CCW  if cross<0   (right turn)          */
+        A(next, cross > 0 ? 1 : 0, 0);
     }
 
     const tailLeft = { x: centres[n - 1].x + left(D[n - 2]).x * R,
                        y: centres[n - 1].y + left(D[n - 2]).y * R };
     L(tailLeft);
 
-    /* ========================================================
-       2.  TAIL HALF-CIRCLE  (left ➜ right)
-       ======================================================== */
+    /* ======================================================
+         TAIL CAP   (left ➜ right)
+       ====================================================== */
     const tailRight = { x: centres[n - 1].x + right(D[n - 2]).x * R,
                         y: centres[n - 1].y + right(D[n - 2]).y * R };
-    A(tailRight, sweepHalf(D[n - 2]), 1);                   // 180°, large-arc=1
 
-    /* ========================================================
-       3.  RIGHT WALL  (tail ➜ head)  =  left wall of reversed line
-       ======================================================== */
+    /* FIX #2 ─ the outside of the tube is *always* clockwise */
+    A(tailRight, 1, 1);                                    // 180°, CW
+
+    /* ======================================================
+         RIGHT WALL   (tail ➜ head)  =  left wall of reversed line
+       ====================================================== */
     const centresR = centres.slice().reverse();
     const DR = [];
     for (let i = 0; i < n - 1; ++i) DR.push(dir(centresR[i], centresR[i + 1]));
@@ -159,25 +153,25 @@ const drawSnakeQ = (svg, path, cols, rows, width, height) => {
         const next = { x: centresR[i].x + left(dn).x * R,
                        y: centresR[i].y + left(dn).y * R };
         const cross = dp.x * dn.y - dp.y * dn.x;
-        A(next, sweepQuarter(cross), 0);
+        A(next, cross > 0 ? 1 : 0, 0);
     }
 
     const headRight = { x: centres[0].x + right(D[0]).x * R,
                         y: centres[0].y + right(D[0]).y * R };
     L(headRight);
 
-    /* ========================================================
-       4.  HEAD HALF-CIRCLE  (right ➜ left)  +  close
-       ======================================================== */
-    A(start, sweepHalf({ x: -D[0].x, y: -D[0].y }), 1);      // 180°
+    /* ======================================================
+         HEAD CAP   (right ➜ left)  +  close
+       ====================================================== */
+    A(start, 1, 1);                                        // 180°, CW
     d += ' Z';
 
-    /* ───────────────── inject into the SVG ───────────────── */
+    /* ─── inject into the SVG ────────────────────────────── */
     const outline = document.createElementNS(SVG_NS, 'path');
     outline.setAttribute('d', d);
 
-    if (DEBUG) {                                             // help spot crossings
-        outline.setAttribute('fill',   'none');
+    if (DEBUG) {
+        outline.setAttribute('fill', 'none');
         outline.setAttribute('stroke', '#f66');
         outline.setAttribute('stroke-width', 2);
         outline.setAttribute('vector-effect', 'non-scaling-stroke');
@@ -185,7 +179,6 @@ const drawSnakeQ = (svg, path, cols, rows, width, height) => {
     } else {
         outline.setAttribute('fill', SNAKE_COLOR);
     }
-
     svg.append(outline);
 };
 
