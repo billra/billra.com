@@ -67,11 +67,12 @@ function wall (centers, R) {
     let cmd = '';
 
     for (let i = 1; i < centers.length - 1; ++i) {
-        const dp = D[i - 1];          // incoming direction
-        const dn = D[i];              // outgoing direction
-        if (dp.x === dn.x && dp.y === dn.y) continue;      // straight
+        const dp = D[i - 1]; // incoming direction
+        const dn = D[i];     // outgoing direction
+        if (dp.x === dn.x && dp.y === dn.y) continue; // straight
 
-        const cross = dp.x * dn.y - dp.y * dn.x;           // + : concave,  – : convex
+        // cross: negative = concave inner bend, positive = convex outer bend
+        const cross = dp.x * dn.y - dp.y * dn.x;
 
         // point on the offset of the previous segment
         let prev = {
@@ -84,14 +85,16 @@ function wall (centers, R) {
             y: centers[i].y + left(dn).y * R
         };
 
-        if (cross < 0) {           // inner corner – shorten both segments by R
-            prev.x -= dp.x * 2 * R; prev.y -= dp.y * 2 * R;     // −dp  because the
-            next.x += dn.x * 2 * R; next.y += dn.y * 2 * R;     //  next segment starts there
+        // shorten previous and next line segments on inner curve
+        if (cross < 0) {
+            prev.x -= dp.x * 2 * R; prev.y -= dp.y * 2 * R;
+            next.x += dn.x * 2 * R; next.y += dn.y * 2 * R;
         }
 
         cmd += ` L ${prev.x} ${prev.y}`;
 
-        const sweep = cross > 0 ? 1 : 0;   // clockwise for inner, counter-cw for outer
+        // sweep: clockwise for convex outer, counter-clockwise for concave inner
+        const sweep = cross > 0 ? 1 : 0;
         cmd += ` A ${R} ${R} 0 0 ${sweep} ${next.x} ${next.y}`;
     }
 
@@ -107,7 +110,7 @@ function drawSnakeQ(svg, path, cols, rows, width, height) {
     if (!path || path.length < 2) return;
 
     const R     = SNAKE_WIDTH / 2;
-    const DEBUG = true;
+    const DEBUG = false;
 
     // cell centers
     const offX = (width - cols * CELL_SIZE) / 2;
