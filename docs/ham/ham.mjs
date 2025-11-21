@@ -67,16 +67,31 @@ function wall (centers, R) {
     let cmd = '';
 
     for (let i = 1; i < centers.length - 1; ++i) {
-        const dp = D[i - 1], dn = D[i];
-        if (dp.x === dn.x && dp.y === dn.y) continue; // straight
+        const dp = D[i - 1];          // incoming direction
+        const dn = D[i];              // outgoing direction
+        if (dp.x === dn.x && dp.y === dn.y) continue;      // straight
 
-        const prev = { x: centers[i].x + left(dp).x * R,
-                       y: centers[i].y + left(dp).y * R };
+        const cross = dp.x * dn.y - dp.y * dn.x;           // + : concave,  – : convex
+
+        // point on the offset of the previous segment
+        let prev = {
+            x: centers[i].x + left(dp).x * R,
+            y: centers[i].y + left(dp).y * R
+        };
+        // point on the offset of the next segment
+        let next = {
+            x: centers[i].x + left(dn).x * R,
+            y: centers[i].y + left(dn).y * R
+        };
+
+        if (cross < 0) {           // inner corner – shorten both segments by R
+            prev.x -= dp.x * 2 * R; prev.y -= dp.y * 2 * R;     // −dp  because the
+            next.x += dn.x * 2 * R; next.y += dn.y * 2 * R;     //  next segment starts there
+        }
+
         cmd += ` L ${prev.x} ${prev.y}`;
 
-        const next = { x: centers[i].x + left(dn).x * R,
-                       y: centers[i].y + left(dn).y * R };
-        const sweep = (dp.x * dn.y - dp.y * dn.x) > 0 ? 1 : 0;
+        const sweep = cross > 0 ? 1 : 0;   // clockwise for inner, counter-cw for outer
         cmd += ` A ${R} ${R} 0 0 ${sweep} ${next.x} ${next.y}`;
     }
 
