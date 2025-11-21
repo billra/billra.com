@@ -27,7 +27,8 @@ const setupSvg = (container, width, height) => {
     container.replaceChildren(svg);
     return svg;
 };
-// Draw the Hamiltonian snake as a single <polyline>.
+
+// ────────── draw the snake as a single polyline ──────────
 const drawSnake = (svg, path, cols, rows, width, height) => {
     if (!path) return;
 
@@ -51,88 +52,68 @@ const drawSnake = (svg, path, cols, rows, width, height) => {
     svg.append(polyline);
 };
 
-// ───────────────── helpers ─────────────────
+// ────────── draw the snake as a filled outline path ──────────
 const dir   = (p, q) => ({ x: Math.sign(q.x - p.x), y: Math.sign(q.y - p.y) });
 const left  = ({x, y}) => ({ x:  y, y: -x });
-const right = ({x, y}) => ({ x: -y, y:  x });
 
-/*────────────────── one wall ──────────────────
- * centers → wall path fragment
- *
- * includeMove === true   ▶  “M x y …”
- * includeMove === false  ▶  “L x y …”
- */
-function buildWall(centers, R, includeMove = true) {
-    const dir   = (p, q) => ({ x: Math.sign(q.x - p.x),
-                               y: Math.sign(q.y - p.y) });
-    const left  = ({x, y}) => ({ x:  y, y: -x });
+// left wall forward, right wall reverse
+function wall (centers, R) {
+    const D     = centers.slice(1).map((c, i) => dir(centers[i], c));
+    const start = { x: centers[0].x     + left(D[0]).x     * R,
+                    y: centers[0].y     + left(D[0]).y     * R };
+    const end   = { x: centers.at(-1).x + left(D.at(-1)).x * R,
+                    y: centers.at(-1).y + left(D.at(-1)).y * R };
 
-    const D = centers.slice(1).map((c, i) => dir(centers[i], c));
-
-    const startOff = left(D[0]);
-    const start    = {
-        x: centers[0].x + startOff.x * R,
-        y: centers[0].y + startOff.y * R
-    };
-
-    let cmd = `${includeMove ? 'M' : 'L'} ${start.x} ${start.y}`;
+    let cmd = '';
 
     for (let i = 1; i < centers.length - 1; ++i) {
         const dp = D[i - 1], dn = D[i];
-        if (dp.x === dn.x && dp.y === dn.y) continue;        // straight
+        if (dp.x === dn.x && dp.y === dn.y) continue; // straight
 
-        const prev = {
-            x: centers[i].x + left(dp).x * R,
-            y: centers[i].y + left(dp).y * R
-        };
+        const prev = { x: centers[i].x + left(dp).x * R,
+                       y: centers[i].y + left(dp).y * R };
         cmd += ` L ${prev.x} ${prev.y}`;
 
-        const next = {
-            x: centers[i].x + left(dn).x * R,
-            y: centers[i].y + left(dn).y * R
-        };
+        const next = { x: centers[i].x + left(dn).x * R,
+                       y: centers[i].y + left(dn).y * R };
         const sweep = (dp.x * dn.y - dp.y * dn.x) > 0 ? 1 : 0;
         cmd += ` A ${R} ${R} 0 0 ${sweep} ${next.x} ${next.y}`;
     }
 
-    const endOff = left(D[D.length - 1]);
-    const end    = {
-        x: centers[centers.length - 1].x + endOff.x * R,
-        y: centers[centers.length - 1].y + endOff.y * R
-    };
     cmd += ` L ${end.x} ${end.y}`;
-
-    return { d: cmd, start, end };
+    return { start, end, cmd };
 }
-// ───────────────────────────────────────────
 
-// ────────── Filled Outline Snake ──────────
-const drawSnakeQ = (svg, path, cols, rows, width, height) => {
+// 180° semicircle
+const cap = (to, R) => ` A ${R} ${R} 0 1 1 ${to.x} ${to.y}`;
+
+// draw filled path snake
+function drawSnakeQ(svg, path, cols, rows, width, height) {
     if (!path || path.length < 2) return;
 
     const R     = SNAKE_WIDTH / 2;
     const DEBUG = true;
 
-    // Cell center → pixel
-    const offX = (width  - cols * CELL_SIZE) / 2;
+    // cell centers
+    const offX = (width - cols * CELL_SIZE) / 2;
     const offY = (height - rows * CELL_SIZE) / 2;
-    const toPx = ({x, y}) => ({
+    const center = ({ x, y }) => ({
         x: offX + CELL_SIZE * (x + 0.5),
         y: offY + CELL_SIZE * (y + 0.5)
     });
-    const centers = path.map(toPx);
+    const centers = path.map(center);
 
-    // left wall (head → tail)  – starts with ‘M’
-    const leftWall  = buildWall(centers, R, true);
+    // left wall (head → tail), right wall (tail → head)
+    const leftWall  = wall(centers,                R);
+    const rightWall = wall([...centers].reverse(), R);
 
-    // right wall (tail → head) – starts with ‘L’
-    const rightWall = buildWall([...centers].reverse(), R, false);
-
-    // two 180° semicircles that close the outline
-    const tailCap = ` A ${R} ${R} 0 1 1 ${rightWall.start.x} ${rightWall.start.y}`;
-    const headCap = ` A ${R} ${R} 0 1 1 ${leftWall.start.x}  ${leftWall.start.y}`;
-
-    const d = `${leftWall.d}${tailCap}${rightWall.d}${headCap}Z`;
+    // assemble:  line ◂ cap ◂ line ◂ cap
+    const d = `M ${leftWall.start.x} ${leftWall.start.y}`
+            + leftWall.cmd            // head→tail (left side)
+            + cap(rightWall.start, R) // tail: left→right
+            + rightWall.cmd           // tail→head (right side)
+            + cap(leftWall.start, R)  // head: right→left
+            + 'Z';
 
     const outline = document.createElementNS(SVG_NS, 'path');
     outline.setAttribute('d', d);
@@ -147,7 +128,7 @@ const drawSnakeQ = (svg, path, cols, rows, width, height) => {
         outline.setAttribute('fill', SNAKE_COLOR);
     }
     svg.append(outline);
-};
+}
 
 // ────────── status line & buttons ──────────
 const updateUI = (msg, { ok = true, busy = false } = {}) => {
