@@ -53,8 +53,13 @@ const drawSnake = (svg, path, cols, rows, width, height) => {
 };
 
 // ────────── draw the snake as a filled outline path ──────────
-const dir   = (p, q) => ({ x: Math.sign(q.x - p.x), y: Math.sign(q.y - p.y) });
-const left  = ({x, y}) => ({ x:  y, y: -x });
+const dir = (p, q) => ({ x: Math.sign(q.x - p.x), y: Math.sign(q.y - p.y) });
+const left = ({ x, y }) => ({ x: y, y: -x });
+// offset point based on curve radius and concavity
+const offset = (c, d, by, R) => ({
+    x: c.x + left(d).x * R + d.x * by,
+    y: c.y + left(d).y * R + d.y * by
+});
 
 // left wall forward, right wall reverse
 function wall (centers, R) {
@@ -75,16 +80,10 @@ function wall (centers, R) {
         // cross: positive = convex outer bend, negative = concave inner bend
         const cross = dp.x * dn.y - dp.y * dn.x;
         // shorten previous and next line segments on concave inner bend
-        const shorten = cross > 0 ? 0 : 2 * R;
+        const by = cross > 0 ? 0 : 2 * R;
 
-        // offset point based on curve radius and concavity
-        const offset = (c, d, along) => ({
-            x: c.x + left(d).x * R + d.x * along,
-            y: c.y + left(d).y * R + d.y * along
-        });
-
-        const prev = offset(centers[i], dp, -shorten); // start of arc
-        const next = offset(centers[i], dn, shorten);  // end of arc
+        const prev = offset(centers[i], dp, -by, R); // start of arc
+        const next = offset(centers[i], dn, by, R);  // end of arc
 
         cmd += ` L ${prev.x} ${prev.y}`;
 
