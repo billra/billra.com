@@ -9,16 +9,17 @@ $$('[id]').forEach(el =>
 );
 
 // ────────── constants (CSS px) ──────────
-const SNAKE_WIDTH = 30;
+const RADIUS      = 15; // everything calculated based on this value
+const SNAKE_WIDTH = RADIUS * 2;
 const CELL_SIZE   = SNAKE_WIDTH * 2; // match negative and positive space width: 2
 const SNAKE_COLOR = '#1f5';
 // background gets same radius as snake
-document.documentElement.style.setProperty('--snake-radius', SNAKE_WIDTH / 2 + 'px');
+document.documentElement.style.setProperty('--snake-radius', RADIUS + 'px');
 
 // ────────── SVG helpers ──────────
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-// Replace the content of `container` with a fresh <svg> element and returns that element.
+// Replace the content of `container` with a fresh <svg> element and return that element.
 const setupSvg = (container, width, height) => {
     const svg = document.createElementNS(SVG_NS, 'svg');
     svg.setAttribute('width',  width);
@@ -66,11 +67,11 @@ const M = p         => `M ${p.x} ${p.y}`;
 const L = p         => ` L ${p.x} ${p.y}`;
 const A = (p, s, r) => ` A ${r} ${r} 0 0 ${s} ${p.x} ${p.y}`;
 
-// ────── wall(centers, R)  →  { start, end, cmd } ──────
-function wall(centers, R) {
+// ────── wall(centers) → { start, end, cmd } ──────
+function wall(centers) {
     const D     = centers.slice(1).map((c, i) => dir(centers[i], c));
-    const start = add(centers[0],     mul(left(D[0]),      R));
-    const end   = add(centers.at(-1), mul(left(D.at(-1)),  R));
+    const start = add(centers[0],     mul(left(D[0]),     RADIUS));
+    const end   = add(centers.at(-1), mul(left(D.at(-1)), RADIUS));
 
     let cmd = '';
 
@@ -80,24 +81,23 @@ function wall(centers, R) {
         if (dp.x === dn.x && dp.y === dn.y) continue; // straight
 
         const concave = cross(dp, dn) < 0;
-        const shift   = concave ? 2 * R : 0; // only inner bends
+        const shift   = concave ? 2 * RADIUS : 0; // only inner bends
 
-        const prev = add(add(centers[i], mul(left(dp), R)), mul(dp, -shift));
-        const next = add(add(centers[i], mul(left(dn), R)), mul(dn,  shift));
+        const prev = add(add(centers[i], mul(left(dp), RADIUS)), mul(dp, -shift));
+        const next = add(add(centers[i], mul(left(dn), RADIUS)), mul(dn,  shift));
 
-        cmd += L(prev) + A(next, concave ? 0 : 1, R); // sweep: 0 = CCW, 1 = CW
+        cmd += L(prev) + A(next, concave ? 0 : 1, RADIUS); // sweep: 0 = CCW, 1 = CW
     }
     return { start, end, cmd: cmd + L(end) };
 }
 
 /* 180° cap between left and right walls */
-const cap = (p, R) => A(p, 1, R);  // sweep-flag 1 ⇢ half-circle
+const cap = p => A(p, 1, RADIUS);  // sweep-flag 1 ⇢ half-circle
 
 // ────────── draw the snake as a filled outline path ──────────
 function drawSnakeQ(svg, path, cols, rows, width, height) {
     if (!path || path.length < 2) return;
 
-    const R     = SNAKE_WIDTH / 2;
     const DEBUG = false;
 
     // grid-cell → absolute center
@@ -108,14 +108,14 @@ function drawSnakeQ(svg, path, cols, rows, width, height) {
             offY + CELL_SIZE * (y + 0.5));
 
     const centers   = path.map(center);
-    const leftWall  = wall(centers,                R);
-    const rightWall = wall([...centers].reverse(), R);
+    const leftWall  = wall(centers);                // head → tail
+    const rightWall = wall([...centers].reverse()); // tail → head
 
     const d =  M(leftWall.start)
-            + leftWall.cmd            // head → tail (left edge)
-            + cap(rightWall.start, R) // 180° round tail
-            + rightWall.cmd           // tail → head (right edge)
-            + cap(leftWall.start, R)  // 180° round head
+            + leftWall.cmd         // head → tail (left edge)
+            + cap(rightWall.start) // 180° round tail
+            + rightWall.cmd        // tail → head (right edge)
+            + cap(leftWall.start)  // 180° round head
             + 'Z';
 
     const outline = document.createElementNS(SVG_NS, 'path');
@@ -156,7 +156,7 @@ const generateSnake = () => {
     const width  = cols * CELL_SIZE + CELL_SIZE - SNAKE_WIDTH;
     const height = rows * CELL_SIZE + CELL_SIZE - SNAKE_WIDTH;
 
-    const svg = setupSvg(ui.drawing, width, height);
+    const svg  = setupSvg(ui.drawing,  width, height);
     const svgQ = setupSvg(ui.drawingQ, width, height);
 
     updateUI('Working …', { busy: true });
@@ -170,7 +170,7 @@ const generateSnake = () => {
             return;
         }
 
-        drawSnake(svg, data.path, cols, rows, width, height);
+        drawSnake (svg,  data.path, cols, rows, width, height);
         drawSnakeQ(svgQ, data.path, cols, rows, width, height);
 
         updateUI(
