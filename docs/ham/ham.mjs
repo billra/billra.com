@@ -52,79 +52,70 @@ const drawSnake = (svg, path, cols, rows, width, height) => {
     svg.append(polyline);
 };
 
-// ────────── draw the snake as a filled outline path ──────────
-const dir = (p, q) => ({ x: Math.sign(q.x - p.x), y: Math.sign(q.y - p.y) });
-const left = ({ x, y }) => ({ x: y, y: -x });
-// offset point based on curve radius and concavity
-const offset = (c, d, by, R) => ({
-    x: c.x + left(d).x * R + d.x * by,
-    y: c.y + left(d).y * R + d.y * by
-});
+// ────── vector helpers ──────
+const vec   = (x = 0, y = 0) => ({ x, y });
+const add   = (a, b)         => vec(a.x + b.x, a.y + b.y);
+const mul   = (a, k)         => vec(a.x * k,  a.y * k);
+const dir   = (p, q)         => vec(Math.sign(q.x - p.x),
+                                    Math.sign(q.y - p.y));
+const left  = d              => vec( d.y, -d.x); // 90° CCW
+const cross = (a, b)         => a.x * b.y - a.y * b.x;
 
-// left wall forward, right wall reverse
-function wall (centers, R) {
+// ────── SVG path helpers ──────
+const M = p         => `M ${p.x} ${p.y}`;
+const L = p         => ` L ${p.x} ${p.y}`;
+const A = (p, s, r) => ` A ${r} ${r} 0 0 ${s} ${p.x} ${p.y}`;
+
+// ────── wall(centers, R)  →  { start, end, cmd } ──────
+function wall(centers, R) {
     const D     = centers.slice(1).map((c, i) => dir(centers[i], c));
-    const start = { x: centers[0].x     + left(D[0]).x     * R,
-                    y: centers[0].y     + left(D[0]).y     * R };
-    const end   = { x: centers.at(-1).x + left(D.at(-1)).x * R,
-                    y: centers.at(-1).y + left(D.at(-1)).y * R };
+    const start = add(centers[0],     mul(left(D[0]),      R));
+    const end   = add(centers.at(-1), mul(left(D.at(-1)),  R));
 
     let cmd = '';
 
     for (let i = 1; i < centers.length - 1; ++i) {
-        const dp = D[i - 1]; // incoming direction
-        const dn = D[i];     // outgoing direction
-        // straight segment: early return
-        if (dp.x === dn.x && dp.y === dn.y) continue;
+        const dp = D[i - 1]; // incoming
+        const dn = D[i];     // outgoing
+        if (dp.x === dn.x && dp.y === dn.y) continue; // straight
 
-        // cross: positive = convex outer bend, negative = concave inner bend
-        const cross = dp.x * dn.y - dp.y * dn.x;
-        // shorten previous and next line segments on concave inner bend
-        const by = cross > 0 ? 0 : 2 * R;
+        const concave = cross(dp, dn) < 0;
+        const shift   = concave ? 2 * R : 0; // only inner bends
 
-        const prev = offset(centers[i], dp, -by, R); // start of arc
-        const next = offset(centers[i], dn, by, R);  // end of arc
+        const prev = add(add(centers[i], mul(left(dp), R)), mul(dp, -shift));
+        const next = add(add(centers[i], mul(left(dn), R)), mul(dn,  shift));
 
-        cmd += ` L ${prev.x} ${prev.y}`;
-
-        // sweep: clockwise for convex outer, counter-clockwise for concave inner
-        const sweep = cross > 0 ? 1 : 0;
-        cmd += ` A ${R} ${R} 0 0 ${sweep} ${next.x} ${next.y}`;
+        cmd += L(prev) + A(next, concave ? 0 : 1, R); // sweep: 0 = CCW, 1 = CW
     }
-
-    cmd += ` L ${end.x} ${end.y}`;
-    return { start, end, cmd };
+    return { start, end, cmd: cmd + L(end) };
 }
 
-// 180° semicircle
-const cap = (to, R) => ` A ${R} ${R} 0 1 1 ${to.x} ${to.y}`;
+/* 180° cap between left and right walls */
+const cap = (p, R) => A(p, 1, R);  // sweep-flag 1 ⇢ half-circle
 
-// draw filled path snake
+// ────────── draw the snake as a filled outline path ──────────
 function drawSnakeQ(svg, path, cols, rows, width, height) {
     if (!path || path.length < 2) return;
 
     const R     = SNAKE_WIDTH / 2;
     const DEBUG = false;
 
-    // cell centers
-    const offX = (width - cols * CELL_SIZE) / 2;
-    const offY = (height - rows * CELL_SIZE) / 2;
-    const center = ({ x, y }) => ({
-        x: offX + CELL_SIZE * (x + 0.5),
-        y: offY + CELL_SIZE * (y + 0.5)
-    });
-    const centers = path.map(center);
+    // grid-cell → absolute center
+    const offX   = (width  - cols * CELL_SIZE) / 2;
+    const offY   = (height - rows * CELL_SIZE) / 2;
+    const center = ({ x, y }) =>
+        vec(offX + CELL_SIZE * (x + 0.5),
+            offY + CELL_SIZE * (y + 0.5));
 
-    // left wall (head → tail), right wall (tail → head)
+    const centers   = path.map(center);
     const leftWall  = wall(centers,                R);
     const rightWall = wall([...centers].reverse(), R);
 
-    // assemble:  line ◂ cap ◂ line ◂ cap
-    const d = `M ${leftWall.start.x} ${leftWall.start.y}`
-            + leftWall.cmd            // head→tail (left side)
-            + cap(rightWall.start, R) // tail: left→right
-            + rightWall.cmd           // tail→head (right side)
-            + cap(leftWall.start, R)  // head: right→left
+    const d =  M(leftWall.start)
+            + leftWall.cmd            // head → tail (left edge)
+            + cap(rightWall.start, R) // 180° round tail
+            + rightWall.cmd           // tail → head (right edge)
+            + cap(leftWall.start, R)  // 180° round head
             + 'Z';
 
     const outline = document.createElementNS(SVG_NS, 'path');
