@@ -69,27 +69,22 @@ function wall (centers, R) {
     for (let i = 1; i < centers.length - 1; ++i) {
         const dp = D[i - 1]; // incoming direction
         const dn = D[i];     // outgoing direction
-        if (dp.x === dn.x && dp.y === dn.y) continue; // straight
+        // straight segment: early return
+        if (dp.x === dn.x && dp.y === dn.y) continue;
 
-        // cross: negative = concave inner bend, positive = convex outer bend
+        // cross: positive = convex outer bend, negative = concave inner bend
         const cross = dp.x * dn.y - dp.y * dn.x;
+        // shorten previous and next line segments on concave inner bend
+        const shorten = cross > 0 ? 0 : 2 * R;
 
-        // point on the offset of the previous segment
-        let prev = {
-            x: centers[i].x + left(dp).x * R,
-            y: centers[i].y + left(dp).y * R
-        };
-        // point on the offset of the next segment
-        let next = {
-            x: centers[i].x + left(dn).x * R,
-            y: centers[i].y + left(dn).y * R
-        };
+        // offset point based on curve radius and concavity
+        const offset = (c, d, along) => ({
+            x: c.x + left(d).x * R + d.x * along,
+            y: c.y + left(d).y * R + d.y * along
+        });
 
-        // shorten previous and next line segments on inner curve
-        if (cross < 0) {
-            prev.x -= dp.x * 2 * R; prev.y -= dp.y * 2 * R;
-            next.x += dn.x * 2 * R; next.y += dn.y * 2 * R;
-        }
+        const prev = offset(centers[i], dp, -shorten); // start of arc
+        const next = offset(centers[i], dn, shorten);  // end of arc
 
         cmd += ` L ${prev.x} ${prev.y}`;
 
