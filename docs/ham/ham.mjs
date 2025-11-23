@@ -61,6 +61,7 @@ const dir   = (p, q)         => vec(Math.sign(q.x - p.x),
                                     Math.sign(q.y - p.y));
 const left  = d              => vec( d.y, -d.x); // 90° CCW
 const cross = (a, b)         => a.x * b.y - a.y * b.x;
+const eq    = (a, b)         => a.x === b.x && a.y === b.y;
 
 // ────── SVG path helpers ──────
 const M = p         => `M ${p.x} ${p.y}`;
@@ -74,31 +75,41 @@ function wall(centers) {
     const end   = add(centers.at(-1), mul(left(D.at(-1)), RADIUS));
 
     let cmd = '';
+    let lineStart = start; // line starts at current position
 
     for (let i = 1; i < centers.length - 1; ++i) {
-        const dp = D[i - 1]; // incoming
-        const dn = D[i];     // outgoing
-        if (dp.x === dn.x && dp.y === dn.y) continue; // straight
+        const dp = D[i - 1]; // incoming direction
+        const dn = D[i];     // outgoing direction
+        if (dp.x === dn.x && dp.y === dn.y) continue; // straight line, no bend
 
+        // we are bending, create a curve
         const concave = cross(dp, dn) < 0;
-        const shift   = concave ? 2 * RADIUS : 0; // only inner bends
+        const shift   = concave ? 2 * RADIUS : 0;
 
-        const prev = add(add(centers[i], mul(left(dp), RADIUS)), mul(dp, -shift));
-        const next = add(add(centers[i], mul(left(dn), RADIUS)), mul(dn,  shift));
+        const prev = add(add(centers[i], mul(left(dp), RADIUS)),
+                         mul(dp, -shift));
+        const next = add(add(centers[i], mul(left(dn), RADIUS)),
+                         mul(dn,  shift));
 
-        cmd += L(prev) + A(next, concave ? 0 : 1, RADIUS); // sweep: 0 = CCW, 1 = CW
+        if (!eq(lineStart, prev)) cmd += L(prev); // no zero length lines
+        cmd += A(next, concave ? 0 : 1, RADIUS);
+        lineStart = next; // new line start is end of curve
     }
-    return { start, end, cmd: cmd + L(end) };
+
+    // always ends with a line by construction
+    console.assert(!eq(lineStart, end),'ending with zero length line');
+    cmd += L(end);
+    return { start, end, cmd };
 }
 
-/* 180° cap between left and right walls */
+// 180° cap between left and right walls
 const cap = p => A(p, 1, RADIUS);  // sweep-flag 1 ⇢ half-circle
 
 // ────────── draw the snake as a filled outline path ──────────
 function drawSnakeQ(svg, path, cols, rows, width, height) {
     if (!path || path.length < 2) return;
 
-    const DEBUG = false;
+    const DEBUG = true;
 
     // grid-cell → absolute center
     const offX   = (width  - cols * CELL_SIZE) / 2;
@@ -108,8 +119,8 @@ function drawSnakeQ(svg, path, cols, rows, width, height) {
             offY + CELL_SIZE * (y + 0.5));
 
     const centers   = path.map(center);
-    const leftWall  = wall(centers);                // head → tail
-    const rightWall = wall([...centers].reverse()); // tail → head
+    const leftWall  = wall(centers);           // head → tail
+    const rightWall = wall(centers.reverse()); // tail → head
 
     const d =  M(leftWall.start)
             + leftWall.cmd         // head → tail (left edge)
