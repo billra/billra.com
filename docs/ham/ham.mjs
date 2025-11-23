@@ -106,7 +106,7 @@ function wall(centers) {
 const cap = p => A(p, 1, RADIUS);  // sweep-flag 1 ⇢ half-circle
 
 // ────────── draw the snake as a filled outline path ──────────
-function drawSnakeQ(svg, path, cols, rows, width, height, outlineOnly) {
+function drawSnakeQ(svg, path, cols, rows, width, height) {
     if (!path || path.length < 2) return;
 
     // grid-cell → absolute center
@@ -130,7 +130,7 @@ function drawSnakeQ(svg, path, cols, rows, width, height, outlineOnly) {
     const outline = document.createElementNS(SVG_NS, 'path');
     outline.setAttribute('d', d);
 
-    if (outlineOnly) {
+    if (ui.pathModeOutline.checked) {
         outline.setAttribute('fill', 'none');
         outline.setAttribute('stroke', '#f66');
         outline.setAttribute('stroke-width', 2);
@@ -175,10 +175,6 @@ const generateSnake = () => {
     worker?.terminate(); // abort an existing run
     worker = null;
 
-    const showPolyline = ui.showPolyline.checked;
-    const showPath     = ui.showPath.checked;
-    const outlineOnly  = ui.pathModeOutline.checked;
-
     const cols = +ui.cols.value; // unary + → number
     const rows = +ui.rows.value;
 
@@ -187,7 +183,7 @@ const generateSnake = () => {
 
     // prepare containers & SVGs
     let svg = null;
-    if (showPolyline) {
+    if (ui.showPolyline.checked) {
         ui.drawing.style.display = '';
         svg = setupSvg(ui.drawing, width, height);
     } else {
@@ -195,7 +191,7 @@ const generateSnake = () => {
         ui.drawing.style.display = 'none';
     }
     let svgQ = null;
-    if (showPath) {
+    if (ui.showPath.checked) {
         ui.drawingQ.style.display = '';
         svgQ = setupSvg(ui.drawingQ, width, height);
     } else {
@@ -215,7 +211,7 @@ const generateSnake = () => {
         }
 
         if (svg)  drawSnake (svg,  data.path, cols, rows, width, height);
-        if (svgQ) drawSnakeQ(svgQ, data.path, cols, rows, width, height, outlineOnly);
+        if (svgQ) drawSnakeQ(svgQ, data.path, cols, rows, width, height);
 
         updateUI(
             data.path ? `Found path: ${cols} × ${rows}`
