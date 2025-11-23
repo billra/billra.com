@@ -94,8 +94,7 @@ button:disabled {
 }
 
 /* drawing contains svg */
-#drawing,
-#drawingQ {
+.drawing {
     display: block; /* keep it a block so margin:auto centres it */
     width: fit-content; /* shrink to the SVG’s intrinsic width  */
     margin: 0.5rem auto;
@@ -103,8 +102,7 @@ button:disabled {
     border-radius: var(--snake-radius, 8px);
 }
 /* remove inline baseline gap by making the injected SVG a block*/
-#drawing svg,
-#drawingQ svg {
+.drawing svg {
     display: block;
 }
 
