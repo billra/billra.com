@@ -106,10 +106,8 @@ function wall(centers) {
 const cap = p => A(p, 1, RADIUS);  // sweep-flag 1 ⇢ half-circle
 
 // ────────── draw the snake as a filled outline path ──────────
-function drawSnakeQ(svg, path, cols, rows, width, height) {
+function drawSnakeQ(svg, path, cols, rows, width, height, outlineOnly) {
     if (!path || path.length < 2) return;
-
-    const DEBUG = true;
 
     // grid-cell → absolute center
     const offX   = (width  - cols * CELL_SIZE) / 2;
@@ -132,7 +130,7 @@ function drawSnakeQ(svg, path, cols, rows, width, height) {
     const outline = document.createElementNS(SVG_NS, 'path');
     outline.setAttribute('d', d);
 
-    if (DEBUG) {
+    if (outlineOnly) {
         outline.setAttribute('fill', 'none');
         outline.setAttribute('stroke', '#f66');
         outline.setAttribute('stroke-width', 2);
@@ -153,6 +151,22 @@ const updateUI = (msg, { ok = true, busy = false } = {}) => {
     ui.cancel.disabled   = !busy;
 };
 
+// outline controls
+const updateOutlineControls = () => {
+    const on = ui.showPath.checked;
+    ui.pathModeOutline.disabled = !on;
+    ui.pathModeFilled .disabled = !on;
+};
+
+// react to check-box toggles
+ui.showPath.addEventListener('change', () => {
+    ui.drawingQ.style.display = ui.showPath.checked ? '' : 'none';
+    updateOutlineControls();
+});
+ui.showPolyline.addEventListener('change', () => {
+    ui.drawing.style.display = ui.showPolyline.checked ? '' : 'none';
+});
+
 // ────────── worker glue ──────────
 const WORKER_URL = new URL('./worker.mjs', import.meta.url); // single instance
 let worker = null;
@@ -161,14 +175,33 @@ const generateSnake = () => {
     worker?.terminate(); // abort an existing run
     worker = null;
 
+    const showPolyline = ui.showPolyline.checked;
+    const showPath     = ui.showPath.checked;
+    const outlineOnly  = ui.pathModeOutline.checked;
+
     const cols = +ui.cols.value; // unary + → number
     const rows = +ui.rows.value;
 
     const width  = cols * CELL_SIZE + CELL_SIZE - SNAKE_WIDTH;
     const height = rows * CELL_SIZE + CELL_SIZE - SNAKE_WIDTH;
 
-    const svg  = setupSvg(ui.drawing,  width, height);
-    const svgQ = setupSvg(ui.drawingQ, width, height);
+    // prepare containers & SVGs
+    let svg = null;
+    if (showPolyline) {
+        ui.drawing.style.display = '';
+        svg = setupSvg(ui.drawing, width, height);
+    } else {
+        ui.drawing.replaceChildren();
+        ui.drawing.style.display = 'none';
+    }
+    let svgQ = null;
+    if (showPath) {
+        ui.drawingQ.style.display = '';
+        svgQ = setupSvg(ui.drawingQ, width, height);
+    } else {
+        ui.drawingQ.replaceChildren();
+        ui.drawingQ.style.display = 'none';
+    }
 
     updateUI('Working …', { busy: true });
 
@@ -181,8 +214,8 @@ const generateSnake = () => {
             return;
         }
 
-        drawSnake (svg,  data.path, cols, rows, width, height);
-        drawSnakeQ(svgQ, data.path, cols, rows, width, height);
+        if (svg)  drawSnake (svg,  data.path, cols, rows, width, height);
+        if (svgQ) drawSnakeQ(svgQ, data.path, cols, rows, width, height, outlineOnly);
 
         updateUI(
             data.path ? `Found path: ${cols} × ${rows}`
@@ -214,5 +247,6 @@ ui.cancel.addEventListener('click', () => {
 document.addEventListener('DOMContentLoaded', () => {
     ui.pageTitle.textContent = document.title;
     ui.version.textContent   = 'v' + $('meta[name="version"]').content;
+    updateOutlineControls();
     generateSnake();
 });
