@@ -3,7 +3,7 @@
 <head>
     <title>Hamiltonian Snake</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="3.2">
+    <meta name="version" content="3.3">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="icon" href="ham.ico">
@@ -13,17 +13,21 @@
 <body>
     <h1><span id="page-title"></span> <span id="version"></span></h1>
     <form class="controls">
-        <label for="cols"> Columns <input type="number" id="cols" min="2" max="30" value="6"></label>
-        <label for="rows"> Rows <input type="number" id="rows" min="2" max="30" value="6"></label>
+        <label> Size
+            <input type="number" id="cols" min="2" max="30" value="6"> ×
+            <input type="number" id="rows" min="2" max="30" value="6">
+        </label>
         <label><input type="checkbox" id="show-polyline" checked> Polyline</label>
         <label><input type="checkbox" id="show-path" checked> Path</label>
         <span id="path-modes">
             <label><input type="radio" name="pathMode" id="path-mode-outline" value="outline" checked> outline</label>
             <label><input type="radio" name="pathMode" id="path-mode-filled" value="filled"> filled</label>
         </span>
+    </form>
+    <div class="buttons">
         <button type="button" id="generate">Generate</button>
         <button type="button" id="cancel">Cancel</button>
-    </form>
+    </div>
     <p class="description">Create a random Hamiltonian path (snake) that visits each grid cell exactly once.</p>
     <div class="drawing" id="drawing"></div>
     <div class="drawing" id="drawingQ"></div>
