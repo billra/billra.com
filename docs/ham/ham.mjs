@@ -172,7 +172,9 @@ function drawSnakeQ(svg, path, cols, rows, width, height) {
     const offY = (height - rows * CELL_SIZE) / 2;
 
     // draw grid
-    svg.append(svgGrid(offX, offY, cols, rows));
+    if (ui.showGrid.checked) {
+        svg.append(svgGrid(offX, offY, cols, rows));
+    }
 
     // draw snake
     svg.append(svgSnake(offX, offY, path));
@@ -192,6 +194,7 @@ const updateOutlineControls = () => {
     const on = ui.showPath.checked;
     ui.pathModeOutline.disabled = !on;
     ui.pathModeFilled .disabled = !on;
+    ui.showGrid       .disabled = !on;
 };
 
 // react to check-box toggles
