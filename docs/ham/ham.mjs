@@ -103,7 +103,7 @@ function wall(centers) {
 }
 
 // 180° cap between left and right walls
-const cap = p => A(p, 1, RADIUS);  // sweep-flag 1 ⇢ half-circle
+const cap = p => A(p, 1, RADIUS); // sweep-flag 1 ⇢ half-circle
 
 function svgSnake(offX, offY, path) {
     const center = ({ x, y }) =>
@@ -115,10 +115,10 @@ function svgSnake(offX, offY, path) {
     const rightWall = wall(centers.reverse()); // tail → head
 
     const d =  M(leftWall.start)
-            + leftWall.cmd         // head → tail (left edge)
-            + cap(rightWall.start) // 180° round tail
-            + rightWall.cmd        // tail → head (right edge)
-            + cap(leftWall.start)  // 180° round head
+            + leftWall.cmd         // head → tail (left)
+            + cap(rightWall.start) // round tail
+            + rightWall.cmd        // tail → head (right)
+            + cap(leftWall.start)  // round head
             + 'Z';
 
     const outline = document.createElementNS(SVG_NS, 'path');
@@ -186,7 +186,7 @@ const updateUI = (msg, { ok = true, busy = false } = {}) => {
     ui.status.classList.toggle('error', !ok);
 
     ui.generate.disabled = busy;
-    ui.cancel.disabled   = !busy;
+    ui.cancel  .disabled = !busy;
 };
 
 // outline controls
@@ -197,46 +197,67 @@ const updateOutlineControls = () => {
     ui.showGrid       .disabled = !on;
 };
 
-// react to check-box toggles
-ui.showPath.addEventListener('change', () => {
-    ui.drawingQ.style.display = ui.showPath.checked ? '' : 'none';
+// ────────── cached result + (re)draw helpers ──────────
+const cache = { path: null, cols: 0, rows: 0, width: 0, height: 0 };
+
+const clearDrawings = () => {
+    ui.drawing .replaceChildren();
+    ui.drawingQ.replaceChildren();
+    ui.drawing .style.display = 'none';
+    ui.drawingQ.style.display = 'none';
+};
+
+// Build / rebuild SVGs from the cached path according to the
+// current check-box / radio state
+function redraw() {
     updateOutlineControls();
-});
-ui.showPolyline.addEventListener('change', () => {
-    ui.drawing.style.display = ui.showPolyline.checked ? '' : 'none';
-});
+
+    // nothing to draw?
+    if (!cache.path) { clearDrawings(); return; }
+
+    const { path, cols, rows, width, height } = cache;
+
+    // polyline view
+    if (ui.showPolyline.checked) {
+        ui.drawing.style.display = '';
+        const svg = setupSvg(ui.drawing, width, height);
+        drawSnake(svg, path, cols, rows, width, height);
+    } else {
+        ui.drawing.replaceChildren();
+        ui.drawing.style.display = 'none';
+    }
+
+    // outline / filled view
+    if (ui.showPath.checked) {
+        ui.drawingQ.style.display = '';
+        const svgQ = setupSvg(ui.drawingQ, width, height);
+        drawSnakeQ(svgQ, path, cols, rows, width, height);
+    } else {
+        ui.drawingQ.replaceChildren();
+        ui.drawingQ.style.display = 'none';
+    }
+}
 
 // ────────── worker glue ──────────
 const WORKER_URL = new URL('./worker.mjs', import.meta.url); // single instance
 let worker = null;
 
 const generateSnake = () => {
-    worker?.terminate(); // abort an existing run
+    // abort a possibly running worker
+    worker?.terminate();
     worker = null;
 
-    const cols = +ui.cols.value; // unary + → number
+    const cols = +ui.cols.value;
     const rows = +ui.rows.value;
 
-    const width  = cols * CELL_SIZE + CELL_SIZE - SNAKE_WIDTH;
-    const height = rows * CELL_SIZE + CELL_SIZE - SNAKE_WIDTH;
+    cache.path = null; // invalidate old drawing
+    clearDrawings();
 
-    // prepare containers & SVGs
-    let svg = null;
-    if (ui.showPolyline.checked) {
-        ui.drawing.style.display = '';
-        svg = setupSvg(ui.drawing, width, height);
-    } else {
-        ui.drawing.replaceChildren();
-        ui.drawing.style.display = 'none';
-    }
-    let svgQ = null;
-    if (ui.showPath.checked) {
-        ui.drawingQ.style.display = '';
-        svgQ = setupSvg(ui.drawingQ, width, height);
-    } else {
-        ui.drawingQ.replaceChildren();
-        ui.drawingQ.style.display = 'none';
-    }
+    // canvas size for the upcoming drawing
+    cache.cols  = cols;
+    cache.rows  = rows;
+    cache.width  = cols * CELL_SIZE + CELL_SIZE - SNAKE_WIDTH;
+    cache.height = rows * CELL_SIZE + CELL_SIZE - SNAKE_WIDTH;
 
     updateUI('Working …', { busy: true });
 
@@ -248,14 +269,13 @@ const generateSnake = () => {
             console.log('%cworker:', 'color:grey', data.debug);
             return;
         }
-
-        if (svg)  drawSnake (svg,  data.path, cols, rows, width, height);
-        if (svgQ) drawSnakeQ(svgQ, data.path, cols, rows, width, height);
+        cache.path = data.path; // may be null on failure
+        redraw();               // (re)draw with current controls
 
         updateUI(
-            data.path ? `Found path: ${cols} × ${rows}`
-                      : 'Failed: no Hamiltonian path',
-            { ok: Boolean(data.path) }
+            cache.path ? `Found path: ${cols} × ${rows}`
+                       : 'Failed: no Hamiltonian path',
+            { ok: Boolean(cache.path) }
         );
 
         worker.terminate();
@@ -270,9 +290,20 @@ const generateSnake = () => {
     };
 };
 
-// ────────── event wiring ──────────
+// ────────── UI events ──────────
+
+// visual options that must instantly update the view
+[
+    ui.showPath,
+    ui.showPolyline,
+    ui.pathModeOutline,
+    ui.pathModeFilled,
+    ui.showGrid
+].forEach(el => el.addEventListener('change', redraw));
+
+// buttons
 ui.generate.addEventListener('click', generateSnake);
-ui.cancel.addEventListener('click', () => {
+ui.cancel  .addEventListener('click', () => {
     worker?.terminate();
     worker = null;
     updateUI('Cancelled.', { ok: false });
@@ -283,5 +314,5 @@ document.addEventListener('DOMContentLoaded', () => {
     ui.pageTitle.textContent = document.title;
     ui.version.textContent   = 'v' + $('meta[name="version"]').content;
     updateOutlineControls();
-    generateSnake();
+    generateSnake(); // create first snake on load
 });
