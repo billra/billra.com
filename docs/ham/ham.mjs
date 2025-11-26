@@ -112,6 +112,34 @@ function drawSnakeQ(svg, path, cols, rows, width, height) {
     // grid-cell → absolute center
     const offX   = (width  - cols * CELL_SIZE) / 2;
     const offY   = (height - rows * CELL_SIZE) / 2;
+
+    // ───── draw grid ─────
+    const grid = document.createElementNS(SVG_NS, 'g');
+    grid.setAttribute('stroke', '#888');
+    grid.setAttribute('stroke-width', '0.5');
+    grid.setAttribute('shape-rendering', 'crispEdges');
+    grid.setAttribute('vector-effect', 'non-scaling-stroke');
+
+    // vertical lines
+    for (let c = 0; c <= cols; ++c) {
+        const x = offX + c * CELL_SIZE;
+        const v = document.createElementNS(SVG_NS, 'line');
+        v.setAttribute('x1', x); v.setAttribute('y1', offY);
+        v.setAttribute('x2', x); v.setAttribute('y2', offY + rows * CELL_SIZE);
+        grid.append(v);
+    }
+
+    // horizontal lines
+    for (let r = 0; r <= rows; ++r) {
+        const y = offY + r * CELL_SIZE;
+        const h = document.createElementNS(SVG_NS, 'line');
+        h.setAttribute('x1', offX);                    h.setAttribute('y1', y);
+        h.setAttribute('x2', offX + cols * CELL_SIZE); h.setAttribute('y2', y);
+        grid.append(h);
+    }
+    svg.append(grid);
+
+    // ───── draw snake ─────
     const center = ({ x, y }) =>
         vec(offX + CELL_SIZE * (x + 0.5),
             offY + CELL_SIZE * (y + 0.5));
