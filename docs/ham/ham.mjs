@@ -189,12 +189,19 @@ const updateUI = (msg, { ok = true, busy = false } = {}) => {
     ui.cancel  .disabled = !busy;
 };
 
+// dim label with control
+function setDisabled(input, disabled) {
+    input.disabled = disabled;
+    const label = input.closest('label');
+    if (label) label.classList.toggle('disabled', disabled);
+}
+
 // outline controls
 const updateOutlineControls = () => {
     const on = ui.showPath.checked;
-    ui.pathModeOutline.disabled = !on;
-    ui.pathModeFilled .disabled = !on;
-    ui.showGrid       .disabled = !on;
+    setDisabled(ui.pathModeOutline, !on);
+    setDisabled(ui.pathModeFilled , !on);
+    setDisabled(ui.showGrid       , !on);
 };
 
 // ────────── cached result + (re)draw helpers ──────────

@@ -56,6 +56,9 @@ h1 {
   align-items: center;
   gap: 0.3rem;
 }
+.controls label.disabled {
+  color: var(--color-button-disabled);
+}
 
 /* number inputs */
 input[type="number"] {
