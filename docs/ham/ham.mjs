@@ -70,19 +70,21 @@ const A = (p, s, r) => ` A ${r} ${r} 0 0 ${s} ${p.x} ${p.y}`;
 
 // ────── wall(centers) → { start, end, cmd } ──────
 function wall(centers) {
-    const D     = centers.slice(1).map((c, i) => dir(centers[i], c));
+    // directions of the centre-line segments
+    const D = centers.slice(1).map((c, i) => dir(centers[i], c));
+
     const start = add(centers[0],     mul(left(D[0]),     RADIUS));
     const end   = add(centers.at(-1), mul(left(D.at(-1)), RADIUS));
 
-    let cmd = '';
-    let lineStart = start; // line starts at current position
+    const parts = [];                 // collect commands as objects
+    let lineStart = start;            // current pen position
+    let pendingConcaveIdx = null;     // last concave arc w/o line in-between
 
     for (let i = 1; i < centers.length - 1; ++i) {
-        const dp = D[i - 1]; // incoming direction
-        const dn = D[i];     // outgoing direction
-        if (dp.x === dn.x && dp.y === dn.y) continue; // straight line, no bend
+        const dp = D[i - 1];          // incoming direction
+        const dn = D[i];              // outgoing direction
+        if (eq(dp, dn)) continue;     // straight – nothing to draw here
 
-        // we are bending, create a curve
         const concave = cross(dp, dn) < 0;
         const shift   = concave ? 2 * RADIUS : 0;
 
@@ -91,14 +93,44 @@ function wall(centers) {
         const next = add(add(centers[i], mul(left(dn), RADIUS)),
                          mul(dn,  shift));
 
-        if (!eq(lineStart, prev)) cmd += L(prev); // no zero length lines
-        cmd += A(next, concave ? 0 : 1, RADIUS);
-        lineStart = next; // new line start is end of curve
+        /* ---------- straight segment (if any) ---------- */
+        if (!eq(lineStart, prev)) {
+            parts.push({ t: 'L', p: prev });
+            pendingConcaveIdx = null;          // line breaks merge chain
+        }
+
+        /* ---------- bend (quarter arc or merged half arc) ---------- */
+        if (concave) {
+            if (pendingConcaveIdx !== null) {
+                /* merge with previous concave quarter-arc */
+                const arc = parts[pendingConcaveIdx];
+                arc.large = 1;                 // 180°
+                arc.p = next;                  // new end point
+                pendingConcaveIdx = null;      // no further merge possible
+            } else {
+                /* regular quarter-arc */
+                parts.push({ t: 'A', p: next, sweep: 0, large: 0 });
+                pendingConcaveIdx = parts.length - 1; // remember me
+            }
+        } else { /* convex */
+            parts.push({ t: 'A', p: next, sweep: 1, large: 0 });
+            pendingConcaveIdx = null;          // convex arcs never merge
+        }
+
+        lineStart = next;
     }
 
-    // always ends with a line by construction
-    console.assert(!eq(lineStart, end),'ending with zero length line');
-    cmd += L(end);
+    /* ---------- final straight segment ---------- */
+    console.assert(!eq(lineStart, end), 'ending with zero length line');
+    parts.push({ t: 'L', p: end });
+
+    /* ---------- stringify ---------- */
+    const cmd = parts.map(cmd =>
+        cmd.t === 'L'
+            ? ` L ${cmd.p.x} ${cmd.p.y}`
+            : ` A ${RADIUS} ${RADIUS} 0 ${cmd.large} ${cmd.sweep} ${cmd.p.x} ${cmd.p.y}`
+    ).join('');
+
     return { start, end, cmd };
 }
 
