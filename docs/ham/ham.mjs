@@ -68,6 +68,36 @@ const M = p         => `M ${p.x} ${p.y}`;
 const L = p         => ` L ${p.x} ${p.y}`;
 const A = (p, s, r) => ` A ${r} ${r} 0 0 ${s} ${p.x} ${p.y}`;
 
+// ────────── wall sanity check ──────────
+function goodWall(cmd) {
+    /*
+        Requirements
+        ────────────
+        1. Every token that is *not* the single-letter commands “L” or “A”
+           must be an (optionally signed) integer written *without* a
+           decimal point or exponent.
+        2. Path verbs must alternate strictly: “… L … A … L … A …”.
+           Two successive “L” or two successive “A” tokens are forbidden.
+    */
+
+    const tokens   = cmd.trim().split(/\s+/);   // split on whitespace
+    let prevVerb   = null;
+
+    for (const t of tokens) {
+
+        // command letters
+        if (t === 'L' || t === 'A') {
+            if (t === prevVerb) return false;   // duplicate verb
+            prevVerb = t;
+            continue;
+        }
+
+        // numeric parameter – has to be an *integer literal*
+        if (!/^-?\d+$/.test(t)) return false;
+    }
+    return true;
+}
+
 // ────── wall(centers) → { start, end, cmd } ──────
 function wall(centers) {
     // directions of the centre-line segments
@@ -131,6 +161,7 @@ function wall(centers) {
             : ` A ${RADIUS} ${RADIUS} 0 ${cmd.large} ${cmd.sweep} ${cmd.p.x} ${cmd.p.y}`
     ).join('');
 
+    console.assert(goodWall(cmd), 'wall(): path command check failed');
     return { start, end, cmd };
 }
 
