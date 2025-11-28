@@ -68,32 +68,28 @@ const M = p         => `M ${p.x} ${p.y}`;
 const L = p         => ` L ${p.x} ${p.y}`;
 const A = (p, s, r) => ` A ${r} ${r} 0 0 ${s} ${p.x} ${p.y}`;
 
-// ────────── wall sanity check ──────────
+// ───── wall sanity check ─────
+//
+// 1. Every token that is *not* the single-letter command “L” or “A” must be
+//    an unsigned integer written *without* a decimal point or exponent.
+//
+// 2. Path verbs must strictly alternate: “… L … A … L … A …”.
+//    I.e. Two successive same verbs are forbidden.
+
+const VERB_REGEX = /^[LA]$/;
+const UINT_REGEX = /^\d+$/;
 function goodWall(cmd) {
-    /*
-        Requirements
-        ────────────
-        1. Every token that is *not* the single-letter commands “L” or “A”
-           must be an (optionally signed) integer written *without* a
-           decimal point or exponent.
-        2. Path verbs must alternate strictly: “… L … A … L … A …”.
-           Two successive “L” or two successive “A” tokens are forbidden.
-    */
-
-    const tokens   = cmd.trim().split(/\s+/);   // split on whitespace
-    let prevVerb   = null;
-
-    for (const t of tokens) {
-
-        // command letters
-        if (t === 'L' || t === 'A') {
-            if (t === prevVerb) return false;   // duplicate verb
-            prevVerb = t;
+    const tokens = cmd.trim().split(/\s+/);
+    let prevVerb = null;
+    for (const token of tokens) {
+        // verb
+        if (VERB_REGEX.test(token)) {
+            if (token === prevVerb) return false; // duplicate verb
+            prevVerb = token;
             continue;
         }
-
-        // numeric parameter – has to be an *integer literal*
-        if (!/^-?\d+$/.test(t)) return false;
+        // number
+        if (!UINT_REGEX.test(token)) return false;
     }
     return true;
 }
