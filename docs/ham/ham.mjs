@@ -66,8 +66,6 @@ const eq    = (a, b)         => a.x === b.x && a.y === b.y;
 // ────── SVG path helpers ──────
 const M = pt => `M ${pt.x} ${pt.y}`;
 const L = pt => ` L ${pt.x} ${pt.y}`;
-// const A = (p, s, r) => ` A ${r} ${r} 0 0 ${s} ${p.x} ${p.y}`;
-
 const A = (pt, large, sweep) =>
     ` A ${RADIUS} ${RADIUS} 0 ${large} ${sweep} ${pt.x} ${pt.y}`;
 
@@ -131,14 +129,11 @@ function wall(centers) {
     const cmd = parts.map(cmd =>
         cmd.t === 'L'
             ? L(cmd.p)
-            : A(cmd.p, cmd.large, cmd.sweep) 
+            : A(cmd.p, cmd.large, cmd.sweep)
     ).join('');
 
     return { start, end, cmd };
 }
-
-// 180° cap between left and right sides
-const cap = pt => A(pt, 1, 1);
 
 // Good Path:
 // - starts with `M`, ends with `Z`
@@ -157,11 +152,11 @@ function svgSnake(offX, offY, path) {
     const leftWall  = wall(centers);           // head → tail
     const rightWall = wall(centers.reverse()); // tail → head
 
-    const d = M(leftWall.start)
-            + leftWall.cmd         // head → tail (left)
-            + cap(rightWall.start) // round tail
-            + rightWall.cmd        // tail → head (right)
-            + cap(leftWall.start)  // round head
+    const d = M(leftWall.start)        // start location
+            + leftWall.cmd             // head → tail (left)
+            + A(rightWall.start, 1, 1) // round tail: 180° arc between left and right sides
+            + rightWall.cmd            // tail → head (right)
+            + A(leftWall.start, 1, 1)  // round head: 180° arc between left and right sides
             + 'Z';
     console.assert(GOOD_PATH.test(d), `bad snake outline:\n"${d}"`);
 
