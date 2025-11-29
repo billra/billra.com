@@ -68,32 +68,6 @@ const M = p         => `M ${p.x} ${p.y}`;
 const L = p         => ` L ${p.x} ${p.y}`;
 const A = (p, s, r) => ` A ${r} ${r} 0 0 ${s} ${p.x} ${p.y}`;
 
-// ───── wall sanity check ─────
-//
-// 1. Every token that is *not* the single-letter command “L” or “A” must be
-//    an unsigned integer written *without* a decimal point or exponent.
-//
-// 2. Path verbs must strictly alternate: “… L … A … L … A …”.
-//    I.e. Two successive same verbs are forbidden.
-
-const VERB_REGEX = /^[LA]$/;
-const UINT_REGEX = /^\d+$/;
-function goodWall(cmd) {
-    const tokens = cmd.trim().split(/\s+/);
-    let prevVerb = null;
-    for (const token of tokens) {
-        // verb
-        if (VERB_REGEX.test(token)) {
-            if (token === prevVerb) return false; // duplicate verb
-            prevVerb = token;
-            continue;
-        }
-        // number
-        if (!UINT_REGEX.test(token)) return false;
-    }
-    return true;
-}
-
 // ────── wall(centers) → { start, end, cmd } ──────
 function wall(centers) {
     // directions of the centre-line segments
@@ -157,12 +131,19 @@ function wall(centers) {
             : ` A ${RADIUS} ${RADIUS} 0 ${cmd.large} ${cmd.sweep} ${cmd.p.x} ${cmd.p.y}`
     ).join('');
 
-    console.assert(goodWall(cmd), 'wall(): path command check failed');
     return { start, end, cmd };
 }
 
 // 180° cap between left and right walls
 const cap = p => A(p, 1, RADIUS); // sweep-flag 1 ⇢ half-circle
+
+// Good Path:
+// - starts with `M`, ends with `Z`
+// - one or more 'line, arc' pairs
+// - numbers are positive integers
+// - start position = end position
+const GOOD_PATH =
+    /^M (\d+) (\d+)(?: L \d+ \d+ A \d+ \d+ 0 [01] [01] \d+ \d+)* L \d+ \d+ A \d+ \d+ 0 [01] [01] \1 \2Z$/;
 
 function svgSnake(offX, offY, path) {
     const center = ({ x, y }) =>
@@ -173,12 +154,13 @@ function svgSnake(offX, offY, path) {
     const leftWall  = wall(centers);           // head → tail
     const rightWall = wall(centers.reverse()); // tail → head
 
-    const d =  M(leftWall.start)
+    const d = M(leftWall.start)
             + leftWall.cmd         // head → tail (left)
             + cap(rightWall.start) // round tail
             + rightWall.cmd        // tail → head (right)
             + cap(leftWall.start)  // round head
             + 'Z';
+    console.assert(GOOD_PATH.test(d), `bad snake outline:\n"${d}"`);
 
     const outline = document.createElementNS(SVG_NS, 'path');
     outline.setAttribute('d', d);
