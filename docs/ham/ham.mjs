@@ -64,9 +64,12 @@ const cross = (a, b)         => a.x * b.y - a.y * b.x;
 const eq    = (a, b)         => a.x === b.x && a.y === b.y;
 
 // ────── SVG path helpers ──────
-const M = p         => `M ${p.x} ${p.y}`;
-const L = p         => ` L ${p.x} ${p.y}`;
-const A = (p, s, r) => ` A ${r} ${r} 0 0 ${s} ${p.x} ${p.y}`;
+const M = pt => `M ${pt.x} ${pt.y}`;
+const L = pt => ` L ${pt.x} ${pt.y}`;
+// const A = (p, s, r) => ` A ${r} ${r} 0 0 ${s} ${p.x} ${p.y}`;
+
+const A = (pt, large, sweep) =>
+    ` A ${RADIUS} ${RADIUS} 0 ${large} ${sweep} ${pt.x} ${pt.y}`;
 
 // ────── wall(centers) → { start, end, cmd } ──────
 function wall(centers) {
@@ -127,15 +130,15 @@ function wall(centers) {
     /* ---------- stringify ---------- */
     const cmd = parts.map(cmd =>
         cmd.t === 'L'
-            ? ` L ${cmd.p.x} ${cmd.p.y}`
-            : ` A ${RADIUS} ${RADIUS} 0 ${cmd.large} ${cmd.sweep} ${cmd.p.x} ${cmd.p.y}`
+            ? L(cmd.p)
+            : A(cmd.p, cmd.large, cmd.sweep) 
     ).join('');
 
     return { start, end, cmd };
 }
 
-// 180° cap between left and right walls
-const cap = p => A(p, 1, RADIUS); // sweep-flag 1 ⇢ half-circle
+// 180° cap between left and right sides
+const cap = pt => A(pt, 1, 1);
 
 // Good Path:
 // - starts with `M`, ends with `Z`
