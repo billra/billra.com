@@ -72,16 +72,13 @@ const A = (pt, large, sweep) =>
 // ────── wall(centers) → { start, end, cmd } ──────
 function wall(centers) {
     // directions of the center line segments
-    const D = centers.slice(1).map((c, i) => dir(centers[i], c));
+    const D     = centers.slice(1).map((c, i) => dir(centers[i], c));
+    const start = add(centers[0], mul(left(D[0]), RADIUS));
+    let pen     = start;   // current pen position
+    let cmd     = '';      // collected path commands
+    let pending = null;    // concave quarter-arc merge candidate
 
-    const start = add(centers[0],     mul(left(D[0]),     RADIUS));
-    const end   = add(centers.at(-1), mul(left(D.at(-1)), RADIUS));
-
-    let pen = start;    // current “pen” position
-    let cmd = '';       // result string
-    let pending = null; // concave quarter-arc merge candidate
-
-    // flush a concave quarter-arc which was not merged
+    // output stored quarter
     const emitQuarter = () => {
         if (pending) {
             cmd += A(pending, 0, 0);
@@ -90,29 +87,35 @@ function wall(centers) {
         }
     };
 
-    for (let i = 1; i < centers.length - 1; ++i) {
-        const dp = D[i - 1];      // incoming direction
-        const dn = D[i];          // outgoing direction
-        if (eq(dp, dn)) continue; // straight
+    for (let i = 1; i < centers.length; ++i) {
+        const dp = D[i - 1];           // previous cell direction
+        const isTail = i === D.length; // last cell?
+        const dn = isTail ? dp : D[i]; // next direction direction, straight at tail
 
-        const concave = cross(dp, dn) < 0;
+        if (!isTail && eq(dp, dn)) continue; // straight
+
+        const concave = !isTail && cross(dp, dn) < 0;
         const shift   = concave ? 2 * RADIUS : 0;
+        const prev    = add(add(centers[i], mul(left(dp), RADIUS)), mul(dp, -shift));
 
-        const prev = add(add(centers[i], mul(left(dp), RADIUS)), mul(dp, -shift));
-        const next = add(add(centers[i], mul(left(dn), RADIUS)), mul(dn,  shift));
         // line
         if (!eq(pen, prev)) {
             emitQuarter();
             cmd += L(prev);
             pen = prev;
         }
-        // arc
+        if (isTail) break; // no bend at tail
+
+        // arc, we know dp != dn
+        const next = add(add(centers[i], mul(left(dn), RADIUS)), mul(dn, shift));
+
         if (concave) {
             if (pending) { // merge two 90° arcs into one 180° arc
                 cmd += A(next, 1, 0);
                 pen = next;
                 pending = null;
             } else {
+                pen     = next;
                 pending = next; // create arc merge candidate
             }
         } else { // convex never merges
@@ -121,9 +124,8 @@ function wall(centers) {
             pen = next;
         }
     }
-    emitQuarter();
-    cmd += L(end);
-    return { start, end, cmd };
+    console.assert(pending === null, 'detected trailing curve');
+    return { start, cmd };
 }
 
 // Good Path:
