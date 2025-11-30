@@ -75,8 +75,8 @@ function wall(centers) {
     const D     = centers.slice(1).map((c, i) => dir(centers[i], c));
     const start = add(centers[0], mul(left(D[0]), RADIUS));
     let pen     = start;   // current pen position
+    let pending = false;   // true: a 90° concave arc is buffered
     let cmd     = '';      // collected path commands
-    let pending = null;    // concave quarter-arc merge candidate
 
     for (let i = 1; i < centers.length; ++i) {
         const dp = D[i - 1];           // previous cell direction
@@ -93,8 +93,8 @@ function wall(centers) {
         if (!eq(pen, prev)) {
             // output any stored 90° arc before the line
             if (pending) {
-                cmd += A(pending, 0, 0);
-                pending = null;
+                cmd += A(pen, 0, 0);
+                pending = false;
             }
             cmd += L(prev);
             pen = prev;
@@ -107,17 +107,17 @@ function wall(centers) {
         if (concave) {
             if (pending) { // merge two 90° arcs into one 180° arc
                 cmd += A(next, 1, 0);
-                pending = null;
+                pending = false;
             } else {
-                pending = next; // create arc merge candidate
+                pending = true; // create arc merge candidate
             }
         } else { // convex never merges
-            console.assert(pending === null, 'detected S curve');
+            console.assert(!pending, 'detected S curve');
             cmd += A(next, 0, 1);
         }
         pen = next;
     }
-    console.assert(pending === null, 'detected trailing curve');
+    console.assert(!pending, 'detected trailing curve');
     return { start, cmd };
 }
 
