@@ -78,15 +78,6 @@ function wall(centers) {
     let cmd     = '';      // collected path commands
     let pending = null;    // concave quarter-arc merge candidate
 
-    // output stored quarter
-    const emitQuarter = () => {
-        if (pending) {
-            cmd += A(pending, 0, 0);
-            pen = pending;
-            pending = null;
-        }
-    };
-
     for (let i = 1; i < centers.length; ++i) {
         const dp = D[i - 1];           // previous cell direction
         const isTail = i === D.length; // last cell?
@@ -100,7 +91,11 @@ function wall(centers) {
 
         // line
         if (!eq(pen, prev)) {
-            emitQuarter();
+            // output any stored 90° arc before the line
+            if (pending) {
+                cmd += A(pending, 0, 0);
+                pending = null;
+            }
             cmd += L(prev);
             pen = prev;
         }
