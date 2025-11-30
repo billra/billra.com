@@ -107,17 +107,15 @@ function wall(centers) {
         if (concave) {
             if (pending) { // merge two 90° arcs into one 180° arc
                 cmd += A(next, 1, 0);
-                pen = next;
                 pending = null;
             } else {
-                pen     = next;
                 pending = next; // create arc merge candidate
             }
         } else { // convex never merges
             console.assert(pending === null, 'detected S curve');
             cmd += A(next, 0, 1);
-            pen = next;
         }
+        pen = next;
     }
     console.assert(pending === null, 'detected trailing curve');
     return { start, cmd };
