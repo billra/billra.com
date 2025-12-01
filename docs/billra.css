@@ -1,0 +1,29 @@
+:root {
+    --bg: white;
+    --fg: black;
+    --link: #06c;
+    --link-visited: #528;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: black;
+        --fg: white;
+        --link: #7af;
+        --link-visited: #a8f;
+    }
+}
+body {
+    font-family: Verdana, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+}
+a {
+    color: var(--link);
+}
+a:visited {
+    color: var(--link-visited);
+}
+a:hover, a:focus {
+    text-decoration: underline;
+    filter: brightness(1.2);
+}
