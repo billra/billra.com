@@ -54,14 +54,14 @@ const drawSnake = (svg, path, cols, rows, width, height) => {
 };
 
 // ────── vector helpers ──────
-const vec   = (x = 0, y = 0) => ({ x, y });
-const add   = (a, b)         => vec(a.x + b.x, a.y + b.y);
-const mul   = (a, k)         => vec(a.x * k,  a.y * k);
-const dir   = (p, q)         => vec(Math.sign(q.x - p.x),
-                                    Math.sign(q.y - p.y));
-const left  = d              => vec( d.y, -d.x); // 90° CCW
-const cross = (a, b)         => a.x * b.y - a.y * b.x;
-const eq    = (a, b)         => a.x === b.x && a.y === b.y;
+const vec   = (x, y) => ({ x, y });
+const add   = (a, b) => vec(a.x + b.x, a.y + b.y);
+const mul   = (a, k) => vec(a.x * k,  a.y * k);
+const dir   = (p, q) => vec(Math.sign(q.x - p.x),
+                            Math.sign(q.y - p.y));
+const left  = d      => vec( d.y, -d.x); // 90° CCW
+const cross = (a, b) => a.x * b.y - a.y * b.x;
+const eq    = (a, b) => a.x === b.x && a.y === b.y;
 
 // ────── SVG path helpers ──────
 const M = pt => `M ${pt.x} ${pt.y}`;
