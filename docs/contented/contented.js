@@ -74,7 +74,7 @@ function createNewTab(name = null, content = '') {
     }
 
     const id = `editor-${Date.now()}`;
-    tabs.set(id, { name: tabName, dirty: true });
+    tabs.set(id, { name: tabName, dirty: false });
 
     createEditorDiv(id, content);
     localStorage.setItem(`${tabName} tab`, content); // Changed
