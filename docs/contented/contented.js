@@ -1,7 +1,7 @@
 // Head metadata initialization
 document.getElementById('id-version').innerText = document.querySelector('meta[name="version"]').content;
 
-// Core State (Using Map keeps lookup logic fast and expressive)
+// Core State
 const tabs = new Map([['id-help', { name: 'contented', isHelp: true, dirty: false }]]);
 let activeTabId = 'id-help';
 let tabCounter = 0;
@@ -19,9 +19,9 @@ function init() {
     // Reconstruct tabs directly from matching localStorage keys
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key?.endsWith('_tab')) {
-            const name = key.slice(0, -4);
-            const id = `editor-${Date.now()}-${i}`; // Robust unique DOM id
+        if (key?.endsWith(' tab')) { // Changed from '_tab'
+            const name = key.slice(0, -4); // " tab" is exactly 4 characters long
+            const id = `editor-${Date.now()}-${i}`;
 
             if (name.startsWith('Untitled ')) {
                 const num = parseInt(name.replace('Untitled ', ''), 10);
@@ -34,7 +34,6 @@ function init() {
     }
 
     tabCounter = maxUntitled;
-
     renderTabBar();
 
     // Restore the active view
@@ -44,7 +43,6 @@ function init() {
     if (activeEntry) {
         switchTab(activeEntry[0]);
     } else if (tabs.size > 1) {
-        // Fallback to the first user tab if activeTab key is missing
         switchTab([...tabs.keys()][1]);
     } else {
         createNewTab();
@@ -56,9 +54,9 @@ function saveDirtyTabs() {
         if (tab.dirty && !tab.isHelp) {
             const div = document.getElementById(id);
             if (div) {
-                localStorage.setItem(`${tab.name}_tab`, div.innerHTML);
+                localStorage.setItem(`${tab.name} tab`, div.innerHTML); // Changed
                 tab.dirty = false;
-                updateTabPillUi(id); // Target only this tab pill instead of a full re-render
+                updateTabPillUi(id);
             }
         }
     });
@@ -71,7 +69,6 @@ function createNewTab(name = null, content = '') {
     tabCounter++;
     const tabName = name || `Untitled ${tabCounter}`;
 
-    // Prevent immediate collisions on generated numbers
     if ([...tabs.values()].some(t => t.name === tabName)) {
         return createNewTab(null, content);
     }
@@ -80,7 +77,7 @@ function createNewTab(name = null, content = '') {
     tabs.set(id, { name: tabName, dirty: true });
 
     createEditorDiv(id, content);
-    localStorage.setItem(`${tabName}_tab`, content);
+    localStorage.setItem(`${tabName} tab`, content); // Changed
 
     renderTabBar();
     switchTab(id);
@@ -117,7 +114,6 @@ function createEditorDiv(id, content) {
 function switchTab(id) {
     if (!tabs.has(id)) return;
 
-    // Toggle active classes safely using optional chaining
     document.getElementById(activeTabId)?.classList.remove('active');
     document.getElementById(id)?.classList.add('active');
 
@@ -131,7 +127,6 @@ function switchTab(id) {
         localStorage.removeItem('activeTab');
     }
 
-    // Refresh layout active state
     document.querySelectorAll('.tab-pill').forEach(pill => {
         pill.classList.toggle('active', pill.dataset.id === activeTabId);
     });
@@ -146,7 +141,7 @@ function closeTab(id, event) {
         if (!confirm(`Are you sure you want to close "${tab.name}"?`)) return;
     }
 
-    localStorage.removeItem(`${tab.name}_tab`);
+    localStorage.removeItem(`${tab.name} tab`); // Changed
     div?.remove();
     tabs.delete(id);
 
@@ -170,9 +165,9 @@ function renameTab(id) {
     }
 
     // Shift file storage to the new key
-    const content = localStorage.getItem(`${tab.name}_tab`);
-    localStorage.removeItem(`${tab.name}_tab`);
-    localStorage.setItem(`${newName}_tab`, content || '');
+    const content = localStorage.getItem(`${tab.name} tab`); // Changed
+    localStorage.removeItem(`${tab.name} tab`); // Changed
+    localStorage.setItem(`${newName} tab`, content || ''); // Changed
 
     tab.name = newName;
     if (activeTabId === id) localStorage.setItem('activeTab', newName);
@@ -194,10 +189,11 @@ function renderTabBar() {
         pill.appendChild(titleSpan);
 
         pill.addEventListener('mousedown', e => {
-            e.preventDefault(); // Don't disrupt contenteditable focus selection frames
+            e.preventDefault();
             switchTab(id);
         });
 
+        // This is the double-click listener!
         if (!tab.isHelp) {
             pill.addEventListener('dblclick', () => renameTab(id));
 
@@ -211,7 +207,6 @@ function renderTabBar() {
     });
 }
 
-// Fine-grained UI updater for changing asterisks without re-rendering the whole bar
 function updateTabPillUi(id) {
     const pill = document.querySelector(`.tab-pill[data-id="${id}"] .tab-title`);
     const tab = tabs.get(id);
@@ -246,15 +241,15 @@ window.addEventListener('keydown', event => {
     const tab = tabs.get(activeTabId);
     let filename = tab.name;
 
-    if (event.key === 'S') { // HTML Export
+    if (event.key === 'S') {
         event.preventDefault();
         if (!/\.html?$/i.test(filename)) filename += '.htm';
         exportFile(filename, fileHeader + activeDiv.innerHTML + fileFooter);
-    } else if (event.key === 's') { // Raw Text Export
+    } else if (event.key === 's') {
         event.preventDefault();
         if (!/\.txt$/i.test(filename)) filename += '.txt';
         exportFile(filename, getText());
-    } else if (event.key === 'o') { // Import Panel
+    } else if (event.key === 'o') {
         event.preventDefault();
         triggerImportDialog();
     }
@@ -272,7 +267,7 @@ function exportFile(filename, content) {
     const tab = tabs.get(activeTabId);
     if (tab) {
         tab.dirty = false;
-        localStorage.setItem(`${tab.name}_tab`, document.getElementById(activeTabId).innerHTML);
+        localStorage.setItem(`${tab.name} tab`, document.getElementById(activeTabId).innerHTML); // Changed
         updateTabPillUi(activeTabId);
     }
 }
@@ -291,7 +286,6 @@ function triggerImportDialog() {
             return;
         }
 
-        // Modern dynamic file reading syntax using async/await wrappers
         try {
             const textContent = await file.text();
             createNewTab(cleanName, '');
@@ -305,7 +299,7 @@ function triggerImportDialog() {
                 activeDiv.innerText = textContent;
             }
 
-            localStorage.setItem(`${currentTab.name}_tab`, activeDiv.innerHTML);
+            localStorage.setItem(`${currentTab.name} tab`, activeDiv.innerHTML); // Changed
             currentTab.dirty = false;
             updateTabPillUi(activeTabId);
         } catch (err) {
