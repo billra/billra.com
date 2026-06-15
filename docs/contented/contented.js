@@ -1,11 +1,11 @@
-// update document with head information
+// Head metadata initialization
 document.getElementById('id-version').innerText = document.querySelector('meta[name="version"]').content;
 
-// Workspace State
-let tabs = [];
-let activeTabId = null;
+// Core State (Using Map keeps lookup logic fast and expressive)
+const tabs = new Map([['id-help', { name: 'contented', isHelp: true, dirty: false }]]);
+let activeTabId = 'id-help';
 let tabCounter = 0;
-let saveTimer;
+let saveTimer = null;
 
 // DOM Elements
 const tabContainer = document.getElementById('tab-container');
@@ -14,83 +14,76 @@ const workspaceDiv = document.getElementById('workspace');
 
 // --- Initialization & Local Storage ---
 function init() {
-    // Always ensure the Help tab exists in our state logic
-    tabs.push({ id: 'id-help', name: 'contented', isHelp: true });
-
-    let loadedTabs = 0;
     let maxUntitled = 0;
 
-    // 1. Reconstruct tabs from individual localStorage keys
+    // Reconstruct tabs directly from matching localStorage keys
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.endsWith('_tab')) {
-            const name = key.slice(0, -4); // remove '_tab'
+        if (key?.endsWith('_tab')) {
+            const name = key.slice(0, -4);
+            const id = `editor-${Date.now()}-${i}`; // Robust unique DOM id
 
-            // Keep track of the highest "Untitled X" to prevent naming collisions on new tabs
             if (name.startsWith('Untitled ')) {
                 const num = parseInt(name.replace('Untitled ', ''), 10);
                 if (!isNaN(num) && num > maxUntitled) maxUntitled = num;
             }
 
-            const id = `editor-${++loadedTabs}`;
-            tabs.push({ id: id, name: name, dirty: false });
+            tabs.set(id, { name, isHelp: false, dirty: false });
             createEditorDiv(id, localStorage.getItem(key));
         }
     }
 
-    tabCounter = maxUntitled; // Resume counter from highest saved state
+    tabCounter = maxUntitled;
 
-    // 2. Restore active tab or default to Help
-    if (loadedTabs === 0) {
-        createNewTab();
+    renderTabBar();
+
+    // Restore the active view
+    const savedActiveName = localStorage.getItem('activeTab');
+    const activeEntry = [...tabs.entries()].find(([_, t]) => t.name === savedActiveName);
+
+    if (activeEntry) {
+        switchTab(activeEntry[0]);
+    } else if (tabs.size > 1) {
+        // Fallback to the first user tab if activeTab key is missing
+        switchTab([...tabs.keys()][1]);
     } else {
-        const savedActiveName = localStorage.getItem('activeTab');
-        const activeMeta = tabs.find(t => t.name === savedActiveName);
-        if (activeMeta) {
-            switchTab(activeMeta.id);
-        } else {
-            switchTab('id-help');
-        }
+        createNewTab();
     }
-
-    renderTabs();
 }
 
 function saveDirtyTabs() {
-    // Only save tabs that have been edited
-    Array.from(workspaceDiv.children).forEach(div => {
-        if (div.getAttribute('contenteditable') !== 'false') {
-            const tabMeta = tabs.find(t => t.id === div.id);
-            if (tabMeta && tabMeta.dirty) {
-                localStorage.setItem(`${tabMeta.name}_tab`, div.innerHTML);
-                tabMeta.dirty = false;
+    tabs.forEach((tab, id) => {
+        if (tab.dirty && !tab.isHelp) {
+            const div = document.getElementById(id);
+            if (div) {
+                localStorage.setItem(`${tab.name}_tab`, div.innerHTML);
+                tab.dirty = false;
+                updateTabPillUi(id); // Target only this tab pill instead of a full re-render
             }
         }
     });
-    renderTabs(); // clear asterisks
-    console.log('Dirty tabs saved to storage');
+    console.log('Saved dirty tabs.');
 }
 window.addEventListener('beforeunload', saveDirtyTabs);
 
 // --- Tab Management ---
-function createNewTab(defaultName = null, initialContent = '') {
+function createNewTab(name = null, content = '') {
     tabCounter++;
-    const newName = defaultName || `Untitled ${tabCounter}`;
+    const tabName = name || `Untitled ${tabCounter}`;
 
-    // Safety check: Ensure the generated name doesn't already exist
-    if (tabs.some(t => t.name === newName)) {
-        return createNewTab(null, initialContent); // try the next number
+    // Prevent immediate collisions on generated numbers
+    if ([...tabs.values()].some(t => t.name === tabName)) {
+        return createNewTab(null, content);
     }
 
-    const newId = `editor-${Date.now()}`; // Unique ID for DOM only
-    tabs.push({ id: newId, name: newName, dirty: true });
+    const id = `editor-${Date.now()}`;
+    tabs.set(id, { name: tabName, dirty: true });
 
-    createEditorDiv(newId, initialContent);
-    // Instantly save the new empty tab to storage so it exists on refresh
-    localStorage.setItem(`${newName}_tab`, initialContent);
+    createEditorDiv(id, content);
+    localStorage.setItem(`${tabName}_tab`, content);
 
-    switchTab(newId);
-    renderTabs();
+    renderTabBar();
+    switchTab(id);
 }
 
 function createEditorDiv(id, content) {
@@ -101,22 +94,19 @@ function createEditorDiv(id, content) {
     div.spellcheck = false;
     div.innerHTML = content;
 
-    // Catch F1 globally or locally for help
-    div.addEventListener('keydown', event => {
-        if (event.key === 'F1') {
-            event.preventDefault();
+    div.addEventListener('keydown', e => {
+        if (e.key === 'F1') {
+            e.preventDefault();
             switchTab('id-help');
         }
     });
 
-    // Listen for 'input' instead of 'keydown' to catch pastes, cuts, and typing
     div.addEventListener('input', () => {
-        const tabMeta = tabs.find(t => t.id === id);
-        if (tabMeta && !tabMeta.dirty) {
-            tabMeta.dirty = true;
-            renderTabs();
+        const tab = tabs.get(id);
+        if (tab && !tab.dirty) {
+            tab.dirty = true;
+            updateTabPillUi(id);
         }
-
         clearTimeout(saveTimer);
         saveTimer = setTimeout(saveDirtyTabs, 5000);
     });
@@ -125,140 +115,112 @@ function createEditorDiv(id, content) {
 }
 
 function switchTab(id) {
-    if (activeTabId) {
-        const oldActiveDiv = document.getElementById(activeTabId);
-        if (oldActiveDiv) oldActiveDiv.classList.remove('active');
-    }
+    if (!tabs.has(id)) return;
+
+    // Toggle active classes safely using optional chaining
+    document.getElementById(activeTabId)?.classList.remove('active');
+    document.getElementById(id)?.classList.add('active');
 
     activeTabId = id;
-    const newActiveDiv = document.getElementById(id);
-    if (newActiveDiv) {
-        newActiveDiv.classList.add('active');
-        newActiveDiv.focus();
-    }
+    document.getElementById(id)?.focus();
 
-    // Update active tab in local storage
-    const activeMeta = tabs.find(t => t.id === id);
-    if (activeMeta && !activeMeta.isHelp) {
-        localStorage.setItem('activeTab', activeMeta.name);
+    const currentTab = tabs.get(id);
+    if (currentTab && !currentTab.isHelp) {
+        localStorage.setItem('activeTab', currentTab.name);
     } else {
-        localStorage.removeItem('activeTab'); // Unset activeTab defaults to Help on refresh
+        localStorage.removeItem('activeTab');
     }
 
-    renderTabs();
+    // Refresh layout active state
+    document.querySelectorAll('.tab-pill').forEach(pill => {
+        pill.classList.toggle('active', pill.dataset.id === activeTabId);
+    });
 }
 
 function closeTab(id, event) {
     event.stopPropagation();
-
+    const tab = tabs.get(id);
     const div = document.getElementById(id);
-    if (div.innerText.trim().length > 0) {
-        if (!confirm("This tab has content. Are you sure you want to close it?")) {
-            return;
-        }
+
+    if (div?.innerText.trim().length > 0) {
+        if (!confirm(`Are you sure you want to close "${tab.name}"?`)) return;
     }
 
-    const tabMeta = tabs.find(t => t.id === id);
+    localStorage.removeItem(`${tab.name}_tab`);
+    div?.remove();
+    tabs.delete(id);
 
-    // 1. Remove from local storage
-    localStorage.removeItem(`${tabMeta.name}_tab`);
-
-    // 2. Remove from DOM and state
-    div.remove();
-    tabs = tabs.filter(t => t.id !== id);
-
-    // 3. Switch view
     if (activeTabId === id) {
-        const remainingEditors = tabs.filter(t => !t.isHelp);
-        if (remainingEditors.length > 0) {
-            switchTab(remainingEditors[remainingEditors.length - 1].id);
-        } else {
-            switchTab('id-help');
-        }
-    } else {
-        renderTabs();
+        const remaining = [...tabs.keys()].filter(k => k !== 'id-help');
+        switchTab(remaining.length > 0 ? remaining.pop() : 'id-help');
     }
+    renderTabBar();
 }
 
 function renameTab(id) {
-    if (id === 'id-help') return;
-    const tabMeta = tabs.find(t => t.id === id);
+    const tab = tabs.get(id);
+    if (!tab || tab.isHelp) return;
 
-    const newName = prompt("Enter new tab name:", tabMeta.name);
-    if (!newName || newName.trim() === '' || newName.trim() === tabMeta.name) return;
+    const newName = prompt("Enter new tab name:", tab.name)?.trim();
+    if (!newName || newName === tab.name) return;
 
-    const cleanedName = newName.trim();
-
-    // Prevent name collisions
-    if (tabs.some(t => t.name.toLowerCase() === cleanedName.toLowerCase())) {
+    if ([...tabs.values()].some(t => t.name.toLowerCase() === newName.toLowerCase())) {
         alert("A tab with this name already exists.");
         return;
     }
 
-    const oldName = tabMeta.name;
-    tabMeta.name = cleanedName;
+    // Shift file storage to the new key
+    const content = localStorage.getItem(`${tab.name}_tab`);
+    localStorage.removeItem(`${tab.name}_tab`);
+    localStorage.setItem(`${newName}_tab`, content || '');
 
-    // Migrate storage to the new key
-    const content = localStorage.getItem(`${oldName}_tab`);
-    localStorage.removeItem(`${oldName}_tab`);
-    if (content !== null) {
-        localStorage.setItem(`${cleanedName}_tab`, content);
-    }
+    tab.name = newName;
+    if (activeTabId === id) localStorage.setItem('activeTab', newName);
 
-    // Update active tab key if we are renaming the active tab
-    if (activeTabId === id) {
-        localStorage.setItem('activeTab', cleanedName);
-    }
-
-    renderTabs();
+    renderTabBar();
 }
 
-// --- Render UI ---
-function renderTabs() {
+// --- Dynamic UI Rendering ---
+function renderTabBar() {
     tabContainer.innerHTML = '';
-
-    tabs.forEach(t => {
+    tabs.forEach((tab, id) => {
         const pill = document.createElement('div');
-        pill.className = `tab-pill ${t.id === activeTabId ? 'active' : ''}`;
-
-        let displayText = t.name;
-        if (t.dirty) displayText += ' *';
+        pill.className = `tab-pill ${id === activeTabId ? 'active' : ''}`;
+        pill.dataset.id = id;
 
         const titleSpan = document.createElement('span');
-        titleSpan.innerText = displayText;
+        titleSpan.className = 'tab-title';
+        titleSpan.innerText = tab.name + (tab.dirty ? ' *' : '');
         pill.appendChild(titleSpan);
 
-        pill.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            switchTab(t.id);
+        pill.addEventListener('mousedown', e => {
+            e.preventDefault(); // Don't disrupt contenteditable focus selection frames
+            switchTab(id);
         });
 
-        if (!t.isHelp) {
-            pill.addEventListener('dblclick', () => renameTab(t.id));
+        if (!tab.isHelp) {
+            pill.addEventListener('dblclick', () => renameTab(id));
 
             const closeBtn = document.createElement('span');
             closeBtn.className = 'tab-close';
             closeBtn.innerText = 'x';
-            closeBtn.addEventListener('mousedown', (e) => closeTab(t.id, e));
+            closeBtn.addEventListener('mousedown', e => closeTab(id, e));
             pill.appendChild(closeBtn);
         }
-
         tabContainer.appendChild(pill);
     });
 }
 
-// --- Global Event Listeners ---
-addTabBtn.addEventListener('click', () => createNewTab());
-
-document.getElementById('id-help').addEventListener('keydown', event => {
-    if (event.key.match(/^[\s\S]$/)) {
-        event.preventDefault();
-        const editors = tabs.filter(t => !t.isHelp);
-        if (editors.length > 0) switchTab(editors[editors.length - 1].id);
-        else createNewTab();
+// Fine-grained UI updater for changing asterisks without re-rendering the whole bar
+function updateTabPillUi(id) {
+    const pill = document.querySelector(`.tab-pill[data-id="${id}"] .tab-title`);
+    const tab = tabs.get(id);
+    if (pill && tab) {
+        pill.innerText = tab.name + (tab.dirty ? ' *' : '');
     }
-});
+}
 
+// --- Core Native Operations ---
 function getText() {
     const activeDiv = document.getElementById(activeTabId);
     if (!activeDiv || activeTabId === 'id-help') return '';
@@ -267,103 +229,103 @@ function getText() {
     const initialRange = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
     selection.selectAllChildren(activeDiv);
     const text = selection.toString();
+
     selection.removeAllRanges();
     if (initialRange) selection.addRange(initialRange);
     return text;
 }
 
-// --- Filesystem ---
-const contentedFileBegin = '<div id="contented" style="color: white; background-color: black;">';
-const contentedFileEnd = '</div>';
+// --- Filesystem Pipeline ---
+const fileHeader = '<div id="contented" style="color: white; background-color: black;">';
+const fileFooter = '</div>';
 
 window.addEventListener('keydown', event => {
-    if (activeTabId === 'id-help') return;
-    const activeDiv = document.getElementById(activeTabId);
-    const activeTabMeta = tabs.find(t => t.id === activeTabId);
+    if (activeTabId === 'id-help' || !event.ctrlKey) return;
 
-    // ctrl + 'S' -> save as HTML
-    if (event.key === 'S' && event.ctrlKey) {
+    const activeDiv = document.getElementById(activeTabId);
+    const tab = tabs.get(activeTabId);
+    let filename = tab.name;
+
+    if (event.key === 'S') { // HTML Export
         event.preventDefault();
-        const html = contentedFileBegin + activeDiv.innerHTML + contentedFileEnd;
-        let filename = activeTabMeta.name;
-        if (!filename.toLowerCase().endsWith('.htm') && !filename.toLowerCase().endsWith('.html')) filename += '.htm';
-        save(filename, html);
-    }
-    // ctrl + 's' -> save as text
-    if (event.key === 's' && event.ctrlKey) {
+        if (!/\.html?$/i.test(filename)) filename += '.htm';
+        exportFile(filename, fileHeader + activeDiv.innerHTML + fileFooter);
+    } else if (event.key === 's') { // Raw Text Export
         event.preventDefault();
-        const text = getText();
-        let filename = activeTabMeta.name;
-        if (!filename.toLowerCase().endsWith('.txt')) filename += '.txt';
-        save(filename, text);
-    }
-    // ctrl + 'o' -> open file
-    if (event.key === 'o' && event.ctrlKey) {
+        if (!/\.txt$/i.test(filename)) filename += '.txt';
+        exportFile(filename, getText());
+    } else if (event.key === 'o') { // Import Panel
         event.preventDefault();
-        loadDialog();
+        triggerImportDialog();
     }
 });
 
-function save(filename, content) {
+function exportFile(filename, content) {
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
-    link.style.display = 'none';
     link.click();
     URL.revokeObjectURL(url);
 
-    const tabMeta = tabs.find(t => t.id === activeTabId);
-    if (tabMeta) {
-        tabMeta.dirty = false;
-        // Also force a write to localStorage so the clean state is preserved
-        localStorage.setItem(`${tabMeta.name}_tab`, document.getElementById(activeTabId).innerHTML);
-        renderTabs();
+    const tab = tabs.get(activeTabId);
+    if (tab) {
+        tab.dirty = false;
+        localStorage.setItem(`${tab.name}_tab`, document.getElementById(activeTabId).innerHTML);
+        updateTabPillUi(activeTabId);
     }
 }
 
-function loadDialog() {
+function triggerImportDialog() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.txt,.htm,.html,.text';
-    input.onchange = () => {
+    input.onchange = async () => {
         const file = input.files[0];
-        const reader = new FileReader();
-        reader.onload = () => {
-            // Strip the extension for the tab name
-            const tabName = file.name.replace(/\.[^/.]+$/, "");
+        if (!file) return;
 
-            // Check if a tab with this name already exists before creating
-            if (tabs.some(t => t.name.toLowerCase() === tabName.toLowerCase())) {
-                alert(`A tab named "${tabName}" is already open.`);
-                return;
+        const cleanName = file.name.replace(/\.[^/.]+$/, "");
+        if ([...tabs.values()].some(t => t.name.toLowerCase() === cleanName.toLowerCase())) {
+            alert(`A tab named "${cleanName}" is already open.`);
+            return;
+        }
+
+        // Modern dynamic file reading syntax using async/await wrappers
+        try {
+            const textContent = await file.text();
+            createNewTab(cleanName, '');
+
+            const activeDiv = document.getElementById(activeTabId);
+            const currentTab = tabs.get(activeTabId);
+
+            if (textContent.startsWith(fileHeader)) {
+                activeDiv.innerHTML = textContent.slice(fileHeader.length, -fileFooter.length);
+            } else {
+                activeDiv.innerText = textContent;
             }
 
-            createNewTab(tabName, '');
-            doLoad(reader.result);
-        };
-        reader.readAsText(file, 'UTF-8');
+            localStorage.setItem(`${currentTab.name}_tab`, activeDiv.innerHTML);
+            currentTab.dirty = false;
+            updateTabPillUi(activeTabId);
+        } catch (err) {
+            console.error("Failed to parse local file stream context", err);
+        }
     };
     input.click();
 }
 
-function doLoad(str) {
-    const activeDiv = document.getElementById(activeTabId);
-    const tabMeta = tabs.find(t => t.id === activeTabId);
-
-    if (str.startsWith(contentedFileBegin)) {
-        const html = str.slice(contentedFileBegin.length, -contentedFileEnd.length);
-        activeDiv.innerHTML = html;
-    } else {
-        activeDiv.innerText = str;
+// Help Tab keyboard drop-through
+document.getElementById('id-help').addEventListener('keydown', e => {
+    if (e.key.match(/^[\s\S]$/)) {
+        e.preventDefault();
+        const userTabs = [...tabs.keys()].filter(k => k !== 'id-help');
+        if (userTabs.length > 0) switchTab(userTabs.pop());
+        else createNewTab();
     }
+});
 
-    // Save the loaded content to local storage immediately
-    localStorage.setItem(`${tabMeta.name}_tab`, activeDiv.innerHTML);
-    tabMeta.dirty = false;
-    renderTabs();
-}
+addTabBtn.addEventListener('click', () => createNewTab());
 
-// Bootstrap
+// Bootstrap initialization
 init();
