@@ -1,8 +1,8 @@
 // Head metadata initialization
 document.getElementById('id-version').innerText = document.querySelector('meta[name="version"]').content;
 
-// Core State
-const tabs = new Map([['id-help', { name: 'contented', isHelp: true, dirty: false }]]);
+// Core State (Relying directly on 'id-help' as our system tab anchor)
+const tabs = new Map([['id-help', { name: 'contented', dirty: false }]]);
 let activeTabId = 'id-help';
 let tabCounter = 0;
 let saveTimer = null;
@@ -19,8 +19,8 @@ function init() {
     // Reconstruct tabs directly from matching localStorage keys
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key?.endsWith(' tab')) { // Changed from '_tab'
-            const name = key.slice(0, -4); // " tab" is exactly 4 characters long
+        if (key?.endsWith(' tab')) {
+            const name = key.slice(0, -4);
             const id = `editor-${Date.now()}-${i}`;
 
             if (name.startsWith('Untitled ')) {
@@ -28,7 +28,7 @@ function init() {
                 if (!isNaN(num) && num > maxUntitled) maxUntitled = num;
             }
 
-            tabs.set(id, { name, isHelp: false, dirty: false });
+            tabs.set(id, { name, dirty: false });
             createEditorDiv(id, localStorage.getItem(key));
         }
     }
@@ -43,7 +43,7 @@ function init() {
     if (activeEntry) {
         switchTab(activeEntry[0]);
     } else if (tabs.size > 1) {
-        switchTab([...tabs.keys()][1]);
+        switchTab([...tabs.keys()][1]); // Switch to the first user-created tab
     } else {
         createNewTab();
     }
@@ -51,10 +51,10 @@ function init() {
 
 function saveDirtyTabs() {
     tabs.forEach((tab, id) => {
-        if (tab.dirty && !tab.isHelp) {
+        if (tab.dirty && id !== 'id-help') {
             const div = document.getElementById(id);
             if (div) {
-                localStorage.setItem(`${tab.name} tab`, div.innerHTML); // Changed
+                localStorage.setItem(`${tab.name} tab`, div.innerHTML);
                 tab.dirty = false;
                 updateTabPillUi(id);
             }
@@ -77,7 +77,7 @@ function createNewTab(name = null, content = '') {
     tabs.set(id, { name: tabName, dirty: false });
 
     createEditorDiv(id, content);
-    localStorage.setItem(`${tabName} tab`, content); // Changed
+    localStorage.setItem(`${tabName} tab`, content);
 
     renderTabBar();
     switchTab(id);
@@ -121,7 +121,7 @@ function switchTab(id) {
     document.getElementById(id)?.focus();
 
     const currentTab = tabs.get(id);
-    if (currentTab && !currentTab.isHelp) {
+    if (currentTab && id !== 'id-help') {
         localStorage.setItem('activeTab', currentTab.name);
     } else {
         localStorage.removeItem('activeTab');
@@ -141,7 +141,7 @@ function closeTab(id, event) {
         if (!confirm(`Are you sure you want to close "${tab.name}"?`)) return;
     }
 
-    localStorage.removeItem(`${tab.name} tab`); // Changed
+    localStorage.removeItem(`${tab.name} tab`);
     div?.remove();
     tabs.delete(id);
 
@@ -153,8 +153,9 @@ function closeTab(id, event) {
 }
 
 function renameTab(id) {
+    if (id === 'id-help') return;
     const tab = tabs.get(id);
-    if (!tab || tab.isHelp) return;
+    if (!tab) return;
 
     const newName = prompt("Enter new tab name:", tab.name)?.trim();
     if (!newName || newName === tab.name) return;
@@ -165,9 +166,9 @@ function renameTab(id) {
     }
 
     // Shift file storage to the new key
-    const content = localStorage.getItem(`${tab.name} tab`); // Changed
-    localStorage.removeItem(`${tab.name} tab`); // Changed
-    localStorage.setItem(`${newName} tab`, content || ''); // Changed
+    const content = localStorage.getItem(`${tab.name} tab`);
+    localStorage.removeItem(`${tab.name} tab`);
+    localStorage.setItem(`${newName} tab`, content || '');
 
     tab.name = newName;
     if (activeTabId === id) localStorage.setItem('activeTab', newName);
@@ -193,8 +194,7 @@ function renderTabBar() {
             switchTab(id);
         });
 
-        // This is the double-click listener!
-        if (!tab.isHelp) {
+        if (id !== 'id-help') {
             pill.addEventListener('dblclick', () => renameTab(id));
 
             const closeBtn = document.createElement('span');
@@ -267,7 +267,7 @@ function exportFile(filename, content) {
     const tab = tabs.get(activeTabId);
     if (tab) {
         tab.dirty = false;
-        localStorage.setItem(`${tab.name} tab`, document.getElementById(activeTabId).innerHTML); // Changed
+        localStorage.setItem(`${tab.name} tab`, document.getElementById(activeTabId).innerHTML);
         updateTabPillUi(activeTabId);
     }
 }
@@ -299,7 +299,7 @@ function triggerImportDialog() {
                 activeDiv.innerText = textContent;
             }
 
-            localStorage.setItem(`${currentTab.name} tab`, activeDiv.innerHTML); // Changed
+            localStorage.setItem(`${currentTab.name} tab`, activeDiv.innerHTML);
             currentTab.dirty = false;
             updateTabPillUi(activeTabId);
         } catch (err) {
