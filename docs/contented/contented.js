@@ -101,17 +101,18 @@ function createEditorDiv(id, content) {
     div.spellcheck = false;
     div.innerHTML = content;
 
-    // Keydown listener for the editor
+    // Catch F1 globally or locally for help
     div.addEventListener('keydown', event => {
         if (event.key === 'F1') {
             event.preventDefault();
             switchTab('id-help');
-            return;
         }
+    });
 
-        // Mark dirty
+    // Listen for 'input' instead of 'keydown' to catch pastes, cuts, and typing
+    div.addEventListener('input', () => {
         const tabMeta = tabs.find(t => t.id === id);
-        if (tabMeta && !tabMeta.dirty && !event.ctrlKey && event.key.length === 1) {
+        if (tabMeta && !tabMeta.dirty) {
             tabMeta.dirty = true;
             renderTabs();
         }
