@@ -2,6 +2,7 @@
 document.getElementById('id-version').innerText = document.querySelector('meta[name="version"]').content;
 
 // Core State (Relying directly on 'id-help' as our system tab anchor)
+const ACTIVE_TAB_KEY = 'active🐱tab';
 const tabs = new Map([['id-help', { name: 'contented', dirty: false }]]);
 let activeTabId = 'id-help';
 let tabCounter = 0;
@@ -16,11 +17,13 @@ const workspaceDiv = document.getElementById('workspace');
 function init() {
     let maxUntitled = 0;
 
-    // Reconstruct tabs directly from matching localStorage keys
+    // Reconstruct tabs directly from localStorage keys
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key?.endsWith(' tab')) {
-            const name = key.slice(0, -4);
+
+        // Skip the active tab tracker key, everything else is a tab
+        if (key !== ACTIVE_TAB_KEY) {
+            const name = key;
             const id = `editor-${Date.now()}-${i}`;
 
             if (name.startsWith('Untitled ')) {
@@ -37,7 +40,7 @@ function init() {
     renderTabBar();
 
     // Restore the active view
-    const savedActiveName = localStorage.getItem('activeTab');
+    const savedActiveName = localStorage.getItem(ACTIVE_TAB_KEY);
     const activeEntry = [...tabs.entries()].find(([_, t]) => t.name === savedActiveName);
 
     if (activeEntry) {
@@ -54,7 +57,7 @@ function saveDirtyTabs() {
         if (tab.dirty && id !== 'id-help') {
             const div = document.getElementById(id);
             if (div) {
-                localStorage.setItem(`${tab.name} tab`, div.innerHTML);
+                localStorage.setItem(tab.name, div.innerHTML);
                 tab.dirty = false;
                 updateTabPillUi(id);
             }
@@ -77,7 +80,7 @@ function createNewTab(name = null, content = '') {
     tabs.set(id, { name: tabName, dirty: false });
 
     createEditorDiv(id, content);
-    localStorage.setItem(`${tabName} tab`, content);
+    localStorage.setItem(tabName, content);
 
     renderTabBar();
     switchTab(id);
@@ -122,9 +125,9 @@ function switchTab(id) {
 
     const currentTab = tabs.get(id);
     if (currentTab && id !== 'id-help') {
-        localStorage.setItem('activeTab', currentTab.name);
+        localStorage.setItem(ACTIVE_TAB_KEY, currentTab.name);
     } else {
-        localStorage.removeItem('activeTab');
+        localStorage.removeItem(ACTIVE_TAB_KEY);
     }
 
     document.querySelectorAll('.tab-pill').forEach(pill => {
@@ -141,7 +144,7 @@ function closeTab(id, event) {
         if (!confirm(`Are you sure you want to close "${tab.name}"?`)) return;
     }
 
-    localStorage.removeItem(`${tab.name} tab`);
+    localStorage.removeItem(tab.name);
     div?.remove();
     tabs.delete(id);
 
@@ -166,12 +169,12 @@ function renameTab(id) {
     }
 
     // Shift file storage to the new key
-    const content = localStorage.getItem(`${tab.name} tab`);
-    localStorage.removeItem(`${tab.name} tab`);
-    localStorage.setItem(`${newName} tab`, content || '');
+    const content = localStorage.getItem(tab.name);
+    localStorage.removeItem(tab.name);
+    localStorage.setItem(newName, content || '');
 
     tab.name = newName;
-    if (activeTabId === id) localStorage.setItem('activeTab', newName);
+    if (activeTabId === id) localStorage.setItem(ACTIVE_TAB_KEY, newName);
 
     renderTabBar();
 }
@@ -267,7 +270,7 @@ function exportFile(filename, content) {
     const tab = tabs.get(activeTabId);
     if (tab) {
         tab.dirty = false;
-        localStorage.setItem(`${tab.name} tab`, document.getElementById(activeTabId).innerHTML);
+        localStorage.setItem(tab.name, document.getElementById(activeTabId).innerHTML);
         updateTabPillUi(activeTabId);
     }
 }
@@ -299,7 +302,7 @@ function triggerImportDialog() {
                 activeDiv.innerText = textContent;
             }
 
-            localStorage.setItem(`${currentTab.name} tab`, activeDiv.innerHTML);
+            localStorage.setItem(currentTab.name, activeDiv.innerHTML);
             currentTab.dirty = false;
             updateTabPillUi(activeTabId);
         } catch (err) {
