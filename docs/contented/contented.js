@@ -8,7 +8,6 @@ const HELP_TAB_NAME = 'contented'; // System tab constant
 
 const tabs = new Map([['id-help', { name: HELP_TAB_NAME, dirty: false, saveTimer: null }]]);
 let activeTabId = 'id-help';
-let tabCounter = 0;
 let uniqueID = 0;
 
 // DOM Elements
@@ -16,10 +15,14 @@ const tabContainer = document.getElementById('tab-container');
 const addTabBtn = document.getElementById('add-tab');
 const workspaceDiv = document.getElementById('workspace');
 
+// --- Helpers ---
+function generateTabId() {
+    uniqueID++;
+    return `tab-${uniqueID}`;
+}
+
 // --- Initialization & Local Storage ---
 function init() {
-    let maxUntitled = 0;
-
     // 1. Get the saved order (if it exists)
     let savedOrder = [];
     try {
@@ -37,13 +40,7 @@ function init() {
 
     // 3. Reconstruct tabs based on the saved array
     const processTabName = (name) => {
-        uniqueID++;
-        const id = `editor-${uniqueID}`;
-
-        if (name.startsWith('Untitled ')) {
-            const num = parseInt(name.replace('Untitled ', ''), 10);
-            if (!isNaN(num) && num > maxUntitled) maxUntitled = num;
-        }
+        const id = generateTabId();
 
         tabs.set(id, { name, dirty: false, saveTimer: null });
         createEditorDiv(id, localStorage.getItem(name));
@@ -58,7 +55,6 @@ function init() {
     // 4. Sweep up any un-ordered stray tabs (fallback safety)
     storageKeys.forEach((name) => processTabName(name));
 
-    tabCounter = maxUntitled;
     renderTabBar();
 
     // Restore the active view
@@ -95,15 +91,13 @@ window.addEventListener('beforeunload', () => {
 
 // --- Tab Management ---
 function createNewTab(name = null, content = '') {
-    tabCounter++;
-    const tabName = name || `Untitled ${tabCounter}`;
+    const id = generateTabId();
+    const tabName = name || id;
 
     if ([...tabs.values()].some(t => t.name === tabName)) {
         return createNewTab(null, content);
     }
 
-    uniqueID++;
-    const id = `editor-${uniqueID}`;
     tabs.set(id, { name: tabName, dirty: false, saveTimer: null });
 
     createEditorDiv(id, content);
