@@ -3,10 +3,9 @@ document.getElementById('id-version').innerText = document.querySelector('meta[n
 
 // Core State (Relying directly on 'id-help' as our system tab anchor)
 const ACTIVE_TAB_KEY = 'active🐱tab';
-const tabs = new Map([['id-help', { name: 'contented', dirty: false }]]);
+const tabs = new Map([['id-help', { name: 'contented', dirty: false, saveTimer: null }]]);
 let activeTabId = 'id-help';
 let tabCounter = 0;
-let saveTimer = null;
 
 // DOM Elements
 const tabContainer = document.getElementById('tab-container');
@@ -32,7 +31,7 @@ function init() {
             if (!isNaN(num) && num > maxUntitled) maxUntitled = num;
         }
 
-        tabs.set(id, { name, dirty: false });
+        tabs.set(id, { name, dirty: false, saveTimer: null });
         createEditorDiv(id, localStorage.getItem(key));
     }
 
@@ -52,20 +51,15 @@ function init() {
     }
 }
 
-function saveDirtyTabs() {
+// Flush any tabs that are still ticking when the window is closed
+window.addEventListener('beforeunload', () => {
     tabs.forEach((tab, id) => {
         if (!tab.dirty || id === 'id-help') return;
 
         const div = document.getElementById(id);
-        if (!div) return;
-
-        localStorage.setItem(tab.name, div.innerHTML);
-        tab.dirty = false;
-        updateTabPillUi(id);
+        if (div) localStorage.setItem(tab.name, div.innerHTML);
     });
-    console.log('Saved dirty tabs.');
-}
-window.addEventListener('beforeunload', saveDirtyTabs);
+});
 
 // --- Tab Management ---
 function createNewTab(name = null, content = '') {
@@ -77,7 +71,7 @@ function createNewTab(name = null, content = '') {
     }
 
     const id = `editor-${Date.now()}`;
-    tabs.set(id, { name: tabName, dirty: false });
+    tabs.set(id, { name: tabName, dirty: false, saveTimer: null });
 
     createEditorDiv(id, content);
     localStorage.setItem(tabName, content);
@@ -102,14 +96,23 @@ function createEditorDiv(id, content) {
 
     div.addEventListener('input', () => {
         const tab = tabs.get(id);
+        if (!tab) return;
 
-        if (tab && !tab.dirty) {
+        // 1. Instantly update the UI on the very first keystroke
+        if (!tab.dirty) {
             tab.dirty = true;
             updateTabPillUi(id);
         }
 
-        clearTimeout(saveTimer);
-        saveTimer = setTimeout(saveDirtyTabs, 5000);
+        // 2. Localized debounce: clear THIS specific tab's timer
+        clearTimeout(tab.saveTimer);
+
+        // 3. Start a new countdown specifically for this tab
+        tab.saveTimer = setTimeout(() => {
+            localStorage.setItem(tab.name, div.innerHTML);
+            tab.dirty = false;
+            updateTabPillUi(id);
+        }, 5000);
     });
 
     workspaceDiv.appendChild(div);
@@ -144,6 +147,8 @@ function closeTab(id, event) {
     // Flattened confirmation prompt
     if (div?.innerText.trim().length > 0 && !confirm(`Are you sure you want to close "${tab.name}"?`)) return;
 
+    // Clean up local storage and background timers
+    clearTimeout(tab.saveTimer);
     localStorage.removeItem(tab.name);
     div?.remove();
     tabs.delete(id);
@@ -169,12 +174,19 @@ function renameTab(id) {
         return;
     }
 
-    // Shift file storage to the new key
-    const content = localStorage.getItem(tab.name);
+    // Shift file storage to the new key.
+    // We grab directly from the div in case a 5-second localized save is currently pending.
+    const div = document.getElementById(id);
+    const content = div ? div.innerHTML : localStorage.getItem(tab.name);
+
     localStorage.removeItem(tab.name);
     localStorage.setItem(newName, content || '');
 
+    // Reset localized dirty states since we just forced a clean save under the new name
+    clearTimeout(tab.saveTimer);
+    tab.dirty = false;
     tab.name = newName;
+
     if (activeTabId === id) localStorage.setItem(ACTIVE_TAB_KEY, newName);
 
     renderTabBar();
@@ -190,7 +202,9 @@ function renderTabBar() {
 
         const titleSpan = document.createElement('span');
         titleSpan.className = 'tab-title';
-        titleSpan.innerText = tab.name + (tab.dirty ? ' *' : '');
+        titleSpan.innerText = tab.name;
+        if (tab.dirty) titleSpan.classList.add('is-dirty');
+
         pill.appendChild(titleSpan);
 
         pill.addEventListener('mousedown', e => {
@@ -212,12 +226,13 @@ function renderTabBar() {
 }
 
 function updateTabPillUi(id) {
-    const pill = document.querySelector(`.tab-pill[data-id="${id}"] .tab-title`);
+    const titleSpan = document.querySelector(`.tab-pill[data-id="${id}"] .tab-title`);
     const tab = tabs.get(id);
 
-    if (!pill || !tab) return;
+    if (!titleSpan || !tab) return;
 
-    pill.innerText = tab.name + (tab.dirty ? ' *' : '');
+    titleSpan.innerText = tab.name;
+    titleSpan.classList.toggle('is-dirty', tab.dirty);
 }
 
 // --- Core Native Operations ---
@@ -272,6 +287,7 @@ function exportFile(filename, content) {
     const tab = tabs.get(activeTabId);
     if (!tab) return;
 
+    clearTimeout(tab.saveTimer); // Clear any pending background autosaves
     tab.dirty = false;
     localStorage.setItem(tab.name, document.getElementById(activeTabId).innerHTML);
     updateTabPillUi(activeTabId);

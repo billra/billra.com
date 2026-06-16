@@ -40,6 +40,9 @@ h2 { font-size: 110%; }
     background: #555;
     border-radius: 3px;
 }
+.tab-title.is-dirty {
+    font-style: italic;
+}
 .tab-pill {
     display: flex;
     align-items: center;
