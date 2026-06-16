@@ -1,11 +1,15 @@
 // Head metadata initialization
 document.getElementById('id-version').innerText = document.querySelector('meta[name="version"]').content;
 
-// Core State (Relying directly on 'id-help' as our system tab anchor)
+// Core State
 const ACTIVE_TAB_KEY = 'active🐱tab';
-const tabs = new Map([['id-help', { name: 'contented', dirty: false, saveTimer: null }]]);
+const TAB_ORDER_KEY = 'tab🐱order';
+const HELP_TAB_NAME = 'contented'; // System tab constant
+
+const tabs = new Map([['id-help', { name: HELP_TAB_NAME, dirty: false, saveTimer: null }]]);
 let activeTabId = 'id-help';
 let tabCounter = 0;
+let uniqueID = 0;
 
 // DOM Elements
 const tabContainer = document.getElementById('tab-container');
@@ -16,15 +20,25 @@ const workspaceDiv = document.getElementById('workspace');
 function init() {
     let maxUntitled = 0;
 
-    // Reconstruct tabs directly from localStorage keys
+    // 1. Get the saved order (if it exists)
+    let savedOrder = [];
+    try {
+        savedOrder = JSON.parse(localStorage.getItem(TAB_ORDER_KEY)) || [];
+    } catch (e) { }
+
+    // 2. Build a set of all valid saved tab names from localStorage
+    const storageKeys = new Set();
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
+        if (key !== ACTIVE_TAB_KEY && key !== TAB_ORDER_KEY) {
+            storageKeys.add(key);
+        }
+    }
 
-        // Guard clause: Skip the active tab tracker key
-        if (key === ACTIVE_TAB_KEY) continue;
-
-        const name = key;
-        const id = `editor-${Date.now()}-${i}`;
+    // 3. Reconstruct tabs based on the saved array
+    const processTabName = (name) => {
+        uniqueID++;
+        const id = `editor-${uniqueID}`;
 
         if (name.startsWith('Untitled ')) {
             const num = parseInt(name.replace('Untitled ', ''), 10);
@@ -32,8 +46,17 @@ function init() {
         }
 
         tabs.set(id, { name, dirty: false, saveTimer: null });
-        createEditorDiv(id, localStorage.getItem(key));
-    }
+        createEditorDiv(id, localStorage.getItem(name));
+        storageKeys.delete(name); // Mark as processed
+    };
+
+    // Load tabs in their strict saved order
+    savedOrder.forEach((name) => {
+        if (storageKeys.has(name)) processTabName(name);
+    });
+
+    // 4. Sweep up any un-ordered stray tabs (fallback safety)
+    storageKeys.forEach((name) => processTabName(name));
 
     tabCounter = maxUntitled;
     renderTabBar();
@@ -45,10 +68,19 @@ function init() {
     if (activeEntry) {
         switchTab(activeEntry[0]);
     } else if (tabs.size > 1) {
-        switchTab([...tabs.keys()][1]); // Switch to the first user-created tab
+        switchTab([...tabs.keys()][1]);
     } else {
         createNewTab();
     }
+}
+
+// Helper to keep the master array synced
+function saveTabOrder() {
+    const order = [...tabs.values()]
+        .filter(t => t.name !== HELP_TAB_NAME) // Utilizing the constant here
+        .map(t => t.name);
+
+    localStorage.setItem(TAB_ORDER_KEY, JSON.stringify(order));
 }
 
 // Flush any tabs that are still ticking when the window is closed
@@ -70,12 +102,14 @@ function createNewTab(name = null, content = '') {
         return createNewTab(null, content);
     }
 
-    const id = `editor-${Date.now()}`;
+    uniqueID++;
+    const id = `editor-${uniqueID}`;
     tabs.set(id, { name: tabName, dirty: false, saveTimer: null });
 
     createEditorDiv(id, content);
     localStorage.setItem(tabName, content);
 
+    saveTabOrder();
     renderTabBar();
     switchTab(id);
 }
@@ -98,16 +132,13 @@ function createEditorDiv(id, content) {
         const tab = tabs.get(id);
         if (!tab) return;
 
-        // 1. Instantly update the UI on the very first keystroke
         if (!tab.dirty) {
             tab.dirty = true;
             updateTabPillUi(id);
         }
 
-        // 2. Localized debounce: clear THIS specific tab's timer
         clearTimeout(tab.saveTimer);
 
-        // 3. Start a new countdown specifically for this tab
         tab.saveTimer = setTimeout(() => {
             localStorage.setItem(tab.name, div.innerHTML);
             tab.dirty = false;
@@ -144,14 +175,14 @@ function closeTab(id, event) {
     const tab = tabs.get(id);
     const div = document.getElementById(id);
 
-    // Flattened confirmation prompt
     if (div?.innerText.trim().length > 0 && !confirm(`Are you sure you want to close "${tab.name}"?`)) return;
 
-    // Clean up local storage and background timers
     clearTimeout(tab.saveTimer);
     localStorage.removeItem(tab.name);
     div?.remove();
     tabs.delete(id);
+
+    saveTabOrder();
 
     if (activeTabId === id) {
         const remaining = [...tabs.keys()].filter(k => k !== 'id-help');
@@ -174,21 +205,19 @@ function renameTab(id) {
         return;
     }
 
-    // Shift file storage to the new key.
-    // We grab directly from the div in case a 5-second localized save is currently pending.
     const div = document.getElementById(id);
     const content = div ? div.innerHTML : localStorage.getItem(tab.name);
 
     localStorage.removeItem(tab.name);
     localStorage.setItem(newName, content || '');
 
-    // Reset localized dirty states since we just forced a clean save under the new name
     clearTimeout(tab.saveTimer);
     tab.dirty = false;
     tab.name = newName;
 
     if (activeTabId === id) localStorage.setItem(ACTIVE_TAB_KEY, newName);
 
+    saveTabOrder();
     renderTabBar();
 }
 
@@ -287,7 +316,7 @@ function exportFile(filename, content) {
     const tab = tabs.get(activeTabId);
     if (!tab) return;
 
-    clearTimeout(tab.saveTimer); // Clear any pending background autosaves
+    clearTimeout(tab.saveTimer);
     tab.dirty = false;
     localStorage.setItem(tab.name, document.getElementById(activeTabId).innerHTML);
     updateTabPillUi(activeTabId);
