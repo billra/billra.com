@@ -21,19 +21,19 @@ function init() {
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
 
-        // Skip the active tab tracker key, everything else is a tab
-        if (key !== ACTIVE_TAB_KEY) {
-            const name = key;
-            const id = `editor-${Date.now()}-${i}`;
+        // Guard clause: Skip the active tab tracker key
+        if (key === ACTIVE_TAB_KEY) continue;
 
-            if (name.startsWith('Untitled ')) {
-                const num = parseInt(name.replace('Untitled ', ''), 10);
-                if (!isNaN(num) && num > maxUntitled) maxUntitled = num;
-            }
+        const name = key;
+        const id = `editor-${Date.now()}-${i}`;
 
-            tabs.set(id, { name, dirty: false });
-            createEditorDiv(id, localStorage.getItem(key));
+        if (name.startsWith('Untitled ')) {
+            const num = parseInt(name.replace('Untitled ', ''), 10);
+            if (!isNaN(num) && num > maxUntitled) maxUntitled = num;
         }
+
+        tabs.set(id, { name, dirty: false });
+        createEditorDiv(id, localStorage.getItem(key));
     }
 
     tabCounter = maxUntitled;
@@ -54,14 +54,14 @@ function init() {
 
 function saveDirtyTabs() {
     tabs.forEach((tab, id) => {
-        if (tab.dirty && id !== 'id-help') {
-            const div = document.getElementById(id);
-            if (div) {
-                localStorage.setItem(tab.name, div.innerHTML);
-                tab.dirty = false;
-                updateTabPillUi(id);
-            }
-        }
+        if (!tab.dirty || id === 'id-help') return;
+
+        const div = document.getElementById(id);
+        if (!div) return;
+
+        localStorage.setItem(tab.name, div.innerHTML);
+        tab.dirty = false;
+        updateTabPillUi(id);
     });
     console.log('Saved dirty tabs.');
 }
@@ -95,18 +95,19 @@ function createEditorDiv(id, content) {
     div.innerHTML = content;
 
     div.addEventListener('keydown', e => {
-        if (e.key === 'F1') {
-            e.preventDefault();
-            switchTab('id-help');
-        }
+        if (e.key !== 'F1') return;
+        e.preventDefault();
+        switchTab('id-help');
     });
 
     div.addEventListener('input', () => {
         const tab = tabs.get(id);
+
         if (tab && !tab.dirty) {
             tab.dirty = true;
             updateTabPillUi(id);
         }
+
         clearTimeout(saveTimer);
         saveTimer = setTimeout(saveDirtyTabs, 5000);
     });
@@ -140,9 +141,8 @@ function closeTab(id, event) {
     const tab = tabs.get(id);
     const div = document.getElementById(id);
 
-    if (div?.innerText.trim().length > 0) {
-        if (!confirm(`Are you sure you want to close "${tab.name}"?`)) return;
-    }
+    // Flattened confirmation prompt
+    if (div?.innerText.trim().length > 0 && !confirm(`Are you sure you want to close "${tab.name}"?`)) return;
 
     localStorage.removeItem(tab.name);
     div?.remove();
@@ -157,6 +157,7 @@ function closeTab(id, event) {
 
 function renameTab(id) {
     if (id === 'id-help') return;
+
     const tab = tabs.get(id);
     if (!tab) return;
 
@@ -213,9 +214,10 @@ function renderTabBar() {
 function updateTabPillUi(id) {
     const pill = document.querySelector(`.tab-pill[data-id="${id}"] .tab-title`);
     const tab = tabs.get(id);
-    if (pill && tab) {
-        pill.innerText = tab.name + (tab.dirty ? ' *' : '');
-    }
+
+    if (!pill || !tab) return;
+
+    pill.innerText = tab.name + (tab.dirty ? ' *' : '');
 }
 
 // --- Core Native Operations ---
@@ -268,11 +270,11 @@ function exportFile(filename, content) {
     URL.revokeObjectURL(url);
 
     const tab = tabs.get(activeTabId);
-    if (tab) {
-        tab.dirty = false;
-        localStorage.setItem(tab.name, document.getElementById(activeTabId).innerHTML);
-        updateTabPillUi(activeTabId);
-    }
+    if (!tab) return;
+
+    tab.dirty = false;
+    localStorage.setItem(tab.name, document.getElementById(activeTabId).innerHTML);
+    updateTabPillUi(activeTabId);
 }
 
 function triggerImportDialog() {
@@ -314,12 +316,13 @@ function triggerImportDialog() {
 
 // Help Tab keyboard drop-through
 document.getElementById('id-help').addEventListener('keydown', e => {
-    if (e.key.match(/^[\s\S]$/)) {
-        e.preventDefault();
-        const userTabs = [...tabs.keys()].filter(k => k !== 'id-help');
-        if (userTabs.length > 0) switchTab(userTabs.pop());
-        else createNewTab();
-    }
+    if (!e.key.match(/^[\s\S]$/)) return;
+
+    e.preventDefault();
+    const userTabs = [...tabs.keys()].filter(k => k !== 'id-help');
+
+    if (userTabs.length > 0) switchTab(userTabs.pop());
+    else createNewTab();
 });
 
 addTabBtn.addEventListener('click', () => createNewTab());
