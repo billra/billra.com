@@ -18,7 +18,7 @@ let uniqueID = 0;
 // DOM Elements
 const tabContainer = document.getElementById('tab-container');
 const addTabBtn = document.getElementById('add-tab');
-const workspaceDiv = document.getElementById('workspace');
+const editorContainer = document.getElementById('editor-container');
 
 // ==========================================================================
 // 2. UTILITY HELPERS
@@ -58,7 +58,7 @@ function init() {
     const processTabName = (name) => {
         const id = generateTabId();
         tabs.set(id, { name, dirty: false, saveTimer: null });
-        createEditorDiv(id, localStorage.getItem(name));
+        createEditor(id, localStorage.getItem(name));
         storageKeys.delete(name);
     };
 
@@ -106,7 +106,7 @@ function createNewTab(name = null, content = '') {
     if (isTabNameTaken(tabName)) return createNewTab(null, content);
 
     tabs.set(id, { name: tabName, dirty: false, saveTimer: null });
-    createEditorDiv(id, content);
+    createEditor(id, content);
     localStorage.setItem(tabName, content);
 
     saveTabOrder();
@@ -130,8 +130,8 @@ function switchTab(id) {
         localStorage.removeItem(ACTIVE_TAB_KEY);
     }
 
-    document.querySelectorAll('.tab-pill').forEach(pill => {
-        pill.classList.toggle('active', pill.dataset.id === activeTabId);
+    document.querySelectorAll('.tab').forEach(tabEl => {
+        tabEl.classList.toggle('active', tabEl.dataset.id === activeTabId);
     });
 }
 
@@ -188,52 +188,52 @@ function renameTab(id) {
 function renderTabBar() {
     tabContainer.innerHTML = '';
     tabs.forEach((tab, id) => {
-        const pill = document.createElement('div');
-        pill.className = `tab-pill ${id === activeTabId ? 'active' : ''}`;
-        pill.dataset.id = id;
+        const tabEl = document.createElement('div');
+        tabEl.className = `tab ${id === activeTabId ? 'active' : ''}`;
+        tabEl.dataset.id = id;
 
-        const titleSpan = document.createElement('span');
-        titleSpan.className = 'tab-title';
-        titleSpan.innerText = tab.name;
-        if (tab.dirty) titleSpan.classList.add('is-dirty');
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'tab-name';
+        nameSpan.innerText = tab.name;
+        if (tab.dirty) nameSpan.classList.add('dirty');
 
-        pill.appendChild(titleSpan);
+        tabEl.appendChild(nameSpan);
 
-        pill.addEventListener('mousedown', e => {
+        tabEl.addEventListener('mousedown', e => {
             e.preventDefault();
             switchTab(id);
         });
 
         if (id !== HELP_TAB_ID) {
-            pill.addEventListener('dblclick', () => renameTab(id));
+            tabEl.addEventListener('dblclick', () => renameTab(id));
 
             const closeBtn = document.createElement('span');
             closeBtn.className = 'tab-close';
             closeBtn.innerText = 'x';
             closeBtn.addEventListener('mousedown', e => closeTab(id, e));
-            pill.appendChild(closeBtn);
+            tabEl.appendChild(closeBtn);
         }
-        tabContainer.appendChild(pill);
+        tabContainer.appendChild(tabEl);
     });
 }
 
-function updateTabPillUi(id) {
-    const titleSpan = document.querySelector(`.tab-pill[data-id="${id}"] .tab-title`);
+function updateTabUi(id) {
+    const nameSpan = document.querySelector(`.tab[data-id="${id}"] .tab-name`);
     const tab = tabs.get(id);
 
-    if (!titleSpan || !tab) return;
-    titleSpan.innerText = tab.name;
-    titleSpan.classList.toggle('is-dirty', tab.dirty);
+    if (!nameSpan || !tab) return;
+    nameSpan.innerText = tab.name;
+    nameSpan.classList.toggle('dirty', tab.dirty);
 }
 
 // ==========================================================================
 // 5. EDITOR OPERATIONS & EVENTS
 // ==========================================================================
 
-function createEditorDiv(id, content) {
+function createEditor(id, content) {
     const div = document.createElement('div');
     div.id = id;
-    div.className = 'fill editor-div';
+    div.className = 'editor';
     div.contentEditable = 'true';
     div.spellcheck = false;
     div.innerHTML = content;
@@ -250,7 +250,7 @@ function createEditorDiv(id, content) {
 
         if (!tab.dirty) {
             tab.dirty = true;
-            updateTabPillUi(id);
+            updateTabUi(id);
         }
 
         clearTimeout(tab.saveTimer);
@@ -259,11 +259,11 @@ function createEditorDiv(id, content) {
         tab.saveTimer = setTimeout(() => {
             localStorage.setItem(tab.name, div.innerHTML);
             tab.dirty = false;
-            updateTabPillUi(id);
+            updateTabUi(id);
         }, 5000);
     });
 
-    workspaceDiv.appendChild(div);
+    editorContainer.appendChild(div);
 }
 
 function getText() {
@@ -336,7 +336,7 @@ function exportFile(filename, content) {
     clearTimeout(tab.saveTimer);
     tab.dirty = false;
     localStorage.setItem(tab.name, document.getElementById(activeTabId).innerHTML);
-    updateTabPillUi(activeTabId);
+    updateTabUi(activeTabId);
 }
 
 function triggerImportDialog() {
@@ -369,7 +369,7 @@ function triggerImportDialog() {
 
             localStorage.setItem(currentTab.name, activeDiv.innerHTML);
             currentTab.dirty = false;
-            updateTabPillUi(activeTabId);
+            updateTabUi(activeTabId);
         } catch (err) {
             console.error("Failed to parse local file stream context", err);
         }

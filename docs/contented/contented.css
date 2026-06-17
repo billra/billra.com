@@ -51,7 +51,7 @@ h2 { font-size: 110%; }
     overflow-x: auto;
     white-space: nowrap;
     height: 100%;
-    padding: 0 var(--tab-radius); /* Prevents the fillets from clipping on overflow */
+    padding: 0 var(--tab-radius); /* Prevents rounded corners from clipping on overflow */
     scrollbar-width: none;        /* Firefox: hide scrollbar to maintain baseline */
 }
 #tab-container::-webkit-scrollbar {
@@ -61,7 +61,7 @@ h2 { font-size: 110%; }
 /* ==========================================================================
    4. TAB GEOMETRY & STYLING (Inactive State)
    ========================================================================== */
-.tab-pill {
+.tab {
     position: relative;
     box-sizing: border-box;
     display: flex;
@@ -83,11 +83,11 @@ h2 { font-size: 110%; }
     border-bottom: var(--line-thickness) solid var(--line-color);
 }
 
-.tab-pill:hover {
+.tab:hover {
     color: #ccc;
 }
 
-.tab-title.is-dirty {
+.tab-name.dirty {
     font-style: italic;
 }
 
@@ -113,54 +113,52 @@ h2 { font-size: 110%; }
 #add-tab:hover { color: #fff; }
 
 /* ==========================================================================
-   5. ACTIVE TAB & FILLETS (The Ring & Clip Vector Engine)
+   5. ACTIVE TAB & ROUNDED CORNERS
    ========================================================================== */
-.tab-pill.active {
+.tab.active {
     color: #FA4;
     background-color: var(--bg-color);
     border-color: var(--line-color);
     border-bottom-color: var(--bg-color);
 }
 
-/* The Fillet Base: A Massive Ring */
-.tab-pill.active::before,
-.tab-pill.active::after {
+/* Base circle for rounded corners */
+.tab.active::before,
+.tab.active::after {
     content: '';
     position: absolute;
     bottom: calc(-1 * var(--line-thickness));
-    /* Create a box twice the size of the radius */
     width: calc(var(--tab-radius) * 2);
     height: calc(var(--tab-radius) * 2);
     box-sizing: border-box;
 
-    /* 1. Use the exact same vector engine as the top corners */
+    /* Match border radius */
     border-radius: 50%;
     border: var(--line-thickness) solid var(--line-color);
 
-    /* 2. Cast a massive shadow outside the ring to fill the miter gap */
+    /* Fill the gap with a shadow */
     box-shadow: 0 0 0 var(--tab-radius) var(--bg-color);
     pointer-events: none;
 }
 
 /* Left Curve */
-.tab-pill.active::before {
+.tab.active::before {
     right: 100%;
-    /* 3. Slice the ring exactly in half vertically and horizontally,
-          keeping ONLY the bottom-right quadrant */
+    /* Keep bottom-right quadrant */
     clip-path: polygon(50% 50%, 100% 50%, 100% 100%, 50% 100%);
 }
 
 /* Right Curve */
-.tab-pill.active::after {
+.tab.active::after {
     left: 100%;
-    /* 3. Keep ONLY the bottom-left quadrant of the ring */
+    /* Keep bottom-left quadrant */
     clip-path: polygon(0 50%, 50% 50%, 50% 100%, 0 100%);
 }
 
 /* ==========================================================================
-   6. EDITOR WORKSPACE & SPECIAL TABS
+   6. EDITORS & SPECIAL TABS
    ========================================================================== */
-.fill {
+.editor {
     position: fixed;
     top: 38px;
     width: 100%;
@@ -169,6 +167,8 @@ h2 { font-size: 110%; }
     padding: 8px;
     box-sizing: border-box;
     overflow: auto;
+    background-color: var(--bg-color);
+    white-space: pre-wrap;
 
     /* Inactive by default */
     z-index: 0;
@@ -176,22 +176,20 @@ h2 { font-size: 110%; }
     pointer-events: none;
 }
 
-.fill.active {
+.editor.active {
     z-index: 2;
     opacity: 1;
     pointer-events: auto;
 }
 
-.fill:focus { outline: none; }
-
-.editor-div {
-    background-color: var(--bg-color);
-    white-space: pre-wrap;
-}
+.editor:focus { outline: none; }
 
 /* Help Screen Overrides */
-#id-help { background-color: var(--help-color); }
-.tab-pill[data-id="id-help"].active {
+#id-help {
+    background-color: var(--help-color);
+    white-space: normal;
+}
+.tab[data-id="id-help"].active {
     /* Dynamically recolor the active tab and its geometry patches */
     --bg-color: var(--help-color);
 }
