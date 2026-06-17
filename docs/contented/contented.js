@@ -1,7 +1,11 @@
-// Head metadata initialization
+// ==========================================================================
+// 1. STATE & DOM INITIALIZATION
+// ==========================================================================
+
+// Head metadata
 document.getElementById('id-version').innerText = document.querySelector('meta[name="version"]').content;
 
-// Core State
+// Core Constants & State
 const ACTIVE_TAB_KEY = 'active🐱tab';
 const TAB_ORDER_KEY = 'tab🐱order';
 const HELP_TAB_ID = 'id-help';
@@ -16,7 +20,10 @@ const tabContainer = document.getElementById('tab-container');
 const addTabBtn = document.getElementById('add-tab');
 const workspaceDiv = document.getElementById('workspace');
 
-// --- Helpers ---
+// ==========================================================================
+// 2. UTILITY HELPERS
+// ==========================================================================
+
 function generateTabId() {
     uniqueID++;
     return `tab-${uniqueID}`;
@@ -30,15 +37,17 @@ function getUserTabIds() {
     return [...tabs.keys()].filter(id => id !== HELP_TAB_ID);
 }
 
-// --- Initialization & Local Storage ---
+// ==========================================================================
+// 3. BOOTSTRAP & LOCAL STORAGE MANAGEMENT
+// ==========================================================================
+
 function init() {
-    // 1. Get the saved order (if it exists)
     let savedOrder = [];
     try {
         savedOrder = JSON.parse(localStorage.getItem(TAB_ORDER_KEY)) || [];
     } catch (e) { }
 
-    // 2. Build a set of all valid saved tab names from localStorage
+    // Build a set of all valid saved tab names from localStorage
     const storageKeys = new Set();
     Object.keys(localStorage).forEach(key => {
         if (key !== ACTIVE_TAB_KEY && key !== TAB_ORDER_KEY) {
@@ -46,21 +55,17 @@ function init() {
         }
     });
 
-    // 3. Reconstruct tabs based on the saved array
     const processTabName = (name) => {
         const id = generateTabId();
-
         tabs.set(id, { name, dirty: false, saveTimer: null });
         createEditorDiv(id, localStorage.getItem(name));
-        storageKeys.delete(name); // Mark as processed
+        storageKeys.delete(name);
     };
 
-    // Load tabs in their strict saved order
+    // Load tabs in strict saved order, then sweep any strays
     savedOrder.forEach((name) => {
         if (storageKeys.has(name)) processTabName(name);
     });
-
-    // 4. Sweep up any un-ordered stray tabs (fallback safety)
     storageKeys.forEach((name) => processTabName(name));
 
     renderTabBar();
@@ -69,86 +74,44 @@ function init() {
     const savedActiveName = localStorage.getItem(ACTIVE_TAB_KEY);
     const activeEntry = [...tabs.entries()].find(([_, t]) => t.name === savedActiveName);
 
-    if (activeEntry) {
-        switchTab(activeEntry[0]);
-    } else if (tabs.size > 1) {
-        switchTab([...tabs.keys()][1]);
-    } else {
-        createNewTab();
-    }
+    if (activeEntry) switchTab(activeEntry[0]);
+    else if (tabs.size > 1) switchTab([...tabs.keys()][1]);
+    else createNewTab();
 }
 
-// Helper to keep the master array synced
 function saveTabOrder() {
     const order = [...tabs.entries()]
         .filter(([id, _]) => id !== HELP_TAB_ID)
         .map(([_, t]) => t.name);
-
     localStorage.setItem(TAB_ORDER_KEY, JSON.stringify(order));
 }
 
-// Flush any tabs that are still ticking when the window is closed
+// Flush dirty tabs before window closes
 window.addEventListener('beforeunload', () => {
     tabs.forEach((tab, id) => {
         if (!tab.dirty || id === HELP_TAB_ID) return;
-
         const div = document.getElementById(id);
         if (div) localStorage.setItem(tab.name, div.innerHTML);
     });
 });
 
-// --- Tab Management ---
+// ==========================================================================
+// 4. TAB MANAGEMENT & UI RENDERING
+// ==========================================================================
+
 function createNewTab(name = null, content = '') {
     const id = generateTabId();
     const tabName = name || id;
 
-    if (isTabNameTaken(tabName)) {
-        return createNewTab(null, content);
-    }
+    if (isTabNameTaken(tabName)) return createNewTab(null, content);
 
     tabs.set(id, { name: tabName, dirty: false, saveTimer: null });
-
     createEditorDiv(id, content);
     localStorage.setItem(tabName, content);
 
     saveTabOrder();
     renderTabBar();
     switchTab(id);
-}
-
-function createEditorDiv(id, content) {
-    const div = document.createElement('div');
-    div.id = id;
-    div.className = 'fill editor-div';
-    div.contentEditable = 'true';
-    div.spellcheck = false;
-    div.innerHTML = content;
-
-    div.addEventListener('keydown', e => {
-        if (e.key !== 'F1') return;
-        e.preventDefault();
-        switchTab(HELP_TAB_ID);
-    });
-
-    div.addEventListener('input', () => {
-        const tab = tabs.get(id);
-        if (!tab) return;
-
-        if (!tab.dirty) {
-            tab.dirty = true;
-            updateTabPillUi(id);
-        }
-
-        clearTimeout(tab.saveTimer);
-
-        tab.saveTimer = setTimeout(() => {
-            localStorage.setItem(tab.name, div.innerHTML);
-            tab.dirty = false;
-            updateTabPillUi(id);
-        }, 5000);
-    });
-
-    workspaceDiv.appendChild(div);
 }
 
 function switchTab(id) {
@@ -195,7 +158,6 @@ function closeTab(id, event) {
 
 function renameTab(id) {
     if (id === HELP_TAB_ID) return;
-
     const tab = tabs.get(id);
     if (!tab) return;
 
@@ -223,7 +185,6 @@ function renameTab(id) {
     renderTabBar();
 }
 
-// --- Dynamic UI Rendering ---
 function renderTabBar() {
     tabContainer.innerHTML = '';
     tabs.forEach((tab, id) => {
@@ -261,12 +222,50 @@ function updateTabPillUi(id) {
     const tab = tabs.get(id);
 
     if (!titleSpan || !tab) return;
-
     titleSpan.innerText = tab.name;
     titleSpan.classList.toggle('is-dirty', tab.dirty);
 }
 
-// --- Core Native Operations ---
+// ==========================================================================
+// 5. EDITOR OPERATIONS & EVENTS
+// ==========================================================================
+
+function createEditorDiv(id, content) {
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = 'fill editor-div';
+    div.contentEditable = 'true';
+    div.spellcheck = false;
+    div.innerHTML = content;
+
+    div.addEventListener('keydown', e => {
+        if (e.key !== 'F1') return;
+        e.preventDefault();
+        switchTab(HELP_TAB_ID);
+    });
+
+    div.addEventListener('input', () => {
+        const tab = tabs.get(id);
+        if (!tab) return;
+
+        if (!tab.dirty) {
+            tab.dirty = true;
+            updateTabPillUi(id);
+        }
+
+        clearTimeout(tab.saveTimer);
+
+        // Auto-save logic
+        tab.saveTimer = setTimeout(() => {
+            localStorage.setItem(tab.name, div.innerHTML);
+            tab.dirty = false;
+            updateTabPillUi(id);
+        }, 5000);
+    });
+
+    workspaceDiv.appendChild(div);
+}
+
 function getText() {
     const activeDiv = document.getElementById(activeTabId);
     if (!activeDiv || activeTabId === HELP_TAB_ID) return '';
@@ -281,7 +280,21 @@ function getText() {
     return text;
 }
 
-// --- Filesystem Pipeline ---
+// Help Tab keyboard drop-through
+document.getElementById(HELP_TAB_ID).addEventListener('keydown', e => {
+    if (!e.key.match(/^[\s\S]$/)) return;
+    e.preventDefault();
+    const userTabs = getUserTabIds();
+    if (userTabs.length > 0) switchTab(userTabs.pop());
+    else createNewTab();
+});
+
+addTabBtn.addEventListener('click', () => createNewTab());
+
+// ==========================================================================
+// 6. FILESYSTEM PIPELINE (Import/Export)
+// ==========================================================================
+
 const fileHeader = '<div id="contented" style="color: white; background-color: black;">';
 const fileFooter = '</div>';
 
@@ -295,7 +308,6 @@ window.addEventListener('keydown', event => {
 
     if (key === 's') {
         event.preventDefault();
-
         if (event.shiftKey) { // HTML Export (Ctrl + Shift + S)
             if (!/\.html?$/i.test(filename)) filename += '.htm';
             exportFile(filename, fileHeader + activeDiv.innerHTML + fileFooter);
@@ -364,19 +376,6 @@ function triggerImportDialog() {
     };
     input.click();
 }
-
-// Help Tab keyboard drop-through
-document.getElementById(HELP_TAB_ID).addEventListener('keydown', e => {
-    if (!e.key.match(/^[\s\S]$/)) return;
-
-    e.preventDefault();
-    const userTabs = getUserTabIds();
-
-    if (userTabs.length > 0) switchTab(userTabs.pop());
-    else createNewTab();
-});
-
-addTabBtn.addEventListener('click', () => createNewTab());
 
 // Bootstrap initialization
 init();
