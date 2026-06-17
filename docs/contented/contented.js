@@ -8,11 +8,12 @@ document.getElementById('id-version').innerText = document.querySelector('meta[n
 // Core Constants & State
 const ACTIVE_TAB_KEY = 'active🐱tab';
 const TAB_ORDER_KEY = 'tab🐱order';
-const HELP_TAB_ID = 'id-help';
-const HELP_TAB_NAME = 'contented';
+const SYSTEM_TAB_NAME = 'contented';
 
-const tabs = new Map([[HELP_TAB_ID, { name: HELP_TAB_NAME, dirty: false, saveTimer: null }]]);
-let activeTabId = HELP_TAB_ID;
+const tabs = new Map();
+let activeTabId = null;
+let previousTabId = null; // Remembers last user tab for F1/Escape toggling
+let systemTabId = null;
 let uniqueID = 0;
 
 // DOM Elements
@@ -33,8 +34,12 @@ function isTabNameTaken(name) {
     return [...tabs.values()].some(t => t.name.toLowerCase() === name.toLowerCase());
 }
 
+function isSystemName(name) {
+    return name.toLowerCase() === SYSTEM_TAB_NAME.toLowerCase();
+}
+
 function getUserTabIds() {
-    return [...tabs.keys()].filter(id => id !== HELP_TAB_ID);
+    return [...tabs.keys()].filter(id => id !== systemTabId);
 }
 
 // ==========================================================================
@@ -42,46 +47,51 @@ function getUserTabIds() {
 // ==========================================================================
 
 function init() {
-    let savedOrder = [];
-    try {
-        savedOrder = JSON.parse(localStorage.getItem(TAB_ORDER_KEY)) || [];
-    } catch (e) { }
+    // 1. Initialize the System Tab (Always leftmost, index 0)
+    systemTabId = generateTabId();
+    const template = document.getElementById('system-tab-template');
 
-    // Build a set of all valid saved tab names from localStorage
+    // Grab the version from the meta tag
+    const appVersion = document.querySelector('meta[name="version"]')?.content || '1.0';
+
+    // Inject the version into the template HTML
+    const sysContent = template ? template.innerHTML.replace('{{VERSION}}', appVersion) : `<h1>${SYSTEM_TAB_NAME}</h1>`;
+
+    tabs.set(systemTabId, { name: SYSTEM_TAB_NAME, dirty: false, readonly: true, saveTimer: null });
+    createEditor(systemTabId, sysContent, true);
+
+    // 2. Load User Tabs
+    let savedOrder = [];
+    try { savedOrder = JSON.parse(localStorage.getItem(TAB_ORDER_KEY)) || []; } catch (e) { }
+
     const storageKeys = new Set();
     Object.keys(localStorage).forEach(key => {
-        if (key !== ACTIVE_TAB_KEY && key !== TAB_ORDER_KEY) {
-            storageKeys.add(key);
-        }
+        if (key !== ACTIVE_TAB_KEY && key !== TAB_ORDER_KEY) storageKeys.add(key);
     });
 
     const processTabName = (name) => {
         const id = generateTabId();
-        tabs.set(id, { name, dirty: false, saveTimer: null });
-        createEditor(id, localStorage.getItem(name));
+        tabs.set(id, { name, dirty: false, readonly: false, saveTimer: null });
+        createEditor(id, localStorage.getItem(name), false);
         storageKeys.delete(name);
     };
 
-    // Load tabs in strict saved order, then sweep any strays
-    savedOrder.forEach((name) => {
-        if (storageKeys.has(name)) processTabName(name);
-    });
+    savedOrder.forEach((name) => { if (storageKeys.has(name)) processTabName(name); });
     storageKeys.forEach((name) => processTabName(name));
 
     renderTabBar();
 
-    // Restore the active view
+    // 3. Restore Active View (Default to System Tab on first visit)
     const savedActiveName = localStorage.getItem(ACTIVE_TAB_KEY);
     const activeEntry = [...tabs.entries()].find(([_, t]) => t.name === savedActiveName);
 
     if (activeEntry) switchTab(activeEntry[0]);
-    else if (tabs.size > 1) switchTab([...tabs.keys()][1]);
-    else createNewTab();
+    else switchTab(systemTabId);
 }
 
 function saveTabOrder() {
     const order = [...tabs.entries()]
-        .filter(([id, _]) => id !== HELP_TAB_ID)
+        .filter(([id, _]) => id !== systemTabId)
         .map(([_, t]) => t.name);
     localStorage.setItem(TAB_ORDER_KEY, JSON.stringify(order));
 }
@@ -89,7 +99,7 @@ function saveTabOrder() {
 // Flush dirty tabs before window closes
 window.addEventListener('beforeunload', () => {
     tabs.forEach((tab, id) => {
-        if (!tab.dirty || id === HELP_TAB_ID) return;
+        if (!tab.dirty || tab.readonly) return;
         const div = document.getElementById(id);
         if (div) localStorage.setItem(tab.name, div.innerHTML);
     });
@@ -101,12 +111,13 @@ window.addEventListener('beforeunload', () => {
 
 function createNewTab(name = null, content = '') {
     const id = generateTabId();
-    const tabName = name || id;
+    let tabName = name || id;
 
+    if (isSystemName(tabName)) tabName += '-user';
     if (isTabNameTaken(tabName)) return createNewTab(null, content);
 
-    tabs.set(id, { name: tabName, dirty: false, saveTimer: null });
-    createEditor(id, content);
+    tabs.set(id, { name: tabName, dirty: false, readonly: false, saveTimer: null });
+    createEditor(id, content, false);
     localStorage.setItem(tabName, content);
 
     saveTabOrder();
@@ -117,6 +128,11 @@ function createNewTab(name = null, content = '') {
 function switchTab(id) {
     if (!tabs.has(id)) return;
 
+    // Track previous user tab for the F1 toggle
+    if (activeTabId && activeTabId !== systemTabId) {
+        previousTabId = activeTabId;
+    }
+
     document.getElementById(activeTabId)?.classList.remove('active');
     document.getElementById(id)?.classList.add('active');
 
@@ -124,7 +140,7 @@ function switchTab(id) {
     document.getElementById(id)?.focus();
 
     const currentTab = tabs.get(id);
-    if (currentTab && id !== HELP_TAB_ID) {
+    if (currentTab && !currentTab.readonly) {
         localStorage.setItem(ACTIVE_TAB_KEY, currentTab.name);
     } else {
         localStorage.removeItem(ACTIVE_TAB_KEY);
@@ -151,18 +167,22 @@ function closeTab(id, event) {
 
     if (activeTabId === id) {
         const remaining = getUserTabIds();
-        switchTab(remaining.length > 0 ? remaining.pop() : HELP_TAB_ID);
+        switchTab(remaining.length > 0 ? remaining[remaining.length - 1] : systemTabId);
     }
     renderTabBar();
 }
 
 function renameTab(id) {
-    if (id === HELP_TAB_ID) return;
     const tab = tabs.get(id);
-    if (!tab) return;
+    if (!tab || tab.readonly) return;
 
     const newName = prompt("Enter new tab name:", tab.name)?.trim();
     if (!newName || newName === tab.name) return;
+
+    if (isSystemName(newName)) {
+        alert(`The name "${SYSTEM_TAB_NAME}" is reserved for system documentation.`);
+        return;
+    }
 
     if (isTabNameTaken(newName)) {
         alert("A tab with this name already exists.");
@@ -191,6 +211,7 @@ function renderTabBar() {
         const tabEl = document.createElement('div');
         tabEl.className = `tab ${id === activeTabId ? 'active' : ''}`;
         tabEl.dataset.id = id;
+        if (tab.readonly) tabEl.dataset.readonly = 'true';
 
         const nameSpan = document.createElement('span');
         nameSpan.className = 'tab-name';
@@ -204,7 +225,8 @@ function renderTabBar() {
             switchTab(id);
         });
 
-        if (id !== HELP_TAB_ID) {
+        // Only add rename and close functions to editable tabs
+        if (!tab.readonly) {
             tabEl.addEventListener('dblclick', () => renameTab(id));
 
             const closeBtn = document.createElement('span');
@@ -230,45 +252,44 @@ function updateTabUi(id) {
 // 5. EDITOR OPERATIONS & EVENTS
 // ==========================================================================
 
-function createEditor(id, content) {
+function createEditor(id, content, isReadonly) {
     const div = document.createElement('div');
     div.id = id;
     div.className = 'editor';
-    div.contentEditable = 'true';
+    if (isReadonly) div.classList.add('is-readonly');
+
+    div.contentEditable = isReadonly ? 'false' : 'true';
     div.spellcheck = false;
     div.innerHTML = content;
 
-    div.addEventListener('keydown', e => {
-        if (e.key !== 'F1') return;
-        e.preventDefault();
-        switchTab(HELP_TAB_ID);
-    });
+    if (!isReadonly) {
+        div.addEventListener('input', () => {
+            const tab = tabs.get(id);
+            if (!tab) return;
 
-    div.addEventListener('input', () => {
-        const tab = tabs.get(id);
-        if (!tab) return;
+            if (!tab.dirty) {
+                tab.dirty = true;
+                updateTabUi(id);
+            }
 
-        if (!tab.dirty) {
-            tab.dirty = true;
-            updateTabUi(id);
-        }
+            clearTimeout(tab.saveTimer);
 
-        clearTimeout(tab.saveTimer);
-
-        // Auto-save logic
-        tab.saveTimer = setTimeout(() => {
-            localStorage.setItem(tab.name, div.innerHTML);
-            tab.dirty = false;
-            updateTabUi(id);
-        }, 5000);
-    });
+            // Auto-save logic
+            tab.saveTimer = setTimeout(() => {
+                localStorage.setItem(tab.name, div.innerHTML);
+                tab.dirty = false;
+                updateTabUi(id);
+            }, 5000);
+        });
+    }
 
     editorContainer.appendChild(div);
 }
 
 function getText() {
     const activeDiv = document.getElementById(activeTabId);
-    if (!activeDiv || activeTabId === HELP_TAB_ID) return '';
+    const tab = tabs.get(activeTabId);
+    if (!activeDiv || !tab || tab.readonly) return '';
 
     const selection = window.getSelection();
     const initialRange = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
@@ -280,29 +301,37 @@ function getText() {
     return text;
 }
 
-// Help Tab keyboard drop-through
-document.getElementById(HELP_TAB_ID).addEventListener('keydown', e => {
-    if (!e.key.match(/^[\s\S]$/)) return;
-    e.preventDefault();
-    const userTabs = getUserTabIds();
-    if (userTabs.length > 0) switchTab(userTabs.pop());
-    else createNewTab();
-});
-
 addTabBtn.addEventListener('click', () => createNewTab());
 
 // ==========================================================================
-// 6. FILESYSTEM PIPELINE (Import/Export)
+// 6. GLOBAL SHORTCUTS & FILESYSTEM PIPELINE
 // ==========================================================================
 
 const fileHeader = '<div id="contented" style="color: white; background-color: black;">';
 const fileFooter = '</div>';
 
 window.addEventListener('keydown', event => {
-    if (activeTabId === HELP_TAB_ID || !event.ctrlKey) return;
+    // Escape Hatch / System Toggle (F1 or Escape)
+    if (event.key === 'F1' || event.key === 'Escape') {
+        event.preventDefault();
+        if (activeTabId === systemTabId) {
+            // Attempt to return to the last used tab, or the first available user tab
+            if (previousTabId && tabs.has(previousTabId)) switchTab(previousTabId);
+            else {
+                const userTabs = getUserTabIds();
+                if (userTabs.length > 0) switchTab(userTabs[0]);
+            }
+        } else {
+            switchTab(systemTabId);
+        }
+        return;
+    }
+
+    // Ignore file operations if we are on a readonly tab or not holding Ctrl
+    const tab = tabs.get(activeTabId);
+    if (!tab || tab.readonly || !event.ctrlKey) return;
 
     const activeDiv = document.getElementById(activeTabId);
-    const tab = tabs.get(activeTabId);
     let filename = tab.name;
     const key = event.key.toLowerCase();
 
@@ -347,7 +376,8 @@ function triggerImportDialog() {
         const file = input.files[0];
         if (!file) return;
 
-        const cleanName = file.name.replace(/\.[^/.]+$/, "");
+        let cleanName = file.name.replace(/\.[^/.]+$/, "");
+        if (isSystemName(cleanName)) cleanName += '-imported';
 
         if (isTabNameTaken(cleanName)) {
             alert(`A tab named "${cleanName}" is already open.`);
@@ -371,7 +401,7 @@ function triggerImportDialog() {
             currentTab.dirty = false;
             updateTabUi(activeTabId);
         } catch (err) {
-            console.error("Failed to parse local file stream context", err);
+            console.error("Failed to parse local file", err);
         }
     };
     input.click();
