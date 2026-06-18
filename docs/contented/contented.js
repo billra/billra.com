@@ -57,7 +57,7 @@ function init() {
     // Inject the version into the template HTML
     const sysContent = template ? template.innerHTML.replace('{{VERSION}}', appVersion) : `<h1>${SYSTEM_TAB_NAME}</h1>`;
 
-    tabs.set(systemTabId, { name: SYSTEM_TAB_NAME, dirty: false, readonly: true, saveTimer: null });
+    tabs.set(systemTabId, { name: SYSTEM_TAB_NAME, dirty: false, readonly: true, saveTimer: null, savedRange: null });
     createEditor(systemTabId, sysContent, true);
 
     // 2. Load User Tabs
@@ -71,7 +71,7 @@ function init() {
 
     const processTabName = (name) => {
         const id = generateTabId();
-        tabs.set(id, { name, dirty: false, readonly: false, saveTimer: null });
+        tabs.set(id, { name, dirty: false, readonly: false, saveTimer: null, savedRange: null });
         createEditor(id, localStorage.getItem(name), false);
         storageKeys.delete(name);
     };
@@ -116,7 +116,7 @@ function createNewTab(name = null, content = '') {
     if (isSystemName(tabName)) tabName += '-user';
     if (isTabNameTaken(tabName)) return createNewTab(null, content);
 
-    tabs.set(id, { name: tabName, dirty: false, readonly: false, saveTimer: null });
+    tabs.set(id, { name: tabName, dirty: false, readonly: false, saveTimer: null, savedRange: null });
     createEditor(id, content, false);
     localStorage.setItem(tabName, content);
 
@@ -133,19 +133,41 @@ function switchTab(id) {
         previousTabId = activeTabId;
     }
 
+    // Save the current cursor/selection state
+    if (activeTabId) {
+        const activeDiv = document.getElementById(activeTabId);
+        const sel = window.getSelection();
+
+        // Only save if there's a selection and it belongs to the active editor
+        if (sel.rangeCount > 0 && activeDiv && activeDiv.contains(sel.anchorNode)) {
+            tabs.get(activeTabId).savedRange = sel.getRangeAt(0).cloneRange();
+        }
+    }
+
+    // Swap active classes
     document.getElementById(activeTabId)?.classList.remove('active');
     document.getElementById(id)?.classList.add('active');
 
     activeTabId = id;
-    document.getElementById(id)?.focus();
+    const newActiveDiv = document.getElementById(id);
+    newActiveDiv?.focus();
 
-    const currentTab = tabs.get(id);
-    if (currentTab && !currentTab.readonly) {
-        localStorage.setItem(ACTIVE_TAB_KEY, currentTab.name);
+    // Restore the saved cursor/selection state
+    const newTab = tabs.get(id);
+    if (newTab && newTab.savedRange) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();             // Clear default focus selection
+        sel.addRange(newTab.savedRange);   // Apply our saved range
+    }
+
+    // Update active tab key in local storage
+    if (newTab && !newTab.readonly) {
+        localStorage.setItem(ACTIVE_TAB_KEY, newTab.name);
     } else {
         localStorage.removeItem(ACTIVE_TAB_KEY);
     }
 
+    // Update tab bar UI
     document.querySelectorAll('.tab').forEach(tabEl => {
         tabEl.classList.toggle('active', tabEl.dataset.id === activeTabId);
     });
