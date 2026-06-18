@@ -2,13 +2,31 @@
    1. CONTROL ROOM (CSS Variables)
    ========================================================================== */
 :root {
+    /* Geometry */
     --tab-radius: 9px;       /* Smoothness of the active tab curve */
     --line-thickness: 2px;   /* Thickness of the continuous dividing line */
-    --line-color: #444;      /* Color of the dividing line */
-    --bg-color: black;       /* Main background color of the workspace */
     --tab-height: 34px;      /* Fixed height for tabs to align the geometry */
-    --readonly-bg: #003;     /* Specific background for readonly system tabs */
-    scrollbar-color: #777 #222;
+
+    /* Background Colors */
+    --bg-main: black;        /* Main background color of the workspace */
+    --bg-tab-bar: #111;      /* Background behind the tabs */
+    --bg-readonly: #003;     /* Specific background for readonly system tabs */
+
+    /* Text Colors */
+    --text-main: white;      /* Default editor and body text */
+    --text-muted: #888;      /* Inactive tabs and icons */
+    --text-hover: #ccc;      /* Hover state for inactive tabs */
+    --text-active: #FA4;     /* Active tab highlight color */
+    --text-danger: #F55;     /* Destructive actions (close button hover) */
+
+    /* UI & Border Colors */
+    --line-color: #444;      /* Color of the dividing line */
+
+    /* Scrollbar Colors */
+    --scrollbar-thumb: #777; /* Scrollbar handle */
+    --scrollbar-track: #222; /* Scrollbar background */
+
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 /* ==========================================================================
@@ -23,8 +41,8 @@ html, body {
 
 body {
     font-family: Arial, sans-serif;
-    color: white;
-    background-color: var(--bg-color);
+    color: var(--text-main);
+    background-color: var(--bg-main);
 }
 
 h1 { font-size: 120%; }
@@ -32,12 +50,28 @@ h2 { font-size: 110%; }
 .small { font-size: 50%; }
 
 /* ==========================================================================
-   3. TAB BAR LAYOUT
+   3. UTILITY & LAYOUT CLASSES
+   ========================================================================== */
+.text-muted {
+    color: var(--text-muted);
+}
+
+.spacer {
+    flex-grow: 1;
+}
+
+.system-content-wrapper {
+    padding: 10px 20px;
+    max-width: 850px;
+}
+
+/* ==========================================================================
+   4. TAB BAR LAYOUT
    ========================================================================== */
 #tab-bar {
     display: flex;
     align-items: flex-end;
-    background-color: #111;
+    background-color: var(--bg-tab-bar);
     height: 38px;
     padding: 0 4px;
     box-sizing: border-box;
@@ -58,7 +92,7 @@ h2 { font-size: 110%; }
 }
 
 /* ==========================================================================
-   4. TAB GEOMETRY & STYLING (Inactive State)
+   5. TAB GEOMETRY & STYLING (Inactive State)
    ========================================================================== */
 .tab {
     position: relative;
@@ -72,7 +106,7 @@ h2 { font-size: 110%; }
 
     border-radius: var(--tab-radius) var(--tab-radius) 0 0;
     background-color: transparent;
-    color: #888;
+    color: var(--text-muted);
     cursor: pointer;
     user-select: none;
     transition: color 0.2s;
@@ -82,7 +116,7 @@ h2 { font-size: 110%; }
 }
 
 .tab:hover {
-    color: #ccc;
+    color: var(--text-hover);
 }
 
 .tab-name.dirty {
@@ -96,7 +130,7 @@ h2 { font-size: 110%; }
 }
 
 .tab-close:hover {
-    color: #F55;
+    color: var(--text-danger);
     opacity: 1;
 }
 
@@ -104,20 +138,20 @@ h2 { font-size: 110%; }
     padding: 4px 12px;
     margin-bottom: var(--line-thickness);
     font-size: 20px;
-    color: #888;
+    color: var(--text-muted);
     cursor: pointer;
     user-select: none;
 }
-#add-tab:hover { color: #fff; }
+#add-tab:hover { color: var(--text-main); }
 
 /* ==========================================================================
-   5. ACTIVE TAB & ROUNDED CORNERS
+   6. ACTIVE TAB & ROUNDED CORNERS
    ========================================================================== */
 .tab.active {
-    color: #FA4;
-    background-color: var(--bg-color);
+    color: var(--text-active);
+    background-color: var(--bg-main);
     border-color: var(--line-color);
-    border-bottom-color: var(--bg-color);
+    border-bottom-color: var(--bg-main);
 }
 
 .tab.active::before,
@@ -130,7 +164,7 @@ h2 { font-size: 110%; }
     box-sizing: border-box;
     border-radius: 50%;
     border: var(--line-thickness) solid var(--line-color);
-    box-shadow: 0 0 0 var(--tab-radius) var(--bg-color);
+    box-shadow: 0 0 0 var(--tab-radius) var(--bg-main);
     pointer-events: none;
 }
 
@@ -145,7 +179,7 @@ h2 { font-size: 110%; }
 }
 
 /* ==========================================================================
-   6. EDITORS & READONLY OVERRIDES
+   7. EDITORS & READONLY OVERRIDES
    ========================================================================== */
 .editor {
     position: fixed;
@@ -156,7 +190,7 @@ h2 { font-size: 110%; }
     padding: 8px;
     box-sizing: border-box;
     overflow: auto;
-    background-color: var(--bg-color);
+    background-color: var(--bg-main);
     white-space: pre-wrap;
 
     z-index: 0;
@@ -174,10 +208,10 @@ h2 { font-size: 110%; }
 
 /* Readonly / System Tab Styles */
 .editor.is-readonly {
-    background-color: var(--readonly-bg);
+    background-color: var(--bg-readonly);
     white-space: normal;
 }
 
 .tab[data-readonly="true"].active {
-    --bg-color: var(--readonly-bg);
+    --bg-main: var(--bg-readonly);
 }

@@ -3,7 +3,7 @@
 <head>
     <title>Contented Editor</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="3.4">
+    <meta name="version" content="3.5">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="icon" href="contented.ico">
@@ -14,15 +14,15 @@
     <div id="tab-bar">
         <div id="tab-container"></div>
         <div id="add-tab" title="New Tab">+</div>
-        <div style="flex-grow: 1;"></div>
+        <div class="spacer"></div>
     </div>
     <div id="editor-container"></div>
     <template id="system-tab-template">
-        <div style="padding: 10px 20px; max-width: 850px;">
+        <div class="system-content-wrapper">
             <h1>
                 <img src="contented.ico" alt="icon">
                 Contented HTML Text Editor
-                <span class="small" style="color: #888;">v{{VERSION}}</span>
+                <span class="small text-muted">v{{VERSION}}</span>
             </h1>
 
             <p>Type text and paste items from other applications.</p>
