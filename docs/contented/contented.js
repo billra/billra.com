@@ -2,9 +2,6 @@
 // 1. STATE & DOM INITIALIZATION
 // ==========================================================================
 
-// Head metadata
-document.getElementById('id-version').innerText = document.querySelector('meta[name="version"]').content;
-
 // Core Constants & State
 const ACTIVE_TAB_KEY = 'active🐱tab';
 const TAB_ORDER_KEY = 'tab🐱order';
