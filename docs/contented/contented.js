@@ -5,6 +5,7 @@ const ACTIVE_TAB_KEY = 'active🐱tab';
 const TAB_ORDER_KEY = 'tab🐱order';
 const SYSTEM_TAB_NAME = 'contented';
 
+// The 'tabs' Map uses internal DOM IDs as keys, and stores user-facing names in the value object.
 const tabs = new Map();
 let activeTabId = null;
 let previousTabId = null; // Powers the F1/Escape rapid-toggle functionality
@@ -19,8 +20,11 @@ const editorContainer = document.getElementById('editor-container');
 // === 2. UTILITY HELPERS =====================================================
 
 /**
- * Generates a purely internal, unique DOM ID for editor divs and tab references.
- * @returns {string} e.g., "tab-1", "tab-2"
+ * Generates a purely internal, unique DOM ID (e.g., "tab-1").
+ * ARCHITECTURE NOTE: This ID is completely decoupled from the user-facing
+ * tab name. This separation of concerns allows us to safely rename tabs without
+ * having to rebuild DOM elements, re-attach event listeners, or break state.
+ * @returns {string}
  */
 function generateTabId() {
     uniqueID++;
@@ -29,6 +33,21 @@ function generateTabId() {
 
 function isTabNameTaken(name) {
     return [...tabs.values()].some(t => t.name.toLowerCase() === name.toLowerCase());
+}
+
+/**
+ * Ensures a requested user-facing tab name is unique, appending
+ * a sequential counter (e.g., "notes-2") if collisions exist.
+ */
+function getUniqueTabName(requestedName) {
+    if (!isTabNameTaken(requestedName)) return requestedName;
+
+    let counter = 2;
+    while (isTabNameTaken(`${requestedName}-${counter}`)) {
+        counter++;
+    }
+
+    return `${requestedName}-${counter}`;
 }
 
 /**
@@ -138,19 +157,19 @@ window.addEventListener('beforeunload', () => {
  * @param {string} content - Optional initial HTML content
  */
 function createNewTab(name = null, content = '') {
-    const id = generateTabId();
-    let tabName = name || id;
+    // 1. Guarantee a unique internal ID (skipping over any user tabs already named 'tab-N')
+    let id;
+    do { id = generateTabId(); } while (isTabNameTaken(id));
 
-    if (isSystemName(tabName)) tabName += '-user';
+    // 2. Resolve the final display name
+    const tabName = name ? getUniqueTabName(name) : id;
 
-    // Recursive failsafe to ensure unique names if rapid-clicking "New Tab"
-    if (isTabNameTaken(tabName)) return createNewTab(null, content);
-
+    // 3. Initialize state and DOM
     tabs.set(id, { name: tabName, dirty: false, readonly: false, saveTimer: null, savedRange: null });
     createEditor(id, content, false);
 
-    saveTabContent(id, content); // Push through standard pipeline
-
+    // 4. Run the standard save/render pipeline
+    saveTabContent(id, content);
     saveTabOrder();
     renderTabBar();
     switchTab(id);
@@ -236,7 +255,8 @@ function renameTab(id) {
     const newName = prompt("Enter new tab name:", tab.name)?.trim();
     if (!newName || newName === tab.name) return;
 
-    // Failsafes to protect data integrity
+    // We explicitly keep this check here so we can warn the user directly
+    // rather than silently altering their input to "contented-2"
     if (isSystemName(newName)) {
         alert(`The name "${SYSTEM_TAB_NAME}" is reserved for system documentation.`);
         return;
@@ -425,15 +445,12 @@ function triggerImportDialog() {
         if (!file) return;
 
         let cleanName = file.name.replace(/\.[^/.]+$/, "");
-        if (isSystemName(cleanName)) cleanName += '-imported';
-
-        if (isTabNameTaken(cleanName)) {
-            alert(`A tab named "${cleanName}" is already open.`);
-            return;
-        }
 
         try {
             const textContent = await file.text();
+
+            // Pass the name directly. All collision logic (including system name)
+            // is safely handled downstream inside createNewTab.
             createNewTab(cleanName, '');
 
             const activeDiv = document.getElementById(activeTabId);
