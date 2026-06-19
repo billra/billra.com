@@ -6,8 +6,8 @@
     --line-thickness: 2px;   /* Thickness of the continuous dividing line */
     --tab-height: 34px;      /* Fixed height for tabs to align the geometry */
 
-    /* Cross-file Dependency: --tab-bar-height is required to push the
-       absolute-positioned editor divs down so they don't overlap the header. */
+    /* Shared Geometry: --tab-bar-height controls both the header's height
+       and the editor's top offset to ensure they never overlap. */
     --tab-bar-height: 38px;
 
     /* Background Colors */
