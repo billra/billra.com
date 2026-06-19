@@ -1,27 +1,27 @@
-// ==========================================================================
-// 1. STATE & DOM INITIALIZATION
-// ==========================================================================
+// === 1. STATE & DOM INITIALIZATION ==========================================
 
-// Core Constants & State
+// Unique delimiters in local storage keys prevent collisions with user tab names
 const ACTIVE_TAB_KEY = 'active🐱tab';
 const TAB_ORDER_KEY = 'tab🐱order';
 const SYSTEM_TAB_NAME = 'contented';
 
 const tabs = new Map();
 let activeTabId = null;
-let previousTabId = null; // Remembers last user tab for F1/Escape toggling
+let previousTabId = null; // Powers the F1/Escape rapid-toggle functionality
 let systemTabId = null;
 let uniqueID = 0;
 
-// DOM Elements
+// DOM Element caching
 const tabContainer = document.getElementById('tab-container');
 const addTabBtn = document.getElementById('add-tab');
 const editorContainer = document.getElementById('editor-container');
 
-// ==========================================================================
-// 2. UTILITY HELPERS
-// ==========================================================================
+// === 2. UTILITY HELPERS =====================================================
 
+/**
+ * Generates a purely internal, unique DOM ID for editor divs and tab references.
+ * @returns {string} e.g., "tab-1", "tab-2"
+ */
 function generateTabId() {
     uniqueID++;
     return `tab-${uniqueID}`;
@@ -31,6 +31,9 @@ function isTabNameTaken(name) {
     return [...tabs.values()].some(t => t.name.toLowerCase() === name.toLowerCase());
 }
 
+/**
+ * Guardrail to ensure users cannot overwrite or spoof the documentation tab.
+ */
 function isSystemName(name) {
     return name.toLowerCase() === SYSTEM_TAB_NAME.toLowerCase();
 }
@@ -39,28 +42,33 @@ function getUserTabIds() {
     return [...tabs.keys()].filter(id => id !== systemTabId);
 }
 
-// ==========================================================================
-// 3. BOOTSTRAP & LOCAL STORAGE MANAGEMENT
-// ==========================================================================
+// === 3. BOOTSTRAP & LOCAL STORAGE MANAGEMENT ================================
 
+/**
+ * Analyzes local storage to restore previous session state, user tabs,
+ * and injects the system documentation tab as the first element.
+ */
 function init() {
     // 1. Initialize the System Tab (Always leftmost, index 0)
     systemTabId = generateTabId();
     const template = document.getElementById('system-tab-template');
 
-    // Grab the version from the meta tag
+    // Extract version dynamically from HTML meta tag to keep JS decoupled
     const appVersion = document.querySelector('meta[name="version"]')?.content || '1.0';
-
-    // Inject the version into the template HTML
     const sysContent = template ? template.innerHTML.replace('{{VERSION}}', appVersion) : `<h1>${SYSTEM_TAB_NAME}</h1>`;
 
     tabs.set(systemTabId, { name: SYSTEM_TAB_NAME, dirty: false, readonly: true, saveTimer: null, savedRange: null });
     createEditor(systemTabId, sysContent, true);
 
-    // 2. Load User Tabs
+    // 2. Load User Tabs safely (failsafe against corrupted JSON)
     let savedOrder = [];
-    try { savedOrder = JSON.parse(localStorage.getItem(TAB_ORDER_KEY)) || []; } catch (e) { }
+    try {
+        savedOrder = JSON.parse(localStorage.getItem(TAB_ORDER_KEY)) || [];
+    } catch (e) {
+        console.warn("Tab order data corrupted, falling back to unordered load.");
+    }
 
+    // Filter out our internal keys so we only treat user data as tabs
     const storageKeys = new Set();
     Object.keys(localStorage).forEach(key => {
         if (key !== ACTIVE_TAB_KEY && key !== TAB_ORDER_KEY) storageKeys.add(key);
@@ -73,12 +81,13 @@ function init() {
         storageKeys.delete(name);
     };
 
+    // Restore tabs in their exact previous visual order
     savedOrder.forEach((name) => { if (storageKeys.has(name)) processTabName(name); });
     storageKeys.forEach((name) => processTabName(name));
 
     renderTabBar();
 
-    // 3. Restore Active View (Default to System Tab on first visit)
+    // 3. Restore Active View (Default to System Tab on first-ever visit)
     const savedActiveName = localStorage.getItem(ACTIVE_TAB_KEY);
     const activeEntry = [...tabs.entries()].find(([_, t]) => t.name === savedActiveName);
 
@@ -93,7 +102,7 @@ function saveTabOrder() {
     localStorage.setItem(TAB_ORDER_KEY, JSON.stringify(order));
 }
 
-// Flush dirty tabs before window closes
+// Failsafe: Ensure any pending keystrokes are flushed to storage before exit
 window.addEventListener('beforeunload', () => {
     tabs.forEach((tab, id) => {
         if (!tab.dirty || tab.readonly) return;
@@ -102,15 +111,20 @@ window.addEventListener('beforeunload', () => {
     });
 });
 
-// ==========================================================================
-// 4. TAB MANAGEMENT & UI RENDERING
-// ==========================================================================
+// === 4. TAB MANAGEMENT & UI RENDERING =======================================
 
+/**
+ * Creates a new active workspace, handles naming collisions, and persists it.
+ * @param {string|null} name - Optional predefined name (used during imports)
+ * @param {string} content - Optional initial HTML content
+ */
 function createNewTab(name = null, content = '') {
     const id = generateTabId();
     let tabName = name || id;
 
     if (isSystemName(tabName)) tabName += '-user';
+
+    // Recursive failsafe to ensure unique names if rapid-clicking "New Tab"
     if (isTabNameTaken(tabName)) return createNewTab(null, content);
 
     tabs.set(id, { name: tabName, dirty: false, readonly: false, saveTimer: null, savedRange: null });
@@ -122,26 +136,29 @@ function createNewTab(name = null, content = '') {
     switchTab(id);
 }
 
+/**
+ * Handles the visual transition between editor views and cursor state preservation.
+ * @param {string} id - The internal ID (e.g., 'tab-3') of the target tab.
+ */
 function switchTab(id) {
     if (!tabs.has(id)) return;
 
-    // Track previous user tab for the F1 toggle
+    // Track previous user tab to enable rapid toggling via F1/Escape
     if (activeTabId && activeTabId !== systemTabId) {
         previousTabId = activeTabId;
     }
 
-    // Save the current cursor/selection state
+    // Preserve the user's exact text selection/cursor position before hiding the div
     if (activeTabId) {
         const activeDiv = document.getElementById(activeTabId);
         const sel = window.getSelection();
 
-        // Only save if there's a selection and it belongs to the active editor
         if (sel.rangeCount > 0 && activeDiv && activeDiv.contains(sel.anchorNode)) {
             tabs.get(activeTabId).savedRange = sel.getRangeAt(0).cloneRange();
         }
     }
 
-    // Swap active classes
+    // Swap active CSS classes to trigger opacity/z-index changes
     document.getElementById(activeTabId)?.classList.remove('active');
     document.getElementById(id)?.classList.add('active');
 
@@ -149,22 +166,21 @@ function switchTab(id) {
     const newActiveDiv = document.getElementById(id);
     newActiveDiv?.focus();
 
-    // Restore the saved cursor/selection state
+    // Restore cursor position for the incoming tab
     const newTab = tabs.get(id);
     if (newTab && newTab.savedRange) {
         const sel = window.getSelection();
-        sel.removeAllRanges();             // Clear default focus selection
-        sel.addRange(newTab.savedRange);   // Apply our saved range
+        sel.removeAllRanges();
+        sel.addRange(newTab.savedRange);
     }
 
-    // Update active tab key in local storage
+    // Persist active tab state to survive page reloads
     if (newTab && !newTab.readonly) {
         localStorage.setItem(ACTIVE_TAB_KEY, newTab.name);
     } else {
         localStorage.removeItem(ACTIVE_TAB_KEY);
     }
 
-    // Update tab bar UI
     document.querySelectorAll('.tab').forEach(tabEl => {
         tabEl.classList.toggle('active', tabEl.dataset.id === activeTabId);
     });
@@ -175,6 +191,7 @@ function closeTab(id, event) {
     const tab = tabs.get(id);
     const div = document.getElementById(id);
 
+    // Prevent accidental deletion of unsaved data
     if (div?.innerText.trim().length > 0 && !confirm(`Are you sure you want to close "${tab.name}"?`)) return;
 
     clearTimeout(tab.saveTimer);
@@ -184,6 +201,7 @@ function closeTab(id, event) {
 
     saveTabOrder();
 
+    // If closing the tab we are currently looking at, gracefully fall back
     if (activeTabId === id) {
         const remaining = getUserTabIds();
         switchTab(remaining.length > 0 ? remaining[remaining.length - 1] : systemTabId);
@@ -198,11 +216,11 @@ function renameTab(id) {
     const newName = prompt("Enter new tab name:", tab.name)?.trim();
     if (!newName || newName === tab.name) return;
 
+    // Failsafes to protect data integrity
     if (isSystemName(newName)) {
         alert(`The name "${SYSTEM_TAB_NAME}" is reserved for system documentation.`);
         return;
     }
-
     if (isTabNameTaken(newName)) {
         alert("A tab with this name already exists.");
         return;
@@ -211,6 +229,7 @@ function renameTab(id) {
     const div = document.getElementById(id);
     const content = div ? div.innerHTML : localStorage.getItem(tab.name);
 
+    // Migrate content to new key
     localStorage.removeItem(tab.name);
     localStorage.setItem(newName, content || '');
 
@@ -244,7 +263,6 @@ function renderTabBar() {
             switchTab(id);
         });
 
-        // Only add rename and close functions to editable tabs
         if (!tab.readonly) {
             tabEl.addEventListener('dblclick', () => renameTab(id));
 
@@ -267,10 +285,14 @@ function updateTabUi(id) {
     nameSpan.classList.toggle('dirty', tab.dirty);
 }
 
-// ==========================================================================
-// 5. EDITOR OPERATIONS & EVENTS
-// ==========================================================================
+// === 5. EDITOR OPERATIONS & EVENTS ==========================================
 
+/**
+ * Initializes a new contenteditable div for typing.
+ * @param {string} id - The internal DOM ID.
+ * @param {string} content - Raw HTML to populate the editor.
+ * @param {boolean} isReadonly - Locks editing (used for System Tab).
+ */
 function createEditor(id, content, isReadonly) {
     const div = document.createElement('div');
     div.id = id;
@@ -293,7 +315,8 @@ function createEditor(id, content, isReadonly) {
 
             clearTimeout(tab.saveTimer);
 
-            // Auto-save logic
+            // Debounce save logic: 5000ms balances performance (avoids thrashing
+            // the disk on every keystroke) with sufficient data safety.
             tab.saveTimer = setTimeout(() => {
                 localStorage.setItem(tab.name, div.innerHTML);
                 tab.dirty = false;
@@ -322,9 +345,7 @@ function getText() {
 
 addTabBtn.addEventListener('click', () => createNewTab());
 
-// ==========================================================================
-// 6. GLOBAL SHORTCUTS & FILESYSTEM PIPELINE
-// ==========================================================================
+// === 6. GLOBAL SHORTCUTS & FILESYSTEM PIPELINE ==============================
 
 const fileHeader = '<div id="contented" style="color: white; background-color: black;">';
 const fileFooter = '</div>';
@@ -369,6 +390,9 @@ window.addEventListener('keydown', event => {
     }
 });
 
+/**
+ * Triggers a silent browser download to save content to the user's hard drive.
+ */
 function exportFile(filename, content) {
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -410,6 +434,7 @@ function triggerImportDialog() {
             const activeDiv = document.getElementById(activeTabId);
             const currentTab = tabs.get(activeTabId);
 
+            // Detect if the HTML was previously exported by Contented
             if (textContent.startsWith(fileHeader)) {
                 activeDiv.innerHTML = textContent.slice(fileHeader.length, -fileFooter.length);
             } else {
