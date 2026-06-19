@@ -5,7 +5,8 @@ const ACTIVE_TAB_KEY = 'active🐱tab';
 const TAB_ORDER_KEY = 'tab🐱order';
 const SYSTEM_TAB_NAME = 'contented';
 
-// The 'tabs' Map uses internal DOM IDs as keys, and stores user-facing names in the value object.
+// The 'tabs' Map uses strictly increasing integers as keys (e.g., 1, 2, 3),
+// and stores user-facing names in the value object.
 const tabs = new Map();
 let activeTabId = null;
 let previousTabId = null; // Powers the F1/Escape rapid-toggle functionality
@@ -20,15 +21,13 @@ const editorContainer = document.getElementById('editor-container');
 // === 2. UTILITY HELPERS =====================================================
 
 /**
- * Generates a purely internal, unique DOM ID (e.g., "tab-1").
- * ARCHITECTURE NOTE: This ID is completely decoupled from the user-facing
- * tab name. This separation of concerns allows us to safely rename tabs without
- * having to rebuild DOM elements, re-attach event listeners, or break state.
- * @returns {string}
+ * Returns a strictly increasing integer. Because DOM elements will use
+ * prefixes (e.g., 'edit-42', 'tab-42'), internal ID collisions are impossible,
+ * decoupling browser rendering from user input.
+ * @returns {number}
  */
 function generateTabId() {
-    uniqueID++;
-    return `tab-${uniqueID}`;
+    return ++uniqueID;
 }
 
 function isTabNameTaken(name) {
@@ -124,12 +123,12 @@ function saveTabOrder() {
 /**
  * Centralized save routine to prevent duplicated local storage logic
  * and ensure UI state (dirty flags, timers) is always reset consistently.
- * @param {string} id - The internal DOM ID.
+ * @param {number} id - The internal Map integer ID.
  * @param {string|null} [contentOverride=null] - Optional hardcoded content to save.
  */
 function saveTabContent(id, contentOverride = null) {
     const tab = tabs.get(id);
-    const div = document.getElementById(id);
+    const div = document.getElementById(`edit-${id}`);
     if (!tab || tab.readonly) return;
 
     // Use explicit override if provided, otherwise grab current editor HTML
@@ -157,18 +156,12 @@ window.addEventListener('beforeunload', () => {
  * @param {string} content - Optional initial HTML content
  */
 function createNewTab(name = null, content = '') {
-    // 1. Guarantee a unique internal ID (skipping over any user tabs already named 'tab-N')
-    let id;
-    do { id = generateTabId(); } while (isTabNameTaken(id));
+    const id = generateTabId();
+    const tabName = name ? getUniqueTabName(name) : `tab-${id}`;
 
-    // 2. Resolve the final display name
-    const tabName = name ? getUniqueTabName(name) : id;
-
-    // 3. Initialize state and DOM
     tabs.set(id, { name: tabName, dirty: false, readonly: false, saveTimer: null, savedRange: null });
     createEditor(id, content, false);
 
-    // 4. Run the standard save/render pipeline
     saveTabContent(id, content);
     saveTabOrder();
     renderTabBar();
@@ -177,7 +170,7 @@ function createNewTab(name = null, content = '') {
 
 /**
  * Handles the visual transition between editor views and cursor state preservation.
- * @param {string} id - The internal ID (e.g., 'tab-3') of the target tab.
+ * @param {number} id - The internal Map integer ID.
  */
 function switchTab(id) {
     if (!tabs.has(id)) return;
@@ -187,25 +180,28 @@ function switchTab(id) {
         previousTabId = activeTabId;
     }
 
-    // Preserve the user's exact text selection/cursor position before hiding the div
+    // Preserve cursor state and remove active classes from the outgoing tab
     if (activeTabId) {
-        const activeDiv = document.getElementById(activeTabId);
+        const activeDiv = document.getElementById(`edit-${activeTabId}`);
         const sel = window.getSelection();
 
         if (sel.rangeCount > 0 && activeDiv && activeDiv.contains(sel.anchorNode)) {
             tabs.get(activeTabId).savedRange = sel.getRangeAt(0).cloneRange();
         }
+
+        document.getElementById(`tab-${activeTabId}`)?.classList.remove('active');
+        activeDiv?.classList.remove('active');
     }
 
-    // Swap active CSS classes to trigger opacity/z-index changes
-    document.getElementById(activeTabId)?.classList.remove('active');
-    document.getElementById(id)?.classList.add('active');
-
     activeTabId = id;
-    const newActiveDiv = document.getElementById(id);
+
+    // Apply active classes and focus to the incoming tab
+    const newActiveDiv = document.getElementById(`edit-${id}`);
+    document.getElementById(`tab-${id}`)?.classList.add('active');
+    newActiveDiv?.classList.add('active');
     newActiveDiv?.focus();
 
-    // Restore cursor position for the incoming tab
+    // Restore cursor position
     const newTab = tabs.get(id);
     if (newTab && newTab.savedRange) {
         const sel = window.getSelection();
@@ -219,16 +215,12 @@ function switchTab(id) {
     } else {
         localStorage.removeItem(ACTIVE_TAB_KEY);
     }
-
-    document.querySelectorAll('.tab').forEach(tabEl => {
-        tabEl.classList.toggle('active', tabEl.dataset.id === activeTabId);
-    });
 }
 
 function closeTab(id, event) {
     event.stopPropagation();
     const tab = tabs.get(id);
-    const div = document.getElementById(id);
+    const div = document.getElementById(`edit-${id}`);
 
     // Prevent accidental deletion of unsaved data
     if (div?.innerText.trim().length > 0 && !confirm(`Are you sure you want to close "${tab.name}"?`)) return;
@@ -266,7 +258,7 @@ function renameTab(id) {
         return;
     }
 
-    const div = document.getElementById(id);
+    const div = document.getElementById(`edit-${id}`);
     const content = div ? div.innerHTML : localStorage.getItem(tab.name);
 
     localStorage.removeItem(tab.name); // Nuke the old key
@@ -283,8 +275,8 @@ function renderTabBar() {
     tabContainer.innerHTML = '';
     tabs.forEach((tab, id) => {
         const tabEl = document.createElement('div');
+        tabEl.id = `tab-${id}`;
         tabEl.className = `tab ${id === activeTabId ? 'active' : ''}`;
-        tabEl.dataset.id = id;
         if (tab.readonly) tabEl.dataset.readonly = 'true';
 
         const nameSpan = document.createElement('span');
@@ -313,7 +305,8 @@ function renderTabBar() {
 }
 
 function updateTabUi(id) {
-    const nameSpan = document.querySelector(`.tab[data-id="${id}"] .tab-name`);
+    // Target the ID prefix directly
+    const nameSpan = document.querySelector(`#tab-${id} .tab-name`);
     const tab = tabs.get(id);
 
     if (!nameSpan || !tab) return;
@@ -325,13 +318,13 @@ function updateTabUi(id) {
 
 /**
  * Initializes a new contenteditable div for typing.
- * @param {string} id - The internal DOM ID.
+ * @param {number} id - The internal Map integer ID.
  * @param {string} content - Raw HTML to populate the editor.
  * @param {boolean} isReadonly - Locks editing (used for System Tab).
  */
 function createEditor(id, content, isReadonly) {
     const div = document.createElement('div');
-    div.id = id;
+    div.id = `edit-${id}`;
     div.className = 'editor';
     if (isReadonly) div.classList.add('is-readonly');
 
@@ -360,7 +353,7 @@ function createEditor(id, content, isReadonly) {
 }
 
 function getText() {
-    const activeDiv = document.getElementById(activeTabId);
+    const activeDiv = document.getElementById(`edit-${activeTabId}`);
     const tab = tabs.get(activeTabId);
     if (!activeDiv || !tab || tab.readonly) return '';
 
@@ -402,7 +395,7 @@ window.addEventListener('keydown', event => {
     const tab = tabs.get(activeTabId);
     if (!tab || tab.readonly || !event.ctrlKey) return;
 
-    const activeDiv = document.getElementById(activeTabId);
+    const activeDiv = document.getElementById(`edit-${activeTabId}`);
     let filename = tab.name;
     const key = event.key.toLowerCase();
 
@@ -453,7 +446,7 @@ function triggerImportDialog() {
             // is safely handled downstream inside createNewTab.
             createNewTab(cleanName, '');
 
-            const activeDiv = document.getElementById(activeTabId);
+            const activeDiv = document.getElementById(`edit-${activeTabId}`);
 
             // Detect if the HTML was previously exported by Contented
             if (textContent.startsWith(fileHeader)) {
