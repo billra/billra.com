@@ -102,12 +102,31 @@ function saveTabOrder() {
     localStorage.setItem(TAB_ORDER_KEY, JSON.stringify(order));
 }
 
+/**
+ * Centralized save routine to prevent duplicated local storage logic
+ * and ensure UI state (dirty flags, timers) is always reset consistently.
+ * @param {string} id - The internal DOM ID.
+ * @param {string|null} [contentOverride=null] - Optional hardcoded content to save.
+ */
+function saveTabContent(id, contentOverride = null) {
+    const tab = tabs.get(id);
+    const div = document.getElementById(id);
+    if (!tab || tab.readonly) return;
+
+    // Use explicit override if provided, otherwise grab current editor HTML
+    const contentToSave = contentOverride !== null ? contentOverride : (div ? div.innerHTML : '');
+    localStorage.setItem(tab.name, contentToSave);
+
+    clearTimeout(tab.saveTimer);
+    tab.dirty = false;
+    updateTabUi(id);
+}
+
 // Failsafe: Ensure any pending keystrokes are flushed to storage before exit
 window.addEventListener('beforeunload', () => {
     tabs.forEach((tab, id) => {
         if (!tab.dirty || tab.readonly) return;
-        const div = document.getElementById(id);
-        if (div) localStorage.setItem(tab.name, div.innerHTML);
+        saveTabContent(id);
     });
 });
 
@@ -129,7 +148,8 @@ function createNewTab(name = null, content = '') {
 
     tabs.set(id, { name: tabName, dirty: false, readonly: false, saveTimer: null, savedRange: null });
     createEditor(id, content, false);
-    localStorage.setItem(tabName, content);
+
+    saveTabContent(id, content); // Push through standard pipeline
 
     saveTabOrder();
     renderTabBar();
@@ -229,13 +249,9 @@ function renameTab(id) {
     const div = document.getElementById(id);
     const content = div ? div.innerHTML : localStorage.getItem(tab.name);
 
-    // Migrate content to new key
-    localStorage.removeItem(tab.name);
-    localStorage.setItem(newName, content || '');
-
-    clearTimeout(tab.saveTimer);
-    tab.dirty = false;
-    tab.name = newName;
+    localStorage.removeItem(tab.name); // Nuke the old key
+    tab.name = newName;                // Update state
+    saveTabContent(id, content || ''); // Push through standard pipeline
 
     if (activeTabId === id) localStorage.setItem(ACTIVE_TAB_KEY, newName);
 
@@ -315,13 +331,8 @@ function createEditor(id, content, isReadonly) {
 
             clearTimeout(tab.saveTimer);
 
-            // Debounce save logic: 5000ms balances performance (avoids thrashing
-            // the disk on every keystroke) with sufficient data safety.
-            tab.saveTimer = setTimeout(() => {
-                localStorage.setItem(tab.name, div.innerHTML);
-                tab.dirty = false;
-                updateTabUi(id);
-            }, 5000);
+            // Debounce save logic: 5000ms balances performance with data safety
+            tab.saveTimer = setTimeout(() => saveTabContent(id), 5000);
         });
     }
 
@@ -402,13 +413,7 @@ function exportFile(filename, content) {
     link.click();
     URL.revokeObjectURL(url);
 
-    const tab = tabs.get(activeTabId);
-    if (!tab) return;
-
-    clearTimeout(tab.saveTimer);
-    tab.dirty = false;
-    localStorage.setItem(tab.name, document.getElementById(activeTabId).innerHTML);
-    updateTabUi(activeTabId);
+    saveTabContent(activeTabId);
 }
 
 function triggerImportDialog() {
@@ -432,7 +437,6 @@ function triggerImportDialog() {
             createNewTab(cleanName, '');
 
             const activeDiv = document.getElementById(activeTabId);
-            const currentTab = tabs.get(activeTabId);
 
             // Detect if the HTML was previously exported by Contented
             if (textContent.startsWith(fileHeader)) {
@@ -441,9 +445,7 @@ function triggerImportDialog() {
                 activeDiv.innerText = textContent;
             }
 
-            localStorage.setItem(currentTab.name, activeDiv.innerHTML);
-            currentTab.dirty = false;
-            updateTabUi(activeTabId);
+            saveTabContent(activeTabId);
         } catch (err) {
             console.error("Failed to parse local file", err);
         }
