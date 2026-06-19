@@ -157,7 +157,9 @@ window.addEventListener('beforeunload', () => {
  */
 function createNewTab(name = null, content = '') {
     const id = generateTabId();
-    const tabName = name ? getUniqueTabName(name) : `tab-${id}`;
+
+    // Ask for the name and let the helper resolve it.
+    const tabName = getUniqueTabName(name || 'tab');
 
     tabs.set(id, { name: tabName, dirty: false, readonly: false, saveTimer: null, savedRange: null });
     createEditor(id, content, false);
