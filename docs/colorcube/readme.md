@@ -1,43 +1,94 @@
-# ColorCube
+# RGB Color Cube
 
-Let's look at the "folded-out" planar net (the three diamonds). Since we already
-know that every point on those three faces has a **Value (Brightness) of 100%**,
-we only need to figure out how **Hue** and **Saturation** map to that flat
-surface.
+Geometry & Controls Documentation
 
-Here is how to read a point on those faces:
+## The Corner View: Flattened Isometric Projection
 
-## 1. Saturation is "Distance from Center"
+The primary interface displays a flat, hexagonal shape composed of three
+interconnected rhombuses (diamonds). This layout uses a **flattened isometric
+view**, which is a specific 3D-to-2D geometric projection. Imagine looking at a
+physical 3D cube from a **corner view**, where the corner closest to the eye
+points directly forward, and the three visible faces slope away symmetrically.
+By flattening this specific perspective into a 2D plane without altering the
+spatial relationships, the three outer faces of the RGB cube can be mapped
+simultaneously without any distortion.
 
-In our folded-out net, all three faces meet in the exact middle at pure White
-(`#FFF`, which is $255, 255, 255$).
+When the control slider is set to `1` (or 100%), the interface strictly displays
+these three outer faces. In this state, every individual color point on the
+screen has at least one RGB channel (Red, Green, or Blue) maxed out at its
+highest possible hexadecimal value (`F` or 255). The shared central vertex where
+all three faces meet represents pure white (`#FFF`), which then blends outward
+toward the pure primary and secondary colors located at the far edges.
 
-- **0% Saturation:** You are standing dead center on the White vertex.
-- **100% Saturation:** You have walked all the way to the outer jagged edges
-  (Pure Red, Pure Blue, Pure Cyan, etc.).
+## The Intensity Slider and Color Rays
 
-**The Mathematical Trick:** To find the Saturation of any color on those faces,
-just look at the **lowest** RGB number.
+The slider controls the overall intensity of the entire corner view via scalar
+multiplication. As the slider is adjusted downward, a mathematical scaling
+factor is applied simultaneously to every color visible on the faces.
+Geometrically, this action visualizes points traveling down an **intensity
+ray**. Within the 3D cube model, an intensity ray is a straight line originating
+from pure black (`#000`) at the hidden far corner and terminating at a specific
+pixel on one of the visible outer faces.
 
-- If the lowest number is also `255`, you are at pure white (0% Saturation).
-- If the lowest number is `0`, you have hit the outer edge (100% Saturation).
-- If the lowest number is somewhere in the middle, say `127`, you are halfway
-  between the center and the edge (50% Saturation).
+Because this ray is perfectly straight, the proportional ratio of Red to Green
+to Blue remains perfectly constant anywhere along the line. Moving the slider
+mathematically pushes the colors down their respective rays toward zero,
+smoothly dimming the entire slice of the color space into black while perfectly
+preserving the base identity of the colors. By utilizing this layout, the tool
+inherently allows for the visualization and specification of all possible color
+values within the RGB spectrum. Every conceivable color exists as a specific
+coordinate on the outer faces, scaled by a specific intensity value.
 
-## 2. Hue is "Which Direction You Walk"
+## Decoding the Hexadecimal Shorthand
 
-If Saturation is *how far* you walk from the white center, Hue is
-*which direction* you chose to walk.
+To fully utilize the slider, it is helpful to understand the basic math of
+3-digit hex codes. A standard color like `#08F` translates to Red at `0`
+(minimum), Green at `8` (roughly 50%), and Blue at `F` (maximum). Because the
+slider acts as a multiplier, setting the slider to 50% cuts all three of these
+values in half simultaneously, resulting in `#048` (or something very close to
+it, depending on rounding). This mathematical relationship holds true for any
+coordinate chosen on the visual map.
 
-- If you walk straight down the Red axis, your Hue is $0^\circ$.
-- If you walk straight down the Green axis, your Hue is $120^\circ$.
-- If you walk straight down the Blue axis, your Hue is $240^\circ$.
-- If you walk somewhere in between—for example, between Red and Green—you end up at Yellow ($60^\circ$).
+## Navigating Grayscale and the Neutral Axis
 
-**The Mathematical Trick:**
-To calculate the exact Hue angle, the computer looks at the **highest** number
-(which tells it which face you are on) and the **middle** number (which tells it
-how far you are leaning toward the next color).
+Within this geometric layout, the entire spectrum of grayscale values is easily
+accessible. Because the central shared vertex represents pure white (zero
+saturation), remaining exactly on this center point while lowering the intensity
+slider pushes the color straight down the **neutral axis**. This axis is the
+central diagonal line passing through the core of the 3D cube from white to
+black. This action mathematically scales white (`#FFF`) down through every shade
+of neutral gray until it reaches pure black (`#000`), completely bypassing the
+colorful outer edges.
 
-By separating the color into these three dimensions, software allows artists to say:
-*"I want this exact direction of color (Hue), this amount of pureness (Saturation), but I just want to scale it down to be darker (Value)."*
+## Complementary Colors and Geometry
+
+The hexagonal layout naturally visualizes **complementary colors** through
+spatial opposites. Drawing a straight line from any color on the outer edge,
+directly through the white center, and out to the opposite edge will always land
+on that color's exact complement. For example, the pure Red vertex sits directly
+across from the pure Cyan vertex. This demonstrates how colors on opposite sides
+of the RGB spectrum cancel each other out to create neutral white light in the
+center.
+
+## Relationship to HSV and HSB
+
+This geometric model is the foundational logic behind the HSV and HSB color
+models used in digital design. **HSV** (Hue, Saturation, Value) and **HSB**
+(Hue, Saturation, Brightness) are identical mathematical concepts under
+different names, designed to translate the Cartesian coordinates of the RGB cube
+into a more intuitive, cylindrical system for human use.
+
+The physical layout and controls of this tool map directly to these color models:
+
+- **Hue:** The angular direction chosen on the corner view map. Traveling from
+  the center toward the red edge versus the blue edge determines the base hue.
+- **Saturation:** The physical distance from the pure white center. Remaining at
+  the center yields zero saturation, while moving toward the far outer edges
+  yields maximum saturation.
+- **Value (or Brightness):** The depth along the intensity ray, which is
+  directly mapped to the slider.
+
+By separating the RGB spectrum into these three distinct dimensions, the
+software allows artists to say, "I want this exact direction of color (Hue),
+this amount of pureness (Saturation), but I just want to scale it down to be
+darker (Value)."
