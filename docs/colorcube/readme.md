@@ -5,30 +5,32 @@ Geometry & Controls Documentation
 ## The Corner View: Flattened Isometric Projection
 
 The primary interface displays a flat, hexagonal shape composed of three
-interconnected rhombuses (diamonds). This layout uses a **flattened isometric
-view**, which is a specific 3D-to-2D geometric projection. Imagine looking at a
-physical 3D cube from a **corner view**, where the corner closest to the eye
-points directly forward, and the three visible faces slope away symmetrically.
-By flattening this specific perspective into a 2D plane without altering the
-spatial relationships, the three outer faces of the RGB cube can be mapped
-simultaneously without any distortion.
+interconnected rhombuses (diamonds). This layout uses a
+**flattened isometric view**, which is a specific 3D-to-2D geometric projection.
+Imagine looking at a physical 3D cube from a **corner view**, where the corner
+closest to the eye points directly forward, and the three visible faces slope
+away symmetrically. By flattening this specific perspective into a 2D plane, the
+layout perfectly preserves the proportional relationships along the axes,
+allowing the three outer faces of the RGB cube to be mapped simultaneously
+without any distortion.
 
 When the control slider is set to `1` (or 100%), the interface strictly displays
 these three outer faces. In this state, every individual color point on the
 screen has at least one RGB channel (Red, Green, or Blue) maxed out at its
-highest possible hexadecimal value (`F` or 255). The shared central vertex where
-all three faces meet represents pure white (`#FFF`), which then blends outward
-toward the pure primary and secondary colors located at the far edges.
+highest possible hexadecimal value (`F`, which translates to 255 in standard
+6-digit hex). The shared central vertex where all three faces meet represents
+pure white (`#FFF`), which then blends outward toward the pure primary and
+secondary colors located at the far edges.
 
 ## The Intensity Slider and Color Rays
 
 The slider controls the overall intensity of the entire corner view via scalar
 multiplication. As the slider is adjusted downward, a mathematical scaling
 factor is applied simultaneously to every color visible on the faces.
-Geometrically, this action visualizes points traveling down an **intensity
-ray**. Within the 3D cube model, an intensity ray is a straight line originating
-from pure black (`#000`) at the hidden far corner and terminating at a specific
-pixel on one of the visible outer faces.
+Geometrically, this action visualizes points traveling down an
+**intensity ray**. Within the 3D cube model, an intensity ray is a straight line
+originating from pure black (`#000`) at the hidden far corner and terminating at
+a specific pixel on one of the visible outer faces.
 
 Because this ray is perfectly straight, the proportional ratio of Red to Green
 to Blue remains perfectly constant anywhere along the line. Moving the slider
@@ -45,9 +47,9 @@ To fully utilize the slider, it is helpful to understand the basic math of
 3-digit hex codes. A standard color like `#08F` translates to Red at `0`
 (minimum), Green at `8` (roughly 50%), and Blue at `F` (maximum). Because the
 slider acts as a multiplier, setting the slider to 50% cuts all three of these
-values in half simultaneously, resulting in `#048` (or something very close to
-it, depending on rounding). This mathematical relationship holds true for any
-coordinate chosen on the visual map.
+values in half simultaneously. Half of `F` (15) is 7.5, which rounds up to 8,
+resulting perfectly in `#048`. This proportional mathematical relationship holds
+true for any coordinate chosen on the visual map.
 
 ## Navigating Grayscale and the Neutral Axis
 
@@ -80,8 +82,10 @@ into a more intuitive, cylindrical system for human use.
 
 The physical layout and controls of this tool map directly to these color models:
 
-- **Hue:** The angular direction chosen on the corner view map. Traveling from
-  the center toward the red edge versus the blue edge determines the base hue.
+- **Hue:** The angular direction, or rotation, around the center point. Imagine
+  tracing a circle around the central white vertex; the position along that
+  circular path, whether pointing toward the red, green, or blue edge,
+  determines the base hue.
 - **Saturation:** The physical distance from the pure white center. Remaining at
   the center yields zero saturation, while moving toward the far outer edges
   yields maximum saturation.
