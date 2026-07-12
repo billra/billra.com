@@ -71,24 +71,49 @@ cancel each other out to create neutral white light in the center.
 ## Relationship to HSV and HSB
 
 This geometric model reveals the underlying logic behind the HSV and HSB color
-models used in digital design. **HSV** (Hue, Saturation, Value) and **HSB**
-(Hue, Saturation, Brightness) are identical concepts under different names,
-designed to translate the Cartesian coordinates of the RGB cube into a
-cylindrical system that aligns with human perception.
+models commonly used in digital design. **HSV** (Hue, Saturation, Value) and
+**HSB** (Hue, Saturation, Brightness) are identical concepts under different
+names, designed to translate the Cartesian coordinates of the RGB cube into a
+mathematical **Cylindrical Coordinate System** that aligns with human
+perception.
 
-The physical layout and controls of this tool map directly to these color dimensions:
+In a standard Cartesian RGB system, colors are plotted on a 3D grid using $x$,
+$y$, and $z$ axes representing width, height, and depth. To define a point, you
+specify three linear distances along these perpendicular axes. This makes
+intuitive adjustments difficult; humans do not naturally calculate how much Red,
+Green, and Blue light to add or subtract to make a dusty navy blue slightly more
+vibrant while keeping the same core color.
 
-* **Hue:** The angular direction, or rotation, around the center point. Imagine
-  tracing a circle around the white vertex; the position along that circular
-  path, whether pointing toward the red, green, or blue edge, determines the
-  base hue.
-* **Saturation:** The distance from the pure white center. Remaining at the
-  center yields zero saturation (grayscale), while moving outward toward the
-  edges yields maximum saturation (pure, vivid color).
-* **Value (or Brightness):** The depth along the intensity ray, which is mapped
-  directly to the slider.
+To solve this, HSV and HSB warp the math into a
+**Cylindrical Coordinate System**. Instead of three flat, intersecting grids, a
+cylindrical system defines any point in 3D space using three completely
+different geometric metrics:
 
-By separating the RGB spectrum into these three dimensions, the software allows
-users to isolate a specific direction of color (Hue) and a specific amount of
-purity (Saturation), and then use the slider to scale it down uniformly to be
-darker (Value).
+- **An Angle ($\theta$):** A rotational direction measured around a central
+  vertical axis, sweeping out a circle.
+- **A Radius ($r$):** A horizontal distance measuring how far out to move from
+  that central axis toward the edge of the circle.
+- **A Height ($z$):** A linear vertical distance measuring how far up or down to
+  move along the central axis.
+
+The physical layout and controls of this tool map directly to these cylindrical
+dimensions:
+
+- **Hue (The Angle):** The angular direction, or rotation, around the center
+  point (ranging from $0^\circ$ to $360^\circ$). Imagine tracing a circle around
+  the white vertex; the position along that circular path, whether pointing
+  toward the red, green, or blue edge, determines the base hue.
+- **Saturation (The Radius):** The distance from the pure white center.
+  Remaining at the center yields zero saturation (grayscale), while moving
+  outward toward the edges yields maximum saturation (pure, vivid color).
+- **Value / Brightness (The Height):** The depth along the intensity ray, which
+  is mapped directly to the slider.
+
+While traditional software interfaces often slice this invisible mathematical
+cylinder into flat 2D color wheels or squares to make them easier to click on a
+flat monitor, this tool's geometry visualizes the exact same underlying
+architecture. By separating the spectrum into these three dimensions, the math
+aligns with how humans naturally categorize what they see: we isolate the
+*identity* of a color (Hue) from its *purity* (Saturation) and its *lighting*
+(Value), allowing users to lock in a specific color and simply scale it down
+uniformly to be darker.
