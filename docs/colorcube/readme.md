@@ -5,9 +5,9 @@ Geometry & Controls Documentation
 ## The Corner View: Flattened Isometric Projection
 
 The primary interface displays a flat, hexagonal shape composed of three
-interconnected rhombuses (diamonds). This layout uses a
+rhombuses (diamonds). This layout uses a
 **flattened isometric view**, which is a 3D-to-2D geometric projection. Imagine
-looking at a physical 3D cube from a **corner view**, where the corner closest
+looking at a 3D cube from a **corner view**, where the corner closest
 to the eye points directly forward, and the three visible faces slope away
 symmetrically. By flattening this perspective into a 2D plane, the layout
 preserves the proportional relationships along the axes, allowing the three
@@ -16,7 +16,7 @@ outer faces of the RGB cube to be mapped simultaneously without distortion.
 When the control slider is set to maximum intensity (100%), the interface
 displays these three outer faces. In this state, every individual color point on
 the screen has at least one color channel (Red, Green, or Blue) at its maximum
-possible value. The shared central vertex where all three faces meet represents
+value. The central vertex where all three faces meet represents
 white, which then blends outward toward the primary and secondary colors located
 at the far edges.
 
@@ -27,7 +27,7 @@ multiplication. As the slider is adjusted, a scaling factor is applied
 simultaneously to every color visible on the faces. Geometrically, this
 visualizes points traveling along an **intensity ray**: a straight line
 originating from black at the hidden far corner of the 3D cube model and
-terminating at a specific coordinate on one of the outer faces.
+terminating at a coordinate on one of the outer faces.
 
 Because this ray is a straight line, the proportional ratio of Red to Green to
 Blue remains constant anywhere along it. To understand this math, consider a
@@ -40,13 +40,13 @@ visual map, ensuring the hue does not shift as the color brightens or darkens.
 
 ## Navigating Grayscale and the Neutral Axis
 
-Within this geometric layout, the entire spectrum of grayscale values is
-accessible. Because the central shared vertex represents white (zero
+Within this geometric layout, the spectrum of grayscale values is
+accessible. Because the central vertex represents white (zero
 saturation), remaining on this center point while lowering the intensity slider
 pushes the color straight down the **neutral axis**. This axis is the diagonal
 line passing directly through the core of the 3D cube from white to black. This
-action scales white down through every shade of neutral gray until it reaches
-black, bypassing the colorful outer edges entirely.
+action scales white down through every shade of gray until it reaches
+black, bypassing the outer edges.
 
 ## Complementary Colors and Geometry
 
@@ -55,7 +55,7 @@ opposites. Drawing a straight line from any color on the outer edge, through the
 white center, and out to the opposite edge will always land on that color's
 complement. For example, the Red vertex sits directly across from the Cyan
 vertex. This demonstrates how colors on opposite sides of the RGB spectrum
-cancel each other out to create neutral white light in the center.
+cancel each other out to create white light in the center.
 
 ## Relationship to HSV and HSB
 
@@ -89,7 +89,7 @@ dimensions:
 - **Hue (The Angle):** The angular direction, or rotation, around the center
   point (ranging from 0° to 360°). Imagine tracing a circle around the white
   vertex; the position along that circular path, whether pointing toward the
-  red, green, or blue edge, determines the base hue.
+  red, green, or blue edge, determines the hue.
 - **Saturation (The Radius):** The distance from the center. Remaining at the
   center yields zero saturation (grayscale), while moving outward toward the
   edges yields maximum saturation (vivid color).
@@ -101,4 +101,4 @@ aligns perfectly with human perception. Instead of forcing users to guess
 Cartesian coordinates, it isolates the *identity* of a color (Hue) from its
 *purity* (Saturation) and its *lighting* (Value). This allows users to
 intuitively lock in the exact color they want, and smoothly adjust the slider to
-find the perfect brightness without altering the core color.
+find the desired brightness without altering the core color.
