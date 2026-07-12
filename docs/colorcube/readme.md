@@ -13,12 +13,12 @@ symmetrically. By flattening this perspective into a 2D plane, the layout
 preserves the proportional relationships along the axes, allowing the three
 outer faces of the RGB cube to be mapped simultaneously without distortion.
 
-When the control slider is set to `1` (or 100%), the interface displays these
-three outer faces. In this state, every individual color point on the screen has
-at least one RGB channel (Red, Green, or Blue) maxed out at its highest possible
-value in 3-digit hex notation (`F`, representing 255). The shared central vertex
-where all three faces meet represents pure white (`#FFF`), which then blends
-outward toward the primary and secondary colors located at the far edges.
+When the control slider is set to maximum intensity (100%), the interface
+displays these three outer faces. In this state, every individual color point on
+the screen has at least one color channel (Red, Green, or Blue) at its maximum
+possible value. The shared central vertex where all three faces meet represents
+pure white, which then blends outward toward the primary and secondary colors
+located at the far edges.
 
 ## The Intensity Slider and Color Rays
 
@@ -26,26 +26,28 @@ The slider controls the overall intensity of the corner view via scalar
 multiplication. As the slider is adjusted downward, a scaling factor is applied
 simultaneously to every color visible on the faces. Geometrically, this action
 visualizes points traveling down an **intensity ray**. Within the 3D cube model,
-an intensity ray is a straight line originating from pure black (`#000`) at the
-hidden far corner and terminating at a specific pixel on one of the outer faces.
+an intensity ray is a straight line originating from pure black at the hidden
+far corner and terminating at a specific coordinate on one of the outer faces.
 
-Because this ray is straight, the proportional ratio of Red to Green to Blue
-remains constant anywhere along the line. Moving the slider pushes the colors
-down their respective rays toward zero, dimming the slice of the color space
-into black while preserving the base identity of the colors. By utilizing this
-layout, the tool allows for the visualization and specification of all possible
-color values within the RGB spectrum. Every color exists as a specific
-coordinate on the outer faces, scaled by a specific intensity value.
+Because this ray is a straight line, the proportional ratio of Red to Green to
+Blue remains completely constant anywhere along it. Moving the slider pushes the
+colors down their respective rays toward zero, dimming the slice of the color
+space into black while preserving the base identity and relationships of the
+channels. By utilizing this layout, the tool allows for the visualization and
+specification of all possible color values within the RGB spectrum. Every color
+exists as a specific coordinate on the outer faces, scaled by a specific
+intensity value.
 
-## Decoding the Hexadecimal Shorthand
+## Proportional Scaling
 
-To fully utilize the slider, it is helpful to understand the math of 3-digit hex
-notation. A standard color like `#08F` translates to Red at `0` (minimum), Green
-at `8` (roughly 50%), and Blue at `F` (maximum). Because the slider acts as a
-multiplier, setting the slider to 50% cuts all three of these values in half
-simultaneously. Half of `F` (15) is 7.5, which rounds up to 8, resulting in
-`#048`. This proportional relationship holds true for any coordinate chosen on
-the visual map.
+To understand the math of the slider, it helps to look at the channels as
+ratios. Consider a color where Red is at minimum, Green is at half-capacity, and
+Blue is at maximum capacity. Because the slider acts as a direct multiplier,
+setting the slider to 50% cuts all three of these channel values exactly in half
+simultaneously. Red remains at minimum, Green drops to a quarter-capacity, and
+Blue drops to half-capacity. This proportional relationship holds true for any
+coordinate chosen on the visual map, ensuring the hue does not shift as the
+color darkens.
 
 ## Navigating Grayscale and the Neutral Axis
 
@@ -53,9 +55,9 @@ Within this geometric layout, the entire spectrum of grayscale values is
 accessible. Because the central shared vertex represents pure white (zero
 saturation), remaining on this center point while lowering the intensity slider
 pushes the color straight down the **neutral axis**. This axis is the diagonal
-line passing through the core of the 3D cube from white to black. This action
-scales white (`#FFF`) down through every shade of neutral gray until it reaches
-pure black (`#000`), bypassing the colorful outer edges.
+line passing directly through the core of the 3D cube from white to black. This
+action scales white down through every shade of neutral gray until it reaches
+pure black, bypassing the colorful outer edges entirely.
 
 ## Complementary Colors and Geometry
 
@@ -68,24 +70,25 @@ cancel each other out to create neutral white light in the center.
 
 ## Relationship to HSV and HSB
 
-This geometric model is the logic behind the HSV and HSB color models used in
-digital design. **HSV** (Hue, Saturation, Value) and **HSB** (Hue, Saturation,
-Brightness) are identical concepts under different names, designed to translate
-the Cartesian coordinates of the RGB cube into a cylindrical system for human
-use.
+This geometric model reveals the underlying logic behind the HSV and HSB color
+models used in digital design. **HSV** (Hue, Saturation, Value) and **HSB**
+(Hue, Saturation, Brightness) are identical concepts under different names,
+designed to translate the Cartesian coordinates of the RGB cube into a
+cylindrical system that aligns with human perception.
 
-The physical layout and controls of this tool map directly to these color models:
+The physical layout and controls of this tool map directly to these color dimensions:
 
 * **Hue:** The angular direction, or rotation, around the center point. Imagine
   tracing a circle around the white vertex; the position along that circular
   path, whether pointing toward the red, green, or blue edge, determines the
   base hue.
 * **Saturation:** The distance from the pure white center. Remaining at the
-  center yields zero saturation, while moving toward the outer edges yields
-  maximum saturation.
+  center yields zero saturation (grayscale), while moving outward toward the
+  edges yields maximum saturation (pure, vivid color).
 * **Value (or Brightness):** The depth along the intensity ray, which is mapped
-  to the slider.
+  directly to the slider.
 
 By separating the RGB spectrum into these three dimensions, the software allows
-artists to say, "I want this direction of color (Hue), this amount of pureness
-(Saturation), but I just want to scale it down to be darker (Value)."
+users to isolate a specific direction of color (Hue) and a specific amount of
+purity (Saturation), and then use the slider to scale it down uniformly to be
+darker (Value).
