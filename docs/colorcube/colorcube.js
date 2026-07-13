@@ -1,9 +1,11 @@
 // --- Configuration & Constants ---
 const CONFIG = {
+    gridSteps: 16, // 16 discrete levels per channel (0 through 15)
+
+    // These will now be updated dynamically based on window size
     logicalWidth: 800,
     logicalHeight: 650,
-    edgeLength: 220,
-    gridSteps: 16 // 16 discrete levels per channel (0 through 15)
+    edgeLength: 220
 };
 
 // --- DOM Elements ---
@@ -20,19 +22,43 @@ if (versionMeta && versionSpan) {
     versionSpan.textContent = `v${versionMeta.content}`;
 }
 
-// --- Setup High-DPI Canvas ---
+// --- Setup Responsive High-DPI Canvas ---
 const dpr = window.devicePixelRatio || 1;
-canvas.width = CONFIG.logicalWidth * dpr;
-canvas.height = CONFIG.logicalHeight * dpr;
-canvas.style.width = `${CONFIG.logicalWidth}px`;
-canvas.style.height = `${CONFIG.logicalHeight}px`;
-ctx.scale(dpr, dpr);
+
+function handleResize() {
+    // 1. Set canvas width to exactly 50% of the viewport width
+    CONFIG.logicalWidth = window.innerWidth * 0.5;
+
+    // 2. Set height slightly taller than width to accommodate the isometric
+    // hexagon's natural shape, plus a little extra room for the tooltip.
+    CONFIG.logicalHeight = CONFIG.logicalWidth * 1.1;
+
+    // 3. Scale the cube's edge length to fill out the canvas.
+    // (An isometric hexagon's total width is ~1.732 * L, and height is 2 * L)
+    // Setting L to 0.45 means the cube will take up ~78% of the canvas width
+    // and 90% of the canvas height, fitting perfectly in the center.
+    CONFIG.edgeLength = CONFIG.logicalWidth * 0.45;
+
+    // Apply the new dimensions
+    canvas.width = CONFIG.logicalWidth * dpr;
+    canvas.height = CONFIG.logicalHeight * dpr;
+    canvas.style.width = `${CONFIG.logicalWidth}px`;
+    canvas.style.height = `${CONFIG.logicalHeight}px`;
+
+    // Reset transform to avoid compounding scales on resize
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+
+    // Redraw the canvas with the new sizes
+    requestRender();
+}
+
+// Listen for window resizing to keep it perfectly at 50%
+window.addEventListener('resize', handleResize);
 
 // --- Helpers ---
-// Converts standard 0-255 RGB values back to 3-digit hex (e.g., #ABC)
 function rgbToShortHex(r, g, b) {
     const toHex = (c) => {
-        // Divide by 17 to map 0-255 back to 0-15 levels
         const level = Math.round(c / 17);
         return Math.max(0, Math.min(15, level)).toString(16).toUpperCase();
     };
@@ -51,7 +77,7 @@ function draw() {
     ctx.clearRect(0, 0, CONFIG.logicalWidth, CONFIG.logicalHeight);
 
     const cx = CONFIG.logicalWidth / 2;
-    const cy = CONFIG.logicalHeight / 2 - 20;
+    const cy = CONFIG.logicalHeight / 2 - (CONFIG.logicalHeight * 0.03); // Scale the vertical offset
     const L = CONFIG.edgeLength;
 
     const axCyan = { x: L * Math.cos(7 * Math.PI / 6), y: L * Math.sin(7 * Math.PI / 6) };
@@ -71,25 +97,21 @@ function draw() {
                 const p3 = { x: cx + u2*uAx.x + v2*vAx.x, y: cy + u2*uAx.y + v2*vAx.y };
                 const p4 = { x: cx + u1*uAx.x + v2*vAx.x, y: cy + u1*uAx.y + v2*vAx.y };
 
-                // Get the exact 0-15 level for this grid block
                 let [r, g, b] = colorFn(i, j);
 
-                // Apply intensity scaling and quantize back to a solid integer level (0-15)
                 r = Math.round(r * t);
                 g = Math.round(g * t);
                 b = Math.round(b * t);
 
-                // Map 0-15 space back up to 0-255 space for the Canvas API
                 const dispR = r * 17;
                 const dispG = g * 17;
                 const dispB = b * 17;
 
                 ctx.fillStyle = `rgb(${dispR},${dispG},${dispB})`;
 
-                // Creates a uniform 2px black gap between all diamonds
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 2;
-                ctx.lineJoin = 'round'; // Keeps the diamond corners clean
+                ctx.lineJoin = 'round';
 
                 ctx.beginPath();
                 ctx.moveTo(p1.x, p1.y);
@@ -103,14 +125,9 @@ function draw() {
         }
     }
 
-    // 1. Right Face (Red Max) -> spans between Yellow and Magenta
-    drawFace(axYellow, axMagenta, (i, j) => [15, 15 - j, 15 - i]);
-
-    // 2. Left Face (Blue Max) -> spans between Cyan and Magenta
-    drawFace(axCyan, axMagenta, (i, j) => [15 - i, 15 - j, 15]);
-
-    // 3. Top Face (Green Max) -> spans between Cyan and Yellow
-    drawFace(axCyan, axYellow, (i, j) => [15 - i, 15, 15 - j]);
+    drawFace(axYellow, axMagenta, (i, j) => [15, 15 - j, 15 - i]); // Right Face
+    drawFace(axCyan, axMagenta, (i, j) => [15 - i, 15 - j, 15]);   // Left Face
+    drawFace(axCyan, axYellow, (i, j) => [15 - i, 15, 15 - j]);    // Top Face
 }
 
 // --- Interactive Hover Logic ---
@@ -124,8 +141,6 @@ canvas.addEventListener('mousemove', (e) => {
 
     const pixel = ctx.getImageData(pixelX, pixelY, 1, 1).data;
 
-    // Check Alpha channel. If it's not fully opaque (255), we are off the cube
-    // or on an anti-aliased edge. Hide tooltip to prevent false readings.
     if (pixel[3] < 255) {
         pointerDisplay.style.display = 'none';
         return;
@@ -151,6 +166,6 @@ function requestRender() {
     }
 }
 
-// Initialize and bind events
+// Initialize
 slider.addEventListener('input', requestRender);
-requestRender();
+handleResize(); // Automatically calls requestRender on the first load
