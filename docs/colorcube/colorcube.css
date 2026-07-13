@@ -1,9 +1,25 @@
+/* Modern Reset */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* CSS Variables */
+:root {
+    --bg-primary: #111;
+    --bg-secondary: #222;
+    --text-primary: #eee;
+    --text-secondary: #888;
+    --border-color: #333;
+    --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: monospace;
+}
+
 body {
     margin: 0;
     padding: 0;
-    background-color: #111;
-    color: #eee;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-main);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -12,7 +28,7 @@ body {
 }
 
 .header {
-    margin-top: 30px;
+    margin-block-start: 30px;
     text-align: center;
 }
 
@@ -24,19 +40,19 @@ h1 {
 
 p {
     margin: 0;
-    color: #888;
+    color: var(--text-secondary);
     font-size: 0.95rem;
 }
 
 .controls {
-    margin-top: 25px;
+    margin-block-start: 25px;
     display: flex;
     align-items: center;
     gap: 15px;
-    background: #222;
+    background: var(--bg-secondary);
     padding: 15px 30px;
     border-radius: 8px;
-    border: 1px solid #333;
+    border: 1px solid var(--border-color);
     z-index: 10;
 }
 
@@ -46,13 +62,13 @@ input[type=range] {
 }
 
 #t-value {
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-size: 1.1rem;
     width: 45px;
 }
 
 canvas {
-    margin-top: 20px;
+    margin-block-start: 20px;
     max-width: 100%;
     display: block;
 }

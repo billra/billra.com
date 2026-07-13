@@ -1,68 +1,86 @@
+// --- Configuration & Constants ---
+const CONFIG = {
+    logicalWidth: 800,
+    logicalHeight: 650,
+    edgeLength: 220,
+    gridSteps: 30,
+    marker: {
+        targetHex: '#0088FF',
+        baseR: 0,
+        baseG: 136,
+        baseB: 255,
+        u: 1.0,           // Cyan axis
+        v: 119 / 255      // Magenta axis
+    }
+};
+
+// --- DOM Elements ---
 const canvas = document.getElementById('colorCanvas');
 const ctx = canvas.getContext('2d');
 const slider = document.getElementById('intensity');
 const tLabel = document.getElementById('t-value');
 
-// Setup high-DPI canvas
-const logicalWidth = 800;
-const logicalHeight = 650;
+// --- Setup High-DPI Canvas ---
 const dpr = window.devicePixelRatio || 1;
-
-canvas.width = logicalWidth * dpr;
-canvas.height = logicalHeight * dpr;
-canvas.style.width = `${logicalWidth}px`;
-canvas.style.height = `${logicalHeight}px`;
+canvas.width = CONFIG.logicalWidth * dpr;
+canvas.height = CONFIG.logicalHeight * dpr;
+canvas.style.width = `${CONFIG.logicalWidth}px`;
+canvas.style.height = `${CONFIG.logicalHeight}px`;
 ctx.scale(dpr, dpr);
 
-// Helper to format rgb to hex
+// --- Helpers ---
+// Modernized string padding for hex conversion
 function rgbToHex(r, g, b) {
-    const toHex = (c) => {
-        const hex = Math.max(0, Math.min(255, Math.round(c))).toString(16).toUpperCase();
-        return hex.length === 1 ? '0' + hex : hex;
-    };
+    const toHex = (c) => Math.max(0, Math.min(255, Math.round(c)))
+                             .toString(16)
+                             .padStart(2, '0') // Modern ES2017 feature
+                             .toUpperCase();
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
+// --- Rendering Logic ---
+let renderPending = false;
+
 function draw() {
+    renderPending = false; // Reset the flag
+
     const t = parseFloat(slider.value);
     tLabel.textContent = t.toFixed(2);
 
-    ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+    ctx.clearRect(0, 0, CONFIG.logicalWidth, CONFIG.logicalHeight);
 
     // Center coordinates
-    const cx = logicalWidth / 2;
-    const cy = logicalHeight / 2 - 20;
-    const L = 220; // Length of the rhombus edges
+    const cx = CONFIG.logicalWidth / 2;
+    const cy = CONFIG.logicalHeight / 2 - 20;
+    const L = CONFIG.edgeLength;
 
-    // The three main axes extending from the central White vertex
-    // Using standard isometric angles
-    const axCyan = { x: L * Math.cos(7 * Math.PI / 6), y: L * Math.sin(7 * Math.PI / 6) };   // Top Left (210 deg)
-    const axYellow = { x: L * Math.cos(11 * Math.PI / 6), y: L * Math.sin(11 * Math.PI / 6) }; // Top Right (330 deg)
-    const axMagenta = { x: L * Math.cos(Math.PI / 2), y: L * Math.sin(Math.PI / 2) };        // Bottom (90 deg)
+    // The three main axes extending from the central White vertex (Isometric)
+    const axCyan = { x: L * Math.cos(7 * Math.PI / 6), y: L * Math.sin(7 * Math.PI / 6) };
+    const axYellow = { x: L * Math.cos(11 * Math.PI / 6), y: L * Math.sin(11 * Math.PI / 6) };
+    const axMagenta = { x: L * Math.cos(Math.PI / 2), y: L * Math.sin(Math.PI / 2) };
 
-    const gridSteps = 30; // Grid resolution for drawing the gradients
+    const { gridSteps } = CONFIG;
 
-    // Function to draw one rhombus face using a grid of quadrilaterals
     function drawFace(uAx, vAx, colorFn) {
         for (let i = 0; i < gridSteps; i++) {
             for (let j = 0; j < gridSteps; j++) {
-                let u1 = i / gridSteps, u2 = (i + 1) / gridSteps;
-                let v1 = j / gridSteps, v2 = (j + 1) / gridSteps;
+                const u1 = i / gridSteps, u2 = (i + 1) / gridSteps;
+                const v1 = j / gridSteps, v2 = (j + 1) / gridSteps;
 
-                let p1 = { x: cx + u1*uAx.x + v1*vAx.x, y: cy + u1*uAx.y + v1*vAx.y };
-                let p2 = { x: cx + u2*uAx.x + v1*vAx.x, y: cy + u2*uAx.y + v1*vAx.y };
-                let p3 = { x: cx + u2*uAx.x + v2*vAx.x, y: cy + u2*uAx.y + v2*vAx.y };
-                let p4 = { x: cx + u1*uAx.x + v2*vAx.x, y: cy + u1*uAx.y + v2*vAx.y };
+                const p1 = { x: cx + u1*uAx.x + v1*vAx.x, y: cy + u1*uAx.y + v1*vAx.y };
+                const p2 = { x: cx + u2*uAx.x + v1*vAx.x, y: cy + u2*uAx.y + v1*vAx.y };
+                const p3 = { x: cx + u2*uAx.x + v2*vAx.x, y: cy + u2*uAx.y + v2*vAx.y };
+                const p4 = { x: cx + u1*uAx.x + v2*vAx.x, y: cy + u1*uAx.y + v2*vAx.y };
 
                 // Evaluate color at center of quad
                 let [r, g, b] = colorFn((u1+u2)/2, (v1+v2)/2);
 
-                // Apply the Intensity scaling!
-                r = r * t; g = g * t; b = b * t;
+                // Apply Intensity scaling
+                r *= t; g *= t; b *= t;
 
                 const colorString = `rgb(${r},${g},${b})`;
                 ctx.fillStyle = colorString;
-                ctx.strokeStyle = colorString; // Prevents faint seams between quads
+                ctx.strokeStyle = colorString;
                 ctx.lineWidth = 1;
 
                 ctx.beginPath();
@@ -78,7 +96,6 @@ function draw() {
     }
 
     // --- DRAW THE 3 FACES ---
-
     // 1. Right Face (Red Max) -> spans between Yellow and Magenta
     drawFace(axYellow, axMagenta, (u, v) => [255, 255*(1-v), 255*(1-u)]);
 
@@ -89,28 +106,15 @@ function draw() {
     drawFace(axCyan, axYellow, (u, v) => [255*(1-u), 255, 255*(1-v)]);
 
 
-    // --- DRAW THE CUSTOM MARKER FOR #08F ---
-
-    // Base #08F is R=0, G=136, B=255.
-    // It sits on the Left Face (Blue Max).
-    // On that face, color function is R = 255(1-u), G = 255(1-v), B = 255.
-    // Solving for u, v:
-    // R = 0   => 1 - u = 0           => u = 1.0 (Full Cyan axis)
-    // G = 136 => 255(1 - v) = 136  => v = 119/255 ≈ 0.4667 (Partway down Magenta axis)
-
-    const markerU = 1.0;
-    const markerV = 119 / 255;
+    // --- DRAW THE CUSTOM MARKER ---
+    const { u: markerU, v: markerV, baseR, baseG, baseB } = CONFIG.marker;
 
     const markerX = cx + markerU * axCyan.x + markerV * axMagenta.x;
     const markerY = cy + markerU * axCyan.y + markerV * axMagenta.y;
 
-    // Calculate scaled color for the label
-    const markerBaseR = 0;
-    const markerBaseG = 136;
-    const markerBaseB = 255;
-    const markerScaledHex = rgbToHex(markerBaseR * t, markerBaseG * t, markerBaseB * t);
+    const markerScaledHex = rgbToHex(baseR * t, baseG * t, baseB * t);
 
-    // Draw marker circle
+    // Marker circle
     ctx.beginPath();
     ctx.arc(markerX, markerY, 8, 0, Math.PI * 2);
     ctx.fillStyle = 'white';
@@ -119,15 +123,15 @@ function draw() {
     ctx.strokeStyle = '#000';
     ctx.stroke();
 
-    // Draw marker label
+    // Marker label
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 14px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText(`Target #08F scaled:`, markerX - 20, markerY - 5);
+    ctx.fillText(`Target ${CONFIG.marker.targetHex} scaled:`, markerX - 20, markerY - 5);
     ctx.fillStyle = '#aaa';
     ctx.fillText(markerScaledHex, markerX - 20, markerY + 13);
 
-    // Draw connecting line
+    // Connecting line
     ctx.beginPath();
     ctx.moveTo(markerX - 10, markerY);
     ctx.lineTo(markerX - 15, markerY);
@@ -141,13 +145,21 @@ function draw() {
     ctx.textAlign = 'center';
     ctx.fillText(`Center: ${centerScaledHex}`, cx, cy - 10);
 
-    // Draw a subtle dot at center
+    // Center dot
     ctx.beginPath();
     ctx.arc(cx, cy, 3, 0, Math.PI * 2);
     ctx.fillStyle = '#000';
     ctx.fill();
 }
 
+// --- Event Handling via requestAnimationFrame ---
+function requestRender() {
+    if (!renderPending) {
+        renderPending = true;
+        requestAnimationFrame(draw);
+    }
+}
+
 // Initialize and bind events
-slider.addEventListener('input', draw);
-draw(); // Initial render
+slider.addEventListener('input', requestRender);
+requestRender(); // Initial render
