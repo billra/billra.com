@@ -12,6 +12,13 @@ const ctx = canvas.getContext('2d');
 const slider = document.getElementById('intensity');
 const tLabel = document.getElementById('t-value');
 const pointerDisplay = document.getElementById('pointer-display');
+const versionSpan = document.getElementById('version'); // New
+
+// --- Inject Version ---
+const versionMeta = document.querySelector('meta[name="version"]');
+if (versionMeta && versionSpan) {
+    versionSpan.textContent = `v${versionMeta.content}`;
+}
 
 // --- Setup High-DPI Canvas ---
 const dpr = window.devicePixelRatio || 1;
