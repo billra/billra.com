@@ -84,10 +84,12 @@ function draw() {
                 const dispG = g * 17;
                 const dispB = b * 17;
 
-                const colorString = `rgb(${dispR},${dispG},${dispB})`;
-                ctx.fillStyle = colorString;
-                ctx.strokeStyle = colorString;
-                ctx.lineWidth = 1;
+                ctx.fillStyle = `rgb(${dispR},${dispG},${dispB})`;
+
+                // Creates a uniform 2px black gap between all diamonds
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.lineJoin = 'round'; // Keeps the diamond corners clean
 
                 ctx.beginPath();
                 ctx.moveTo(p1.x, p1.y);
