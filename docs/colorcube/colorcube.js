@@ -3,7 +3,7 @@ const CONFIG = {
     logicalWidth: 800,
     logicalHeight: 650,
     edgeLength: 220,
-    gridSteps: 30
+    gridSteps: 16 // 16 discrete levels per channel (0 through 15)
 };
 
 // --- DOM Elements ---
@@ -12,7 +12,7 @@ const ctx = canvas.getContext('2d');
 const slider = document.getElementById('intensity');
 const tLabel = document.getElementById('t-value');
 const pointerDisplay = document.getElementById('pointer-display');
-const versionSpan = document.getElementById('version'); // New
+const versionSpan = document.getElementById('version');
 
 // --- Inject Version ---
 const versionMeta = document.querySelector('meta[name="version"]');
@@ -29,11 +29,13 @@ canvas.style.height = `${CONFIG.logicalHeight}px`;
 ctx.scale(dpr, dpr);
 
 // --- Helpers ---
-function rgbToHex(r, g, b) {
-    const toHex = (c) => Math.max(0, Math.min(255, Math.round(c)))
-                             .toString(16)
-                             .padStart(2, '0')
-                             .toUpperCase();
+// Converts standard 0-255 RGB values back to 3-digit hex (e.g., #ABC)
+function rgbToShortHex(r, g, b) {
+    const toHex = (c) => {
+        // Divide by 17 to map 0-255 back to 0-15 levels
+        const level = Math.round(c / 17);
+        return Math.max(0, Math.min(15, level)).toString(16).toUpperCase();
+    };
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
@@ -46,7 +48,6 @@ function draw() {
     const t = parseFloat(slider.value);
     tLabel.textContent = t.toFixed(2);
 
-    // Clears the canvas with transparent black (rgba 0,0,0,0)
     ctx.clearRect(0, 0, CONFIG.logicalWidth, CONFIG.logicalHeight);
 
     const cx = CONFIG.logicalWidth / 2;
@@ -70,10 +71,20 @@ function draw() {
                 const p3 = { x: cx + u2*uAx.x + v2*vAx.x, y: cy + u2*uAx.y + v2*vAx.y };
                 const p4 = { x: cx + u1*uAx.x + v2*vAx.x, y: cy + u1*uAx.y + v2*vAx.y };
 
-                let [r, g, b] = colorFn((u1+u2)/2, (v1+v2)/2);
-                r *= t; g *= t; b *= t;
+                // Get the exact 0-15 level for this grid block
+                let [r, g, b] = colorFn(i, j);
 
-                const colorString = `rgb(${r},${g},${b})`;
+                // Apply intensity scaling and quantize back to a solid integer level (0-15)
+                r = Math.round(r * t);
+                g = Math.round(g * t);
+                b = Math.round(b * t);
+
+                // Map 0-15 space back up to 0-255 space for the Canvas API
+                const dispR = r * 17;
+                const dispG = g * 17;
+                const dispB = b * 17;
+
+                const colorString = `rgb(${dispR},${dispG},${dispB})`;
                 ctx.fillStyle = colorString;
                 ctx.strokeStyle = colorString;
                 ctx.lineWidth = 1;
@@ -90,40 +101,38 @@ function draw() {
         }
     }
 
-    // 1. Right Face (Red Max)
-    drawFace(axYellow, axMagenta, (u, v) => [255, 255*(1-v), 255*(1-u)]);
-    // 2. Left Face (Blue Max)
-    drawFace(axCyan, axMagenta, (u, v) => [255*(1-u), 255*(1-v), 255]);
-    // 3. Top Face (Green Max)
-    drawFace(axCyan, axYellow, (u, v) => [255*(1-u), 255, 255*(1-v)]);
+    // 1. Right Face (Red Max) -> spans between Yellow and Magenta
+    drawFace(axYellow, axMagenta, (i, j) => [15, 15 - j, 15 - i]);
+
+    // 2. Left Face (Blue Max) -> spans between Cyan and Magenta
+    drawFace(axCyan, axMagenta, (i, j) => [15 - i, 15 - j, 15]);
+
+    // 3. Top Face (Green Max) -> spans between Cyan and Yellow
+    drawFace(axCyan, axYellow, (i, j) => [15 - i, 15, 15 - j]);
 }
 
 // --- Interactive Hover Logic ---
 canvas.addEventListener('mousemove', (e) => {
     const rect = canvas.getBoundingClientRect();
-
-    // Calculate CSS coordinates relative to the canvas element
     const cssX = e.clientX - rect.left;
     const cssY = e.clientY - rect.top;
 
-    // Scale to match the internal devicePixelRatio buffer size
     const pixelX = Math.round(cssX * dpr);
     const pixelY = Math.round(cssY * dpr);
 
-    // Read the single pixel data
     const pixel = ctx.getImageData(pixelX, pixelY, 1, 1).data;
 
-    // Check Alpha channel (pixel[3]). If 0, we are hovering outside the drawn hexagon.
-    if (pixel[3] === 0) {
+    // Check Alpha channel. If it's not fully opaque (255), we are off the cube
+    // or on an anti-aliased edge. Hide tooltip to prevent false readings.
+    if (pixel[3] < 255) {
         pointerDisplay.style.display = 'none';
         return;
     }
 
-    const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
+    const hex = rgbToShortHex(pixel[0], pixel[1], pixel[2]);
 
     pointerDisplay.innerText = hex;
     pointerDisplay.style.display = 'block';
-    // Offset the tooltip slightly from the cursor
     pointerDisplay.style.left = `${e.clientX + 15}px`;
     pointerDisplay.style.top = `${e.clientY + 15}px`;
 });
