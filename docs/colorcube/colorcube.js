@@ -1,8 +1,6 @@
 // --- Configuration & Constants ---
 const CONFIG = {
-    gridSteps: 16, // 16 discrete levels per channel (0 through 15)
-
-    // These will now be updated dynamically based on window size
+    // Dynamic dimensions updated on window resize
     logicalWidth: 800,
     logicalHeight: 650,
     edgeLength: 220
@@ -26,34 +24,23 @@ if (versionMeta && versionSpan) {
 const dpr = window.devicePixelRatio || 1;
 
 function handleResize() {
-    // 1. Set canvas width to exactly 50% of the viewport width
     CONFIG.logicalWidth = window.innerWidth * 0.5;
-
-    // 2. Set height slightly taller than width to accommodate the isometric
-    // hexagon's natural shape, plus a little extra room for the tooltip.
     CONFIG.logicalHeight = CONFIG.logicalWidth * 1.1;
 
-    // 3. Scale the cube's edge length to fill out the canvas.
-    // (An isometric hexagon's total width is ~1.732 * L, and height is 2 * L)
-    // Setting L to 0.45 means the cube will take up ~78% of the canvas width
-    // and 90% of the canvas height, fitting perfectly in the center.
+    // The maximum possible edge length at N = 15
     CONFIG.edgeLength = CONFIG.logicalWidth * 0.45;
 
-    // Apply the new dimensions
     canvas.width = CONFIG.logicalWidth * dpr;
     canvas.height = CONFIG.logicalHeight * dpr;
     canvas.style.width = `${CONFIG.logicalWidth}px`;
     canvas.style.height = `${CONFIG.logicalHeight}px`;
 
-    // Reset transform to avoid compounding scales on resize
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
 
-    // Redraw the canvas with the new sizes
     requestRender();
 }
 
-// Listen for window resizing to keep it perfectly at 50%
 window.addEventListener('resize', handleResize);
 
 // --- Helpers ---
@@ -71,47 +58,48 @@ let renderPending = false;
 function draw() {
     renderPending = false;
 
-    const sliderVal = parseInt(slider.value, 10);
-    const t = sliderVal / 15; // Normalize back to 0-1 for the rendering math
-
-    // Convert the 0-15 integer to a Hex string (0-F) for the UI label
-    tLabel.textContent = sliderVal.toString(16).toUpperCase();
+    // N represents both the color intensity ceiling AND the grid size
+    const N = parseInt(slider.value, 10);
+    tLabel.textContent = N.toString(16).toUpperCase();
 
     ctx.clearRect(0, 0, CONFIG.logicalWidth, CONFIG.logicalHeight);
 
+    // If N is 0, we draw nothing (collapses to an empty canvas)
+    if (N === 0) return;
+
     const cx = CONFIG.logicalWidth / 2;
-    const cy = CONFIG.logicalHeight / 2 - (CONFIG.logicalHeight * 0.03); // Scale the vertical offset
-    const L = CONFIG.edgeLength;
+    const cy = CONFIG.logicalHeight / 2 - (CONFIG.logicalHeight * 0.03);
+
+    // Shrink the physical scale of the axis lines proportionally to N!
+    // Since N maxes out at 15, we scale the overall dimension by N / 15.
+    const L = CONFIG.edgeLength * (N / 15);
 
     const axCyan = { x: L * Math.cos(7 * Math.PI / 6), y: L * Math.sin(7 * Math.PI / 6) };
     const axYellow = { x: L * Math.cos(11 * Math.PI / 6), y: L * Math.sin(11 * Math.PI / 6) };
     const axMagenta = { x: L * Math.cos(Math.PI / 2), y: L * Math.sin(Math.PI / 2) };
 
-    const { gridSteps } = CONFIG;
-
     function drawFace(uAx, vAx, colorFn) {
-        for (let i = 0; i < gridSteps; i++) {
-            for (let j = 0; j < gridSteps; j++) {
-                const u1 = i / gridSteps, u2 = (i + 1) / gridSteps;
-                const v1 = j / gridSteps, v2 = (j + 1) / gridSteps;
+        for (let i = 0; i < N; i++) {
+            for (let j = 0; j < N; j++) {
+                // Since N steps make up the dynamic size of the face,
+                // we divide by N to find coordinate percentages.
+                const u1 = i / N, u2 = (i + 1) / N;
+                const v1 = j / N, v2 = (j + 1) / N;
 
                 const p1 = { x: cx + u1*uAx.x + v1*vAx.x, y: cy + u1*uAx.y + v1*vAx.y };
                 const p2 = { x: cx + u2*uAx.x + v1*vAx.x, y: cy + u2*uAx.y + v1*vAx.y };
                 const p3 = { x: cx + u2*uAx.x + v2*vAx.x, y: cy + u2*uAx.y + v2*vAx.y };
                 const p4 = { x: cx + u1*uAx.x + v2*vAx.x, y: cy + u1*uAx.y + v2*vAx.y };
 
-                let [r, g, b] = colorFn(i, j);
+                // Fetch raw channels (0 to N) without complex mapping math
+                const [r, g, b] = colorFn(i, j);
 
-                r = Math.round(r * t);
-                g = Math.round(g * t);
-                b = Math.round(b * t);
-
+                // Convert pure integer level to the standard 0-255 scale
                 const dispR = r * 17;
                 const dispG = g * 17;
                 const dispB = b * 17;
 
                 ctx.fillStyle = `rgb(${dispR},${dispG},${dispB})`;
-
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 2;
                 ctx.lineJoin = 'round';
@@ -128,9 +116,12 @@ function draw() {
         }
     }
 
-    drawFace(axYellow, axMagenta, (i, j) => [15, 15 - j, 15 - i]); // Right Face
-    drawFace(axCyan, axMagenta, (i, j) => [15 - i, 15 - j, 15]);   // Left Face
-    drawFace(axCyan, axYellow, (i, j) => [15 - i, 15, 15 - j]);    // Top Face
+    // Now, color coordinates run exactly from 0 up to N!
+    // Since N is the maximum channel value on the outer edges,
+    // we substitute '15' with 'N' in the mapping functions.
+    drawFace(axYellow, axMagenta, (i, j) => [N, N - j, N - i]); // Right Face
+    drawFace(axCyan, axMagenta, (i, j) => [N - i, N - j, N]);   // Left Face
+    drawFace(axCyan, axYellow, (i, j) => [N - i, N, N - j]);    // Top Face
 }
 
 // --- Interactive Hover Logic ---
@@ -171,4 +162,4 @@ function requestRender() {
 
 // Initialize
 slider.addEventListener('input', requestRender);
-handleResize(); // Automatically calls requestRender on the first load
+handleResize();
