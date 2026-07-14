@@ -71,8 +71,11 @@ let renderPending = false;
 function draw() {
     renderPending = false;
 
-    const t = parseFloat(slider.value);
-    tLabel.textContent = t.toFixed(2);
+    const sliderVal = parseInt(slider.value, 10);
+    const t = sliderVal / 15; // Normalize back to 0-1 for the rendering math
+
+    // Convert the 0-15 integer to a Hex string (0-F) for the UI label
+    tLabel.textContent = sliderVal.toString(16).toUpperCase();
 
     ctx.clearRect(0, 0, CONFIG.logicalWidth, CONFIG.logicalHeight);
 
