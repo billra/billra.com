@@ -65,9 +65,6 @@ function draw() {
 
     ctx.clearRect(0, 0, CONFIG.logicalWidth, CONFIG.logicalHeight);
 
-    // If N is 0, we draw nothing (collapses to an empty canvas)
-    if (N === 0) return;
-
     const cx = CONFIG.logicalWidth / 2;
     const cy = CONFIG.logicalHeight / 2 - (CONFIG.logicalHeight * 0.03);
 
@@ -83,19 +80,22 @@ function draw() {
     const axMagenta = { x: L * Math.cos(Math.PI / 2), y: L * Math.sin(Math.PI / 2) };
 
     function drawFace(uAx, vAx, colorFn) {
-        for (let i = 0; i < N; i++) {
-            for (let j = 0; j < N; j++) {
-                // Since N steps make up the dynamic size of the face,
-                // we divide by N to find coordinate percentages.
-                const u1 = i / N, u2 = (i + 1) / N;
-                const v1 = j / N, v2 = (j + 1) / N;
+        // A hex scale from 0 to N has N + 1 distinct steps
+        const steps = N + 1;
+
+        // Loop up to AND INCLUDING N
+        for (let i = 0; i <= N; i++) {
+            for (let j = 0; j <= N; j++) {
+                // Calculate percentages based on the total number of steps
+                const u1 = i / steps, u2 = (i + 1) / steps;
+                const v1 = j / steps, v2 = (j + 1) / steps;
 
                 const p1 = { x: cx + u1*uAx.x + v1*vAx.x, y: cy + u1*uAx.y + v1*vAx.y };
                 const p2 = { x: cx + u2*uAx.x + v1*vAx.x, y: cy + u2*uAx.y + v1*vAx.y };
                 const p3 = { x: cx + u2*uAx.x + v2*vAx.x, y: cy + u2*uAx.y + v2*vAx.y };
                 const p4 = { x: cx + u1*uAx.x + v2*vAx.x, y: cy + u1*uAx.y + v2*vAx.y };
 
-                // Fetch raw channels (0 to N) without complex mapping math
+                // Fetch raw channels (0 to N)
                 const [r, g, b] = colorFn(i, j);
 
                 // Convert pure integer level to the standard 0-255 scale
