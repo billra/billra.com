@@ -8,7 +8,7 @@ const CONFIG = {
 
 // --- DOM Elements ---
 const canvas = document.getElementById('colorCanvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const slider = document.getElementById('intensity');
 const tLabel = document.getElementById('t-value');
 const pointerDisplay = document.getElementById('pointer-display');
