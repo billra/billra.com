@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RGB Ray Scaling - Planar Net</title>
-    <meta name="version" content="2.1">
+    <meta name="version" content="2.2">
     <link rel="stylesheet" href="colorcube.css">
     <script type="module" src="colorcube.js"></script>
 </head>
@@ -20,8 +20,10 @@
             <label for="intensity">Intensity Ray (N):</label>
             <input type="range" id="intensity" min="0" max="15" step="1" value="15">
             <span id="t-value">F</span>
-        </section>
 
+            <label for="zoom" style="margin-inline-start: 15px; cursor: pointer;">Zoom:</label>
+            <input type="checkbox" id="zoom" style="cursor: pointer;">
+        </section>
         <canvas id="colorCanvas" aria-label="Interactive 3D representation of an RGB color cube scaling with intensity">
             Your browser does not support the HTML canvas tag or JavaScript is disabled.
         </canvas>

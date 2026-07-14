@@ -10,6 +10,7 @@ const CONFIG = {
 const canvas = document.getElementById('colorCanvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const slider = document.getElementById('intensity');
+const zoomCheckbox = document.getElementById('zoom');
 const tLabel = document.getElementById('t-value');
 const pointerDisplay = document.getElementById('pointer-display');
 const versionSpan = document.getElementById('version');
@@ -70,9 +71,12 @@ function draw() {
     const cx = CONFIG.logicalWidth / 2;
     const cy = CONFIG.logicalHeight / 2 - (CONFIG.logicalHeight * 0.03);
 
-    // Shrink the physical scale of the axis lines proportionally to N!
-    // Since N maxes out at 15, we scale the overall dimension by N / 15.
-    const L = CONFIG.edgeLength * (N / 15);
+    // Check the state of the zoom toggle
+    const isZoomed = zoomCheckbox.checked;
+
+    // If zoomed, lock the edge length to maximum.
+    // Otherwise, shrink it proportionally to N.
+    const L = isZoomed ? CONFIG.edgeLength : (CONFIG.edgeLength * (N / 15));
 
     const axCyan = { x: L * Math.cos(7 * Math.PI / 6), y: L * Math.sin(7 * Math.PI / 6) };
     const axYellow = { x: L * Math.cos(11 * Math.PI / 6), y: L * Math.sin(11 * Math.PI / 6) };
@@ -162,4 +166,5 @@ function requestRender() {
 
 // Initialize
 slider.addEventListener('input', requestRender);
+zoomCheckbox.addEventListener('change', requestRender);
 handleResize();
