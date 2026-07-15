@@ -1,10 +1,17 @@
-// --- Configuration & Constants ---
+/// --- Configuration & Constants ---
 const CONFIG = {
     // Dynamic dimensions updated on window resize
     logicalWidth: 800,
     logicalHeight: 650,
-    edgeLength: 220
+    edgeLength: 220,
+    LEVELS: 16, // Change to 8, 32, 64, etc. to scale the entire application
+    get MAX_LEVEL() { return this.LEVELS - 1; },
+    get MULTIPLIER() { return 255 / this.MAX_LEVEL; }
 };
+
+// --- State Management ---
+let currentLevel = CONFIG.MAX_LEVEL;
+let baseRay = [CONFIG.MAX_LEVEL, CONFIG.MAX_LEVEL, CONFIG.MAX_LEVEL]; // Defaults to the neutral axis
 
 // --- DOM Elements ---
 const canvas = document.getElementById('colorCanvas');
@@ -12,10 +19,6 @@ const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const zoomCheckbox = document.getElementById('zoom');
 const pointerDisplay = document.getElementById('pointer-display');
 const coreSampleContainer = document.getElementById('core-sample');
-
-// --- State Management ---
-let currentN = 15;
-let baseRay = [15, 15, 15]; // Defaults to the White/Grayscale neutral axis
 
 // --- Inject Title and Version ---
 document.getElementById('page-title').textContent = document.title;
@@ -55,32 +58,32 @@ function rgbToShortHex(r, g, b) {
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
-// --- Rendering the Core Sample (Replaces Slider) ---
+// --- Rendering the Core Sample ---
 function renderCoreSample() {
     coreSampleContainer.innerHTML = '';
 
-    // Loop from 15 down to 0 so White/Max Color is at the top
-    for (let i = 15; i >= 0; i--) {
+    // Loop from MAX_LEVEL down to 0 so White/Max Color is at the top
+    for (let i = CONFIG.MAX_LEVEL; i >= 0; i--) {
         // Extrapolate the exact integer color for this step of the ray
-        const r = Math.round((baseRay[0] * i) / 15);
-        const g = Math.round((baseRay[1] * i) / 15);
-        const b = Math.round((baseRay[2] * i) / 15);
+        const r = Math.round((baseRay[0] * i) / CONFIG.MAX_LEVEL);
+        const g = Math.round((baseRay[1] * i) / CONFIG.MAX_LEVEL);
+        const b = Math.round((baseRay[2] * i) / CONFIG.MAX_LEVEL);
 
         const block = document.createElement('div');
         block.className = 'core-block';
 
-        // Add the tactile "pop" class if it matches the current intensity
-        if (i === currentN) {
+        // Add the tactile "pop" class if it matches the current level
+        if (i === currentLevel) {
             block.classList.add('active-level');
         }
 
-        const hexColor = rgbToShortHex(r * 17, g * 17, b * 17);
+        const hexColor = rgbToShortHex(r * CONFIG.MULTIPLIER, g * CONFIG.MULTIPLIER, b * CONFIG.MULTIPLIER);
         block.style.backgroundColor = hexColor;
         block.title = `${hexColor} (Level ${i})`; // Tooltip on hover
 
         // Clicking a block scales the cube to that intensity
         block.addEventListener('click', () => {
-            currentN = i;
+            currentLevel = i;
             renderCoreSample(); // Re-render to move the active "pop"
             requestRender();    // Re-draw the 2D canvas
         });
@@ -95,8 +98,8 @@ let renderPending = false;
 function draw() {
     renderPending = false;
 
-    // N represents both the color intensity ceiling AND the grid size
-    const N = currentN;
+    // level represents both the color intensity ceiling AND the grid size
+    const level = currentLevel;
 
     ctx.clearRect(0, 0, CONFIG.logicalWidth, CONFIG.logicalHeight);
 
@@ -107,20 +110,20 @@ function draw() {
     const isZoomed = zoomCheckbox.checked;
 
     // If zoomed, lock the edge length to maximum.
-    // Otherwise, shrink it proportionally to N.
-    const L = isZoomed ? CONFIG.edgeLength : (CONFIG.edgeLength * (N / 15));
+    // Otherwise, shrink it proportionally to the current level.
+    const L = isZoomed ? CONFIG.edgeLength : (CONFIG.edgeLength * (level / CONFIG.MAX_LEVEL));
 
     const axCyan = { x: L * Math.cos(7 * Math.PI / 6), y: L * Math.sin(7 * Math.PI / 6) };
     const axYellow = { x: L * Math.cos(11 * Math.PI / 6), y: L * Math.sin(11 * Math.PI / 6) };
     const axMagenta = { x: L * Math.cos(Math.PI / 2), y: L * Math.sin(Math.PI / 2) };
 
     function drawFace(uAx, vAx, colorFn) {
-        // A hex scale from 0 to N has N + 1 distinct steps
-        const steps = N + 1;
+        // A scale from 0 to level has level + 1 distinct steps
+        const steps = level + 1;
 
-        // Loop up to AND INCLUDING N
-        for (let i = 0; i <= N; i++) {
-            for (let j = 0; j <= N; j++) {
+        // Loop up to AND INCLUDING level
+        for (let i = 0; i <= level; i++) {
+            for (let j = 0; j <= level; j++) {
                 // Calculate percentages based on the total number of steps
                 const u1 = i / steps, u2 = (i + 1) / steps;
                 const v1 = j / steps, v2 = (j + 1) / steps;
@@ -130,13 +133,13 @@ function draw() {
                 const p3 = { x: cx + u2*uAx.x + v2*vAx.x, y: cy + u2*uAx.y + v2*vAx.y };
                 const p4 = { x: cx + u1*uAx.x + v2*vAx.x, y: cy + u1*uAx.y + v2*vAx.y };
 
-                // Fetch raw channels (0 to N)
+                // Fetch raw channels (0 to level)
                 const [r, g, b] = colorFn(i, j);
 
                 // Convert pure integer level to the standard 0-255 scale
-                const dispR = r * 17;
-                const dispG = g * 17;
-                const dispB = b * 17;
+                const dispR = r * CONFIG.MULTIPLIER;
+                const dispG = g * CONFIG.MULTIPLIER;
+                const dispB = b * CONFIG.MULTIPLIER;
 
                 ctx.fillStyle = `rgb(${dispR},${dispG},${dispB})`;
                 ctx.strokeStyle = '#000';
@@ -155,18 +158,16 @@ function draw() {
         }
     }
 
-    // Now, color coordinates run exactly from 0 up to N!
-    // Since N is the maximum channel value on the outer edges,
-    // we substitute '15' with 'N' in the mapping functions.
-    drawFace(axYellow, axMagenta, (i, j) => [N, N - j, N - i]); // Right Face
-    drawFace(axCyan, axMagenta, (i, j) => [N - i, N - j, N]);   // Left Face
-    drawFace(axCyan, axYellow, (i, j) => [N - i, N, N - j]);    // Top Face
+    // Now, color coordinates run exactly from 0 up to level!
+    drawFace(axYellow, axMagenta, (i, j) => [level, level - j, level - i]); // Right Face
+    drawFace(axCyan, axMagenta, (i, j) => [level - i, level - j, level]);   // Left Face
+    drawFace(axCyan, axYellow, (i, j) => [level - i, level, level - j]);    // Top Face
 }
 
 // --- Interactive Click Logic (Ray Selection) ---
 canvas.addEventListener('click', (e) => {
-    // If the cube is entirely black (N=0), a ray cannot be mathematically calculated.
-    if (currentN === 0) return;
+    // If the cube is entirely black (level=0), a ray cannot be mathematically calculated.
+    if (currentLevel === 0) return;
 
     const rect = canvas.getBoundingClientRect();
     const cssX = e.clientX - rect.left;
@@ -180,19 +181,37 @@ canvas.addEventListener('click', (e) => {
     // Ignore clicks on the transparent background
     if (pixel[3] < 255) return;
 
-    // Convert raw 0-255 pixel data to our 0-15 hex steps
-    const r = Math.round(pixel[0] / 17);
-    const g = Math.round(pixel[1] / 17);
-    const b = Math.round(pixel[2] / 17);
+    // Convert raw 0-255 pixel data to our grid steps
+    const r = Math.round(pixel[0] / CONFIG.MULTIPLIER);
+    const g = Math.round(pixel[1] / CONFIG.MULTIPLIER);
+    const b = Math.round(pixel[2] / CONFIG.MULTIPLIER);
 
-    // Mathematics of the Ray: Extrapolate the base color at the N=15 boundary
-    baseRay[0] = Math.min(15, Math.max(0, Math.round((r * 15) / currentN)));
-    baseRay[1] = Math.min(15, Math.max(0, Math.round((g * 15) / currentN)));
-    baseRay[2] = Math.min(15, Math.max(0, Math.round((b * 15) / currentN)));
+    // Mathematics of the Ray: Extrapolate the base color at the boundary
+    baseRay[0] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((r * CONFIG.MAX_LEVEL) / currentLevel)));
+    baseRay[1] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((g * CONFIG.MAX_LEVEL) / currentLevel)));
+    baseRay[2] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((b * CONFIG.MAX_LEVEL) / currentLevel)));
 
     // Rebuild the core sample UI with the new ray path
     renderCoreSample();
 });
+
+// --- Interactive Scroll Logic (Global) ---
+window.addEventListener('wheel', (e) => {
+    // Prevent the default browser scrolling behavior globally
+    e.preventDefault();
+
+    // e.deltaY is negative when scrolling up, positive when scrolling down
+    if (e.deltaY < 0 && currentLevel < CONFIG.MAX_LEVEL) {
+        currentLevel++;     // Scroll up -> Increase intensity
+    } else if (e.deltaY > 0 && currentLevel > 0) {
+        currentLevel--;     // Scroll down -> Decrease intensity
+    } else {
+        return;         // Stop execution if we hit the min/max limits
+    }
+
+    renderCoreSample(); // Update the visual pop on the core
+    requestRender();    // Redraw the 3D cube
+}, { passive: false });
 
 // --- Interactive Hover Logic ---
 canvas.addEventListener('mousemove', (e) => {
@@ -221,24 +240,6 @@ canvas.addEventListener('mousemove', (e) => {
 canvas.addEventListener('mouseleave', () => {
     pointerDisplay.style.display = 'none';
 });
-
-// --- Interactive Scroll Logic (Global) ---
-window.addEventListener('wheel', (e) => {
-    // Prevent the default browser scrolling behavior globally
-    e.preventDefault();
-
-    // e.deltaY is negative when scrolling up, positive when scrolling down
-    if (e.deltaY < 0 && currentN < 15) {
-        currentN++;     // Scroll up -> Increase intensity
-    } else if (e.deltaY > 0 && currentN > 0) {
-        currentN--;     // Scroll down -> Decrease intensity
-    } else {
-        return;         // Stop execution if we hit the min/max limits
-    }
-
-    renderCoreSample(); // Update the visual pop on the core
-    requestRender();    // Redraw the 3D cube
-}, { passive: false }); // passive: false is required to allow preventDefault()
 
 // --- Event Handling via requestAnimationFrame ---
 function requestRender() {
