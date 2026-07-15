@@ -12,18 +12,17 @@ const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const zoomCheckbox = document.getElementById('zoom');
 const tLabel = document.getElementById('t-value');
 const pointerDisplay = document.getElementById('pointer-display');
-const versionSpan = document.getElementById('version');
 const coreSampleContainer = document.getElementById('core-sample');
 
 // --- State Management ---
 let currentN = 15;
 let baseRay = [15, 15, 15]; // Defaults to the White/Grayscale neutral axis
 
-// --- Inject Version ---
+// --- Inject Title and Version ---
+document.getElementById('page-title').textContent = document.title;
+
 const versionMeta = document.querySelector('meta[name="version"]');
-if (versionMeta && versionSpan) {
-    versionSpan.textContent = `v${versionMeta.content}`;
-}
+document.getElementById('version').textContent = `v${versionMeta.content}`;
 
 // --- Setup Responsive High-DPI Canvas ---
 const dpr = window.devicePixelRatio || 1;
