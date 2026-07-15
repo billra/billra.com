@@ -99,3 +99,61 @@ canvas {
     font-weight: bold;
     z-index: 100;
 }
+
+.layout-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 40px;
+    margin-block-start: 20px;
+    max-height: 80vh;
+}
+
+.canvas-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.core-sample {
+    display: flex;
+    flex-direction: column;
+    gap: 2px; /* Tight stack to look like a contiguous core */
+    width: 60px;
+    height: 100%;
+    max-height: 600px; /* Constrain the height */
+    padding: 10px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.core-block {
+    flex: 1; /* Automatically fills available vertical space */
+    width: 100%;
+    min-height: 15px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    position: relative;
+
+    /* The magic of the tactile "pop" transition */
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
+}
+
+.core-block:hover {
+    transform: scale(1.08);
+    z-index: 5;
+}
+
+/* The Active State (The Pop) */
+.core-block.active-level {
+    transform: scale(1.25); /* Pops out wider than the container */
+    z-index: 10;
+
+    /* Double-layer outline ensures contrast against ANY color */
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.8), /* Soft drop shadow */
+        0 0 0 2px var(--bg-primary),   /* Inner dark ring */
+        0 0 0 4px #fff;                /* Outer bright ring */
+}

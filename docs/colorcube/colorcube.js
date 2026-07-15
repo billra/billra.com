@@ -9,11 +9,15 @@ const CONFIG = {
 // --- DOM Elements ---
 const canvas = document.getElementById('colorCanvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
-const slider = document.getElementById('intensity');
 const zoomCheckbox = document.getElementById('zoom');
 const tLabel = document.getElementById('t-value');
 const pointerDisplay = document.getElementById('pointer-display');
 const versionSpan = document.getElementById('version');
+const coreSampleContainer = document.getElementById('core-sample');
+
+// --- State Management ---
+let currentN = 15;
+let baseRay = [15, 15, 15]; // Defaults to the White/Grayscale neutral axis
 
 // --- Inject Version ---
 const versionMeta = document.querySelector('meta[name="version"]');
@@ -53,6 +57,41 @@ function rgbToShortHex(r, g, b) {
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
+// --- Rendering the Core Sample (Replaces Slider) ---
+function renderCoreSample() {
+    coreSampleContainer.innerHTML = '';
+    tLabel.textContent = currentN.toString(16).toUpperCase();
+
+    // Loop from 15 down to 0 so White/Max Color is at the top
+    for (let i = 15; i >= 0; i--) {
+        // Extrapolate the exact integer color for this step of the ray
+        const r = Math.round((baseRay[0] * i) / 15);
+        const g = Math.round((baseRay[1] * i) / 15);
+        const b = Math.round((baseRay[2] * i) / 15);
+
+        const block = document.createElement('div');
+        block.className = 'core-block';
+
+        // Add the tactile "pop" class if it matches the current intensity
+        if (i === currentN) {
+            block.classList.add('active-level');
+        }
+
+        const hexColor = rgbToShortHex(r * 17, g * 17, b * 17);
+        block.style.backgroundColor = hexColor;
+        block.title = `${hexColor} (Level ${i})`; // Tooltip on hover
+
+        // Clicking a block scales the cube to that intensity
+        block.addEventListener('click', () => {
+            currentN = i;
+            renderCoreSample(); // Re-render to move the active "pop"
+            requestRender();    // Re-draw the 2D canvas
+        });
+
+        coreSampleContainer.appendChild(block);
+    }
+}
+
 // --- Rendering Logic ---
 let renderPending = false;
 
@@ -60,8 +99,7 @@ function draw() {
     renderPending = false;
 
     // N represents both the color intensity ceiling AND the grid size
-    const N = parseInt(slider.value, 10);
-    tLabel.textContent = N.toString(16).toUpperCase();
+    const N = currentN;
 
     ctx.clearRect(0, 0, CONFIG.logicalWidth, CONFIG.logicalHeight);
 
@@ -128,6 +166,37 @@ function draw() {
     drawFace(axCyan, axYellow, (i, j) => [N - i, N, N - j]);    // Top Face
 }
 
+// --- Interactive Click Logic (Ray Selection) ---
+canvas.addEventListener('click', (e) => {
+    // If the cube is entirely black (N=0), a ray cannot be mathematically calculated.
+    if (currentN === 0) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const cssX = e.clientX - rect.left;
+    const cssY = e.clientY - rect.top;
+
+    const pixelX = Math.round(cssX * dpr);
+    const pixelY = Math.round(cssY * dpr);
+
+    const pixel = ctx.getImageData(pixelX, pixelY, 1, 1).data;
+
+    // Ignore clicks on the transparent background
+    if (pixel[3] < 255) return;
+
+    // Convert raw 0-255 pixel data to our 0-15 hex steps
+    const r = Math.round(pixel[0] / 17);
+    const g = Math.round(pixel[1] / 17);
+    const b = Math.round(pixel[2] / 17);
+
+    // Mathematics of the Ray: Extrapolate the base color at the N=15 boundary
+    baseRay[0] = Math.min(15, Math.max(0, Math.round((r * 15) / currentN)));
+    baseRay[1] = Math.min(15, Math.max(0, Math.round((g * 15) / currentN)));
+    baseRay[2] = Math.min(15, Math.max(0, Math.round((b * 15) / currentN)));
+
+    // Rebuild the core sample UI with the new ray path
+    renderCoreSample();
+});
+
 // --- Interactive Hover Logic ---
 canvas.addEventListener('mousemove', (e) => {
     const rect = canvas.getBoundingClientRect();
@@ -165,6 +234,6 @@ function requestRender() {
 }
 
 // Initialize
-slider.addEventListener('input', requestRender);
 zoomCheckbox.addEventListener('change', requestRender);
-handleResize();
+renderCoreSample(); // Build the initial grayscale core
+handleResize();     // Size the canvas and trigger the first draw

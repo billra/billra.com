@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RGB Ray Scaling - Planar Net</title>
-    <meta name="version" content="2.3">
+    <meta name="version" content="2.4">
     <link rel="stylesheet" href="colorcube.css">
     <script type="module" src="colorcube.js"></script>
 </head>
@@ -12,21 +12,24 @@
 
     <header class="header">
         <h1>RGB Face Net & Ray Scaling <span id="version"></span></h1>
-        <p>Hover over the faces to see the calculated hex codes.</p>
+        <p>Click a color to view its intensity ray. Click the core sample to scale.</p>
     </header>
 
-    <main>
-        <section class="controls">
-            <label for="intensity">Intensity Ray (N):</label>
-            <input type="range" id="intensity" min="0" max="15" step="1" value="15">
-            <span id="t-value">F</span>
+    <main class="layout-container">
 
-            <label for="zoom" style="margin-inline-start: 15px; cursor: pointer;">Zoom:</label>
-            <input type="checkbox" id="zoom" style="cursor: pointer;">
-        </section>
-        <canvas id="colorCanvas" aria-label="Interactive 3D representation of an RGB color cube scaling with intensity">
-            Your browser does not support the HTML canvas tag or JavaScript is disabled.
-        </canvas>
+        <aside id="core-sample" class="core-sample"></aside>
+
+        <div class="canvas-container">
+            <section class="controls">
+                <span>Intensity Ray (N): <strong id="t-value">F</strong></span>
+                <label for="zoom" style="margin-inline-start: 25px; cursor: pointer;">Zoom:</label>
+                <input type="checkbox" id="zoom" style="cursor: pointer;">
+            </section>
+
+            <canvas id="colorCanvas" aria-label="Interactive 3D representation of an RGB color cube scaling with intensity">
+                Your browser does not support the HTML canvas tag or JavaScript is disabled.
+            </canvas>
+        </div>
 
         <div id="pointer-display"></div>
     </main>
