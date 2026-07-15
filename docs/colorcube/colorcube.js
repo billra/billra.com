@@ -10,7 +10,6 @@ const CONFIG = {
 const canvas = document.getElementById('colorCanvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const zoomCheckbox = document.getElementById('zoom');
-const tLabel = document.getElementById('t-value');
 const pointerDisplay = document.getElementById('pointer-display');
 const coreSampleContainer = document.getElementById('core-sample');
 
@@ -59,7 +58,6 @@ function rgbToShortHex(r, g, b) {
 // --- Rendering the Core Sample (Replaces Slider) ---
 function renderCoreSample() {
     coreSampleContainer.innerHTML = '';
-    tLabel.textContent = currentN.toString(16).toUpperCase();
 
     // Loop from 15 down to 0 so White/Max Color is at the top
     for (let i = 15; i >= 0; i--) {

@@ -3,7 +3,7 @@
 <head>
     <title>Color Cube</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="2.5">
+    <meta name="version" content="2.6">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="colorcube.css">
@@ -17,20 +17,15 @@
     </header>
 
     <main class="layout-container">
-
         <aside id="core-sample" class="core-sample"></aside>
 
-        <div class="canvas-container">
-            <section class="controls">
-                <span>Intensity Ray (N): <strong id="t-value">F</strong></span>
-                <label for="zoom" style="margin-inline-start: 25px; cursor: pointer;">Zoom:</label>
-                <input type="checkbox" id="zoom" style="cursor: pointer;">
-            </section>
+        <canvas id="colorCanvas" aria-label="Interactive 3D representation of an RGB color cube scaling with intensity">
+            Your browser does not support the HTML canvas tag or JavaScript is disabled.
+        </canvas>
 
-            <canvas id="colorCanvas" aria-label="Interactive 3D representation of an RGB color cube scaling with intensity">
-                Your browser does not support the HTML canvas tag or JavaScript is disabled.
-            </canvas>
-        </div>
+        <label class="zoom-control">
+            Zoom: <input type="checkbox" id="zoom">
+        </label>
 
         <div id="pointer-display"></div>
     </main>
