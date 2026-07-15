@@ -222,6 +222,24 @@ canvas.addEventListener('mouseleave', () => {
     pointerDisplay.style.display = 'none';
 });
 
+// --- Interactive Scroll Logic (Global) ---
+window.addEventListener('wheel', (e) => {
+    // Prevent the default browser scrolling behavior globally
+    e.preventDefault();
+
+    // e.deltaY is negative when scrolling up, positive when scrolling down
+    if (e.deltaY < 0 && currentN < 15) {
+        currentN++;     // Scroll up -> Increase intensity
+    } else if (e.deltaY > 0 && currentN > 0) {
+        currentN--;     // Scroll down -> Decrease intensity
+    } else {
+        return;         // Stop execution if we hit the min/max limits
+    }
+
+    renderCoreSample(); // Update the visual pop on the core
+    requestRender();    // Redraw the 3D cube
+}, { passive: false }); // passive: false is required to allow preventDefault()
+
 // --- Event Handling via requestAnimationFrame ---
 function requestRender() {
     if (!renderPending) {
