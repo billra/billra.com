@@ -11,7 +11,7 @@ const CONFIG = {
 
 // --- State Management ---
 let currentLevel = CONFIG.MAX_LEVEL;
-let baseRay = [CONFIG.MAX_LEVEL, CONFIG.MAX_LEVEL, CONFIG.MAX_LEVEL]; // Defaults to the neutral axis
+let baseRay = [15, 7, 0];
 
 // --- DOM Elements ---
 const canvas = document.getElementById('colorCanvas');
