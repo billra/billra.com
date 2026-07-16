@@ -179,7 +179,7 @@ function draw() {
     renderPending = false;
     currentScene = generateSceneGraph(currentLevel, baseRay, zoomCheckbox.checked);
     renderScene(currentScene, ctx);
-    renderCoreSample(); // Keeps the core sample dimensions perfectly mirrored to the canvas geometry
+    renderCoreSample(); // Keeps the core sample updated with window size changes
 }
 
 function requestRender() {
@@ -193,13 +193,12 @@ function requestRender() {
 function renderCoreSample() {
     coreSampleContainer.innerHTML = '';
 
-    // Calculate the precise geometric tip-to-tip vertical height of the cube hex projection
-    const isZoomed = zoomCheckbox.checked;
-    const L = isZoomed ? CONFIG.edgeLength : (CONFIG.edgeLength * (currentLevel / CONFIG.MAX_LEVEL));
-    const cubeHeight = 2 * L;
+    // The core sample now ALWAYS represents the 100% scale max height based on window size.
+    // We completely ignore currentLevel and zoomCheckbox here to create a stable visual anchor.
+    const maxCubeHeight = 2 * CONFIG.edgeLength;
 
-    // Apply the structural height directly to matching layout properties
-    coreSampleContainer.style.height = `${cubeHeight}px`;
+    // Apply the fixed structural height directly
+    coreSampleContainer.style.height = `${maxCubeHeight}px`;
 
     for (let i = CONFIG.MAX_LEVEL; i >= 0; i--) {
         const r = Math.round((baseRay[0] * i) / CONFIG.MAX_LEVEL);
