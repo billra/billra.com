@@ -50,12 +50,34 @@ function handleResize() {
 window.addEventListener('resize', handleResize);
 
 // --- Math & Geometry Helpers ---
+/**
+ * Converts standard 0-255 RGB values into a shorthand 3-digit hex string (#RGB).
+ * * Why divide by 17?
+ * A short hex string uses 4 bits per color channel (0-15).
+ * A standard RGB color uses 8 bits per channel (0-255).
+ * To scale evenly from a max of 255 down to a max of 15, we use the ratio: 255 / 15 = 17.
+ * Therefore, valid inputs should always be exact multiples of 17 (0, 17, 34 ... 255).
+ */
 function rgbToShortHex(r, g, b) {
-    const toHex = (c) => {
-        const level = Math.round(c / 17); // 255 / 15 = 17
-        return Math.max(0, Math.min(15, level)).toString(16).toUpperCase();
+    const hexDigit = (c) => {
+        // Early detection for out-of-bounds values
+        if (c < 0 || c > 255) {
+            console.warn(`rgbToShortHex Warning: Value ${c} is out of 8-bit bounds (0-255).`);
+        }
+
+        // Early detection for values not aligned to the expected 16-level scale
+        if (c % 17 !== 0) {
+            console.warn(`rgbToShortHex Warning: Value ${c} is not a multiple of 17. Expected cleanly scaled integer.`);
+        }
+
+        // Map the 0-255 scale down to a 0-15 integer
+        const scaled = Math.floor(c / 17);
+
+        // Convert to base-16 and capitalize
+        return scaled.toString(16).toUpperCase();
     };
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+
+    return `#${hexDigit(r)}${hexDigit(g)}${hexDigit(b)}`;
 }
 
 // Ray-Casting algorithm to check if an (x,y) point is inside a polygon
