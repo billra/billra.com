@@ -179,6 +179,7 @@ function draw() {
     renderPending = false;
     currentScene = generateSceneGraph(currentLevel, baseRay, zoomCheckbox.checked);
     renderScene(currentScene, ctx);
+    renderCoreSample(); // Keeps the core sample dimensions perfectly mirrored to the canvas geometry
 }
 
 function requestRender() {
@@ -191,6 +192,14 @@ function requestRender() {
 // --- Rendering the Core Sample ---
 function renderCoreSample() {
     coreSampleContainer.innerHTML = '';
+
+    // Calculate the precise geometric tip-to-tip vertical height of the cube hex projection
+    const isZoomed = zoomCheckbox.checked;
+    const L = isZoomed ? CONFIG.edgeLength : (CONFIG.edgeLength * (currentLevel / CONFIG.MAX_LEVEL));
+    const cubeHeight = 2 * L;
+
+    // Apply the structural height directly to matching layout properties
+    coreSampleContainer.style.height = `${cubeHeight}px`;
 
     for (let i = CONFIG.MAX_LEVEL; i >= 0; i--) {
         const r = Math.round((baseRay[0] * i) / CONFIG.MAX_LEVEL);
@@ -210,7 +219,6 @@ function renderCoreSample() {
 
         block.addEventListener('click', () => {
             currentLevel = i;
-            renderCoreSample();
             requestRender();
         });
 
@@ -243,7 +251,6 @@ canvas.addEventListener('click', (e) => {
     baseRay[1] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((g * CONFIG.MAX_LEVEL) / currentLevel)));
     baseRay[2] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((b * CONFIG.MAX_LEVEL) / currentLevel)));
 
-    renderCoreSample();
     requestRender();
 });
 
@@ -279,11 +286,9 @@ window.addEventListener('wheel', (e) => {
         return;
     }
 
-    renderCoreSample();
     requestRender();
 }, { passive: false });
 
 // Initialize
 zoomCheckbox.addEventListener('change', requestRender);
-renderCoreSample();
 handleResize();

@@ -98,9 +98,8 @@ canvas {
     flex-direction: column;
     gap: 2px; /* Tight stack to look like a contiguous core */
     width: 60px;
-    height: 100%;
-    max-height: 600px; /* Constrain the height */
-    padding: 10px;
+    /* height is driven by JavaScript */
+    padding-inline: 10px; /* side padding */
 }
 
 .core-block {
