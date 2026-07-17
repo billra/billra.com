@@ -3,7 +3,7 @@
 <head>
     <title>Color Cube</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="3.3">
+    <meta name="version" content="3.4">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="colorcube.css">
@@ -19,11 +19,19 @@
     <main class="layout-container">
         <!--
           The ViewBox defines our internal 1000x800 coordinate system.
-          The browser natively scales this to fit the screen while maintaining aspect ratio.
+          The browser natively scales this to fit the screen while maintaining the aspect ratio.
         -->
         <svg id="app-svg" viewBox="0 0 1000 800" preserveAspectRatio="xMidYMid meet" aria-label="Interactive 3D representation of an RGB color cube">
             <g id="core-sample-group"></g>
             <g id="cube-group"></g>
+
+            <!-- Dynamic Hover Layer: Renders above the shapes but below the active highlights -->
+            <g id="hover-group">
+                <polygon id="hover-cube" class="hover-outline"></polygon>
+                <rect id="hover-core" class="hover-outline"></rect>
+            </g>
+
+            <!-- Foreground Highlight Layer: Ensures the white selection stroke is never clipped -->
             <g id="highlight-group"></g>
         </svg>
 

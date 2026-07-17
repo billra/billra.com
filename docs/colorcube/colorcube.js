@@ -1,10 +1,9 @@
 /// --- Configuration & Constants ---
 const CONFIG = {
-    // Fixed internal coordinate system
     viewBoxWidth: 1000,
     viewBoxHeight: 800,
     baseEdgeLength: 320,
-    LEVELS: 16,
+    LEVELS: 16, // Scale the resolution of the entire application
     get MAX_LEVEL() { return this.LEVELS - 1; },
     get MULTIPLIER() { return 255 / this.MAX_LEVEL; },
     SVG_NS: 'http://www.w3.org/2000/svg'
@@ -20,6 +19,8 @@ const svg = document.getElementById('app-svg');
 const coreGroup = document.getElementById('core-sample-group');
 const cubeGroup = document.getElementById('cube-group');
 const highlightGroup = document.getElementById('highlight-group');
+const hoverCube = document.getElementById('hover-cube');
+const hoverCore = document.getElementById('hover-core');
 const zoomCheckbox = document.getElementById('zoom');
 const pointerDisplay = document.getElementById('pointer-display');
 
@@ -29,38 +30,12 @@ const versionMeta = document.querySelector('meta[name="version"]');
 document.getElementById('version').textContent = `v${versionMeta.content}`;
 
 // --- Math Helpers ---
-/**
- * Converts standard 0-255 RGB values into a shorthand 3-digit hex string (#RGB).
- * * Why divide by 17?
- * A short hex string uses 4 bits per color channel (0-15).
- * A standard RGB color uses 8 bits per channel (0-255).
- * To scale evenly from a max of 255 down to a max of 15, we use the ratio: 255 / 15 = 17.
- * Therefore, valid inputs should always be exact multiples of 17 (0, 17, 34 ... 255).
- */
 function rgbToShortHex(r, g, b) {
-    const hexDigit = (c) => {
-        // Early detection for out-of-bounds values
-        if (c < 0 || c > 255) {
-            console.warn(`rgbToShortHex Warning: Value ${c} is out of 8-bit bounds (0-255).`);
-        }
-
-        // Early detection for values not aligned to the expected 16-level scale
-        if (c % 17 !== 0) {
-            console.warn(`rgbToShortHex Warning: Value ${c} is not a multiple of 17. Expected cleanly scaled integer.`);
-        }
-
-        // Map the 0-255 scale down to a 0-15 integer
-        const scaled = Math.floor(c / 17);
-
-        // Convert to base-16 and capitalize
-        return scaled.toString(16).toUpperCase();
-    };
-
+    const hexDigit = (c) => Math.floor(c / 17).toString(16).toUpperCase();
     return `#${hexDigit(r)}${hexDigit(g)}${hexDigit(b)}`;
 }
 
 // --- DOM Generators ---
-// Helper to create an SVG element with attributes
 function createSVGElement(tag, attributes = {}) {
     const el = document.createElementNS(CONFIG.SVG_NS, tag);
     for (const [key, value] of Object.entries(attributes)) {
@@ -71,7 +46,7 @@ function createSVGElement(tag, attributes = {}) {
 
 // --- Render Logic ---
 function renderScene() {
-    // Clear previous render
+    // Clear previous renders
     coreGroup.innerHTML = '';
     cubeGroup.innerHTML = '';
     highlightGroup.innerHTML = '';
@@ -88,8 +63,6 @@ function renderCoreSample() {
     const startX = 60;
     const startY = (CONFIG.viewBoxHeight - totalHeight) / 2;
 
-    let activeRect = null;
-
     for (let i = CONFIG.MAX_LEVEL; i >= 0; i--) {
         const r = Math.round((baseRay[0] * i) / CONFIG.MAX_LEVEL);
         const g = Math.round((baseRay[1] * i) / CONFIG.MAX_LEVEL);
@@ -102,7 +75,7 @@ function renderCoreSample() {
         const yPos = startY + ((CONFIG.MAX_LEVEL - i) * (blockSize + spacing));
         const hexColor = rgbToShortHex(dispR, dispG, dispB);
 
-const rect = createSVGElement('rect', {
+        const rect = createSVGElement('rect', {
             x: startX,
             y: yPos,
             width: blockSize,
@@ -113,28 +86,28 @@ const rect = createSVGElement('rect', {
             'data-hex': hexColor
         });
 
-        if (i === currentLevel) {
-            rect.classList.add('active-level');
-            activeRect = rect; // Hold onto the active block...
-        } else {
-            coreGroup.appendChild(rect); // ...and only append the inactive ones right now.
-        }
-    }
+        coreGroup.appendChild(rect);
 
-    // Append the active block once, at the very end, so it paints on top.
-    if (activeRect) {
-        coreGroup.appendChild(activeRect);
+        // Render the white active highlight purely in the foreground group
+        if (i === currentLevel) {
+            const highlight = createSVGElement('rect', {
+                x: startX,
+                y: yPos,
+                width: blockSize,
+                height: blockSize,
+                class: 'highlight-outline'
+            });
+            highlightGroup.appendChild(highlight);
+        }
     }
 }
 
 function renderCube() {
     const L = isZoomed ? CONFIG.baseEdgeLength : (CONFIG.baseEdgeLength * (currentLevel / CONFIG.MAX_LEVEL));
 
-    // Shift center slightly right to accommodate the core sample
     const cx = (CONFIG.viewBoxWidth / 2) + 60;
     const cy = CONFIG.viewBoxHeight / 2 - 20;
 
-    // Isometric Axes
     const axCyan = { x: L * Math.cos(7 * Math.PI / 6), y: L * Math.sin(7 * Math.PI / 6) };
     const axYellow = { x: L * Math.cos(11 * Math.PI / 6), y: L * Math.sin(11 * Math.PI / 6) };
     const axMagenta = { x: L * Math.cos(Math.PI / 2), y: L * Math.sin(Math.PI / 2) };
@@ -177,7 +150,6 @@ function renderCube() {
 
                 cubeGroup.appendChild(polygon);
 
-                // If active, clone the polygon into the highlight group so it renders on top
                 if (isActive) {
                     const highlight = createSVGElement('polygon', {
                         points: pointsStr,
@@ -189,15 +161,14 @@ function renderCube() {
         }
     }
 
-    // Build the 3 visible faces
     buildFace(axYellow, axMagenta, (i, j) => [currentLevel, currentLevel - j, currentLevel - i]); // Right
     buildFace(axCyan, axMagenta, (i, j) => [currentLevel - i, currentLevel - j, currentLevel]);   // Left
     buildFace(axCyan, axYellow, (i, j) => [currentLevel - i, currentLevel, currentLevel - j]);    // Top
 }
 
-// --- Interactive Logic (Event Delegation) ---
+// --- Interactive Logic ---
 
-// Core Sample Interactivity
+// Clicks: Core Sample
 coreGroup.addEventListener('click', (e) => {
     const block = e.target.closest('.core-block');
     if (!block) return;
@@ -206,14 +177,46 @@ coreGroup.addEventListener('click', (e) => {
     renderScene();
 });
 
-// --- Unified Tooltip Logic ---
-svg.addEventListener('pointerover', (e) => {
-    // Check if we are hovering over either a cube face or a core block
-    const target = e.target.closest('.cube-face, .core-block');
-    if (!target) return;
+// Clicks: Cube
+cubeGroup.addEventListener('click', (e) => {
+    if (currentLevel === 0) return;
 
-    pointerDisplay.innerText = target.getAttribute('data-hex');
-    pointerDisplay.style.display = 'block';
+    const face = e.target.closest('.cube-face');
+    if (!face) return;
+
+    const r = parseInt(face.getAttribute('data-r'), 10);
+    const g = parseInt(face.getAttribute('data-g'), 10);
+    const b = parseInt(face.getAttribute('data-b'), 10);
+
+    baseRay[0] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((r * CONFIG.MAX_LEVEL) / currentLevel)));
+    baseRay[1] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((g * CONFIG.MAX_LEVEL) / currentLevel)));
+    baseRay[2] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((b * CONFIG.MAX_LEVEL) / currentLevel)));
+
+    renderScene();
+});
+
+// Hovers & Tooltips (Delegated from the parent SVG)
+svg.addEventListener('pointerover', (e) => {
+    const face = e.target.closest('.cube-face');
+    const block = e.target.closest('.core-block');
+
+    if (face) {
+        hoverCube.setAttribute('points', face.getAttribute('points'));
+        hoverCube.style.opacity = '1';
+
+        pointerDisplay.innerText = face.getAttribute('data-hex');
+        pointerDisplay.style.display = 'block';
+    }
+    else if (block) {
+        hoverCore.setAttribute('x', block.getAttribute('x'));
+        hoverCore.setAttribute('y', block.getAttribute('y'));
+        hoverCore.setAttribute('width', block.getAttribute('width'));
+        hoverCore.setAttribute('height', block.getAttribute('height'));
+        hoverCore.style.opacity = '1';
+
+        pointerDisplay.innerText = block.getAttribute('data-hex');
+        pointerDisplay.style.display = 'block';
+    }
 });
 
 svg.addEventListener('pointermove', (e) => {
@@ -224,16 +227,18 @@ svg.addEventListener('pointermove', (e) => {
 });
 
 svg.addEventListener('pointerout', (e) => {
-    // Only hide the tooltip if we actually left a shape (prevents flickering between adjacent blocks)
+    // We only hide everything if the pointer actually left a valid shape,
+    // avoiding flicker when moving between adjacent blocks.
     const newTarget = e.relatedTarget?.closest('.cube-face, .core-block');
     if (!newTarget) {
         pointerDisplay.style.display = 'none';
+        hoverCube.style.opacity = '0';
+        hoverCore.style.opacity = '0';
     }
 });
 
 // Scroll Logic for Level Changes
 window.addEventListener('wheel', (e) => {
-    // Only intercept scroll if the mouse is over the SVG to avoid blocking page scroll unnecessarily
     if (!e.target.closest('svg')) return;
 
     e.preventDefault();
