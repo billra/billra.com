@@ -85,9 +85,10 @@ function renderCoreSample() {
     const spacing = 2;
     const totalHeight = CONFIG.LEVELS * (blockSize + spacing);
 
-    // Position on the left side, vertically centered
     const startX = 60;
     const startY = (CONFIG.viewBoxHeight - totalHeight) / 2;
+
+    let activeRect = null;
 
     for (let i = CONFIG.MAX_LEVEL; i >= 0; i--) {
         const r = Math.round((baseRay[0] * i) / CONFIG.MAX_LEVEL);
@@ -108,15 +109,20 @@ function renderCoreSample() {
             height: blockSize,
             fill: hexColor,
             class: 'core-block',
-            'data-level': i // Store data directly on the DOM node for event delegation
+            'data-level': i
         });
 
-        // Add visual pop for the active level
         if (i === currentLevel) {
             rect.classList.add('active-level');
+            activeRect = rect; // Hold onto the active block...
+        } else {
+            coreGroup.appendChild(rect); // ...and only append the inactive ones right now.
         }
+    }
 
-        coreGroup.appendChild(rect);
+    // Append the active block once, at the very end, so it paints on top.
+    if (activeRect) {
+        coreGroup.appendChild(activeRect);
     }
 }
 
