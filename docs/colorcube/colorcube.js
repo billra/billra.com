@@ -113,9 +113,7 @@ function renderCoreSample() {
 
         // Add visual pop for the active level
         if (i === currentLevel) {
-            rect.setAttribute('transform', `scale(1.3) translate(${startX * -0.23}, ${yPos * -0.23})`);
-            rect.style.stroke = '#fff';
-            rect.style.strokeWidth = '3px';
+            rect.classList.add('active-level');
         }
 
         coreGroup.appendChild(rect);
