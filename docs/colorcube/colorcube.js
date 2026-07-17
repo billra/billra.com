@@ -102,14 +102,15 @@ function renderCoreSample() {
         const yPos = startY + ((CONFIG.MAX_LEVEL - i) * (blockSize + spacing));
         const hexColor = rgbToShortHex(dispR, dispG, dispB);
 
-        const rect = createSVGElement('rect', {
+const rect = createSVGElement('rect', {
             x: startX,
             y: yPos,
             width: blockSize,
             height: blockSize,
             fill: hexColor,
             class: 'core-block',
-            'data-level': i
+            'data-level': i,
+            'data-hex': hexColor
         });
 
         if (i === currentLevel) {
@@ -205,42 +206,29 @@ coreGroup.addEventListener('click', (e) => {
     renderScene();
 });
 
-// Cube Interactivity
-cubeGroup.addEventListener('click', (e) => {
-    if (currentLevel === 0) return;
+// --- Unified Tooltip Logic ---
+svg.addEventListener('pointerover', (e) => {
+    // Check if we are hovering over either a cube face or a core block
+    const target = e.target.closest('.cube-face, .core-block');
+    if (!target) return;
 
-    const face = e.target.closest('.cube-face');
-    if (!face) return;
-
-    const r = parseInt(face.getAttribute('data-r'), 10);
-    const g = parseInt(face.getAttribute('data-g'), 10);
-    const b = parseInt(face.getAttribute('data-b'), 10);
-
-    baseRay[0] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((r * CONFIG.MAX_LEVEL) / currentLevel)));
-    baseRay[1] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((g * CONFIG.MAX_LEVEL) / currentLevel)));
-    baseRay[2] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((b * CONFIG.MAX_LEVEL) / currentLevel)));
-
-    renderScene();
-});
-
-// Tooltip Logic
-cubeGroup.addEventListener('pointerover', (e) => {
-    const face = e.target.closest('.cube-face');
-    if (!face) return;
-
-    pointerDisplay.innerText = face.getAttribute('data-hex');
+    pointerDisplay.innerText = target.getAttribute('data-hex');
     pointerDisplay.style.display = 'block';
 });
 
-cubeGroup.addEventListener('pointermove', (e) => {
+svg.addEventListener('pointermove', (e) => {
     if (pointerDisplay.style.display === 'block') {
         pointerDisplay.style.left = `${e.clientX + 15}px`;
         pointerDisplay.style.top = `${e.clientY + 15}px`;
     }
 });
 
-cubeGroup.addEventListener('pointerout', () => {
-    pointerDisplay.style.display = 'none';
+svg.addEventListener('pointerout', (e) => {
+    // Only hide the tooltip if we actually left a shape (prevents flickering between adjacent blocks)
+    const newTarget = e.relatedTarget?.closest('.cube-face, .core-block');
+    if (!newTarget) {
+        pointerDisplay.style.display = 'none';
+    }
 });
 
 // Scroll Logic for Level Changes

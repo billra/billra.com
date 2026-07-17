@@ -79,39 +79,43 @@ p {
     max-height: 75vh;
 }
 
-/* 3D Cube Faces */
+/* Unified Interactive Shapes */
+.cube-face, .core-block {
+    cursor: pointer; /* Standardized 'click' hand */
+    transition: filter 0.1s ease, stroke 0.1s ease, stroke-width 0.1s ease;
+}
+
+/* Identical hover brightness */
+.cube-face:hover, .core-block:hover {
+    filter: brightness(1.2);
+}
+
+/* 3D Cube Default */
 .cube-face {
     stroke: #000;
     stroke-width: 1px;
     stroke-linejoin: round;
-    cursor: crosshair;
-    transition: filter 0.1s ease;
 }
 
-.cube-face:hover {
-    filter: brightness(1.2);
-}
-
-/* Core Sample Blocks */
+/* Core Sample Default */
 .core-block {
     stroke: rgba(255, 255, 255, 0.1);
     stroke-width: 1px;
-    cursor: pointer;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), stroke 0.2s, stroke-width 0.2s;
-
-    /* These two properties ensure the SVG shape scales from its own center */
-    transform-box: fill-box;
-    transform-origin: center;
+    /* Removed scaling and transform origins */
 }
 
-.core-block:hover {
-    filter: brightness(1.2);
-}
-
-.core-block.active-level {
-    transform: scale(1.3);
+/* Active Highlight Styling */
+.core-block.active-level,
+.highlight-outline {
     stroke: #fff;
     stroke-width: 3px;
+    stroke-linejoin: round; /* Adding round joins to both makes the corners look softer and identical */
+}
+
+/* Keep the highlight transparent and non-blocking for the cube */
+.highlight-outline {
+    fill: none;
+    pointer-events: none;
 }
 
 /* Active Highlight Shapes */
