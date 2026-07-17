@@ -1,55 +1,34 @@
 /// --- Configuration & Constants ---
 const CONFIG = {
-    // Dynamic dimensions updated on window resize
-    logicalWidth: 800,
-    logicalHeight: 650,
-    edgeLength: 220,
-    LEVELS: 16, // Change to 8, 32, 64, etc. to scale the entire application
+    // Fixed internal coordinate system
+    viewBoxWidth: 1000,
+    viewBoxHeight: 800,
+    baseEdgeLength: 320,
+    LEVELS: 16,
     get MAX_LEVEL() { return this.LEVELS - 1; },
-    get MULTIPLIER() { return 255 / this.MAX_LEVEL; }
+    get MULTIPLIER() { return 255 / this.MAX_LEVEL; },
+    SVG_NS: 'http://www.w3.org/2000/svg'
 };
 
 // --- State Management ---
 let currentLevel = CONFIG.MAX_LEVEL;
 let baseRay = [15, 7, 0];
-let currentScene = []; // The declarative Scene Graph
+let isZoomed = false;
 
 // --- DOM Elements ---
-const canvas = document.getElementById('colorCanvas');
-const ctx = canvas.getContext('2d', { alpha: false }); // alpha: false optimizes rendering for an opaque background
+const svg = document.getElementById('app-svg');
+const coreGroup = document.getElementById('core-sample-group');
+const cubeGroup = document.getElementById('cube-group');
+const highlightGroup = document.getElementById('highlight-group');
 const zoomCheckbox = document.getElementById('zoom');
 const pointerDisplay = document.getElementById('pointer-display');
-const coreSampleContainer = document.getElementById('core-sample');
 
 // --- Inject Title and Version ---
 document.getElementById('page-title').textContent = document.title;
 const versionMeta = document.querySelector('meta[name="version"]');
 document.getElementById('version').textContent = `v${versionMeta.content}`;
 
-// --- Setup Responsive High-DPI Canvas ---
-const dpr = window.devicePixelRatio || 1;
-
-function handleResize() {
-    CONFIG.logicalWidth = window.innerWidth * 0.5;
-    CONFIG.logicalHeight = CONFIG.logicalWidth * 1.1;
-
-    // The maximum possible edge length at N = 15
-    CONFIG.edgeLength = CONFIG.logicalWidth * 0.45;
-
-    canvas.width = CONFIG.logicalWidth * dpr;
-    canvas.height = CONFIG.logicalHeight * dpr;
-    canvas.style.width = `${CONFIG.logicalWidth}px`;
-    canvas.style.height = `${CONFIG.logicalHeight}px`;
-
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(dpr, dpr);
-
-    requestRender();
-}
-
-window.addEventListener('resize', handleResize);
-
-// --- Math & Geometry Helpers ---
+// --- Math Helpers ---
 /**
  * Converts standard 0-255 RGB values into a shorthand 3-digit hex string (#RGB).
  * * Why divide by 17?
@@ -80,236 +59,207 @@ function rgbToShortHex(r, g, b) {
     return `#${hexDigit(r)}${hexDigit(g)}${hexDigit(b)}`;
 }
 
-// Ray-Casting algorithm to check if an (x,y) point is inside a polygon
-function pointInPolygon(point, vs) {
-    let x = point.x, y = point.y;
-    let inside = false;
-    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-        let xi = vs[i].x, yi = vs[i].y;
-        let xj = vs[j].x, yj = vs[j].y;
-        let intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-        if (intersect) inside = !inside;
+// --- DOM Generators ---
+// Helper to create an SVG element with attributes
+function createSVGElement(tag, attributes = {}) {
+    const el = document.createElementNS(CONFIG.SVG_NS, tag);
+    for (const [key, value] of Object.entries(attributes)) {
+        el.setAttribute(key, value);
     }
-    return inside;
+    return el;
 }
 
-// --- Scene Graph Generation (The Math) ---
-// Generates a pure array of polygon objects, decoupled from the canvas
-function generateSceneGraph(level, baseRay, isZoomed) {
-    const cells = [];
+// --- Render Logic ---
+function renderScene() {
+    // Clear previous render
+    coreGroup.innerHTML = '';
+    cubeGroup.innerHTML = '';
+    highlightGroup.innerHTML = '';
 
-    // Scale edge length based on zoom state
-    const L = isZoomed ? CONFIG.edgeLength : (CONFIG.edgeLength * (level / CONFIG.MAX_LEVEL));
-    const cx = CONFIG.logicalWidth / 2;
-    const cy = CONFIG.logicalHeight / 2 - (CONFIG.logicalHeight * 0.03);
-
-    // Isometric Axes
-    const axCyan = { x: L * Math.cos(7 * Math.PI / 6), y: L * Math.sin(7 * Math.PI / 6) };
-    const axYellow = { x: L * Math.cos(11 * Math.PI / 6), y: L * Math.sin(11 * Math.PI / 6) };
-    const axMagenta = { x: L * Math.cos(Math.PI / 2), y: L * Math.sin(Math.PI / 2) };
-
-    // Calculate the target RGB for the current intensity level to determine the active ray
-    const targetR = Math.round((baseRay[0] * level) / CONFIG.MAX_LEVEL);
-    const targetG = Math.round((baseRay[1] * level) / CONFIG.MAX_LEVEL);
-    const targetB = Math.round((baseRay[2] * level) / CONFIG.MAX_LEVEL);
-
-    function buildFace(uAx, vAx, colorFn, faceName) {
-        const steps = level + 1;
-
-        for (let i = 0; i <= level; i++) {
-            for (let j = 0; j <= level; j++) {
-                const u1 = i / steps, u2 = (i + 1) / steps;
-                const v1 = j / steps, v2 = (j + 1) / steps;
-
-                // 4 corners of the isometric polygon
-                const points = [
-                    { x: cx + u1*uAx.x + v1*vAx.x, y: cy + u1*uAx.y + v1*vAx.y },
-                    { x: cx + u2*uAx.x + v1*vAx.x, y: cy + u2*uAx.y + v1*vAx.y },
-                    { x: cx + u2*uAx.x + v2*vAx.x, y: cy + u2*uAx.y + v2*vAx.y },
-                    { x: cx + u1*uAx.x + v2*vAx.x, y: cy + u1*uAx.y + v2*vAx.y }
-                ];
-
-                const [r, g, b] = colorFn(i, j);
-                const isActive = (r === targetR && g === targetG && b === targetB);
-
-                // Display colors mapping purely to CSS RGB
-                const dispR = r * CONFIG.MULTIPLIER;
-                const dispG = g * CONFIG.MULTIPLIER;
-                const dispB = b * CONFIG.MULTIPLIER;
-
-                cells.push({
-                    points,
-                    rawRGB: [r, g, b],
-                    color: `rgb(${dispR},${dispG},${dispB})`,
-                    hex: rgbToShortHex(dispR, dispG, dispB),
-                    face: faceName,
-                    isActive
-                });
-            }
-        }
-    }
-
-    buildFace(axYellow, axMagenta, (i, j) => [level, level - j, level - i], 'right');
-    buildFace(axCyan, axMagenta, (i, j) => [level - i, level - j, level], 'left');
-    buildFace(axCyan, axYellow, (i, j) => [level - i, level, level - j], 'top');
-
-    return cells;
+    renderCoreSample();
+    renderCube();
 }
 
-// --- Rendering Logic (The Canvas) ---
-let renderPending = false;
-
-function drawPolygon(ctx, points) {
-    ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
-    ctx.lineTo(points[1].x, points[1].y);
-    ctx.lineTo(points[2].x, points[2].y);
-    ctx.lineTo(points[3].x, points[3].y);
-    ctx.closePath();
-}
-
-function renderScene(cells, ctx) {
-    // Fill the background black
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, CONFIG.logicalWidth, CONFIG.logicalHeight);
-
-    // LAYER 1: Draw the base cube faces and standard black grid
-    cells.forEach(cell => {
-        ctx.fillStyle = cell.color;
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 1;
-        ctx.lineJoin = 'round';
-
-        drawPolygon(ctx, cell.points);
-        ctx.fill();
-        ctx.stroke();
-    });
-
-    // LAYER 2: Draw highlights on top to prevent adjacent overlapping
-    const activeCells = cells.filter(cell => cell.isActive);
-    activeCells.forEach(cell => {
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 3;
-        ctx.lineJoin = 'round';
-
-        drawPolygon(ctx, cell.points);
-        ctx.stroke();
-    });
-}
-
-function draw() {
-    renderPending = false;
-    currentScene = generateSceneGraph(currentLevel, baseRay, zoomCheckbox.checked);
-    renderScene(currentScene, ctx);
-    renderCoreSample(); // Keeps the core sample updated with window size changes
-}
-
-function requestRender() {
-    if (!renderPending) {
-        renderPending = true;
-        requestAnimationFrame(draw);
-    }
-}
-
-// --- Rendering the Core Sample ---
 function renderCoreSample() {
-    coreSampleContainer.innerHTML = '';
+    const blockSize = 38;
+    const spacing = 2;
+    const totalHeight = CONFIG.LEVELS * (blockSize + spacing);
 
-    // The core sample now ALWAYS represents the 100% scale max height based on window size.
-    // We completely ignore currentLevel and zoomCheckbox here to create a stable visual anchor.
-    const maxCubeHeight = 2 * CONFIG.edgeLength;
-
-    // Apply the fixed structural height directly
-    coreSampleContainer.style.height = `${maxCubeHeight}px`;
+    // Position on the left side, vertically centered
+    const startX = 60;
+    const startY = (CONFIG.viewBoxHeight - totalHeight) / 2;
 
     for (let i = CONFIG.MAX_LEVEL; i >= 0; i--) {
         const r = Math.round((baseRay[0] * i) / CONFIG.MAX_LEVEL);
         const g = Math.round((baseRay[1] * i) / CONFIG.MAX_LEVEL);
         const b = Math.round((baseRay[2] * i) / CONFIG.MAX_LEVEL);
 
-        const block = document.createElement('div');
-        block.className = 'core-block';
+        const dispR = r * CONFIG.MULTIPLIER;
+        const dispG = g * CONFIG.MULTIPLIER;
+        const dispB = b * CONFIG.MULTIPLIER;
 
-        if (i === currentLevel) {
-            block.classList.add('active-level');
-        }
+        const yPos = startY + ((CONFIG.MAX_LEVEL - i) * (blockSize + spacing));
+        const hexColor = rgbToShortHex(dispR, dispG, dispB);
 
-        const hexColor = rgbToShortHex(r * CONFIG.MULTIPLIER, g * CONFIG.MULTIPLIER, b * CONFIG.MULTIPLIER);
-        block.style.backgroundColor = hexColor;
-        block.title = `${hexColor} (Level ${i})`;
-
-        block.addEventListener('click', () => {
-            currentLevel = i;
-            requestRender();
+        const rect = createSVGElement('rect', {
+            x: startX,
+            y: yPos,
+            width: blockSize,
+            height: blockSize,
+            fill: hexColor,
+            class: 'core-block',
+            'data-level': i // Store data directly on the DOM node for event delegation
         });
 
-        coreSampleContainer.appendChild(block);
+        // Add visual pop for the active level
+        if (i === currentLevel) {
+            rect.setAttribute('transform', `scale(1.3) translate(${startX * -0.23}, ${yPos * -0.23})`);
+            rect.style.stroke = '#fff';
+            rect.style.strokeWidth = '3px';
+        }
+
+        coreGroup.appendChild(rect);
     }
 }
 
-// --- Interactive Logic (Data-Driven Geometric Checks) ---
+function renderCube() {
+    const L = isZoomed ? CONFIG.baseEdgeLength : (CONFIG.baseEdgeLength * (currentLevel / CONFIG.MAX_LEVEL));
 
-// Helper to find which cell the mouse is over based on the scene graph
-function getCellAtMouse(e) {
-    const rect = canvas.getBoundingClientRect();
-    const cssX = e.clientX - rect.left;
-    const cssY = e.clientY - rect.top;
+    // Shift center slightly right to accommodate the core sample
+    const cx = (CONFIG.viewBoxWidth / 2) + 60;
+    const cy = CONFIG.viewBoxHeight / 2 - 20;
 
-    // Reverse the array so we check the top-most faces first (Painters Algorithm)
-    return currentScene.slice().reverse().find(cell => pointInPolygon({x: cssX, y: cssY}, cell.points));
+    // Isometric Axes
+    const axCyan = { x: L * Math.cos(7 * Math.PI / 6), y: L * Math.sin(7 * Math.PI / 6) };
+    const axYellow = { x: L * Math.cos(11 * Math.PI / 6), y: L * Math.sin(11 * Math.PI / 6) };
+    const axMagenta = { x: L * Math.cos(Math.PI / 2), y: L * Math.sin(Math.PI / 2) };
+
+    const targetR = Math.round((baseRay[0] * currentLevel) / CONFIG.MAX_LEVEL);
+    const targetG = Math.round((baseRay[1] * currentLevel) / CONFIG.MAX_LEVEL);
+    const targetB = Math.round((baseRay[2] * currentLevel) / CONFIG.MAX_LEVEL);
+
+    function buildFace(uAx, vAx, colorFn) {
+        const steps = currentLevel + 1;
+
+        for (let i = 0; i <= currentLevel; i++) {
+            for (let j = 0; j <= currentLevel; j++) {
+                const u1 = i / steps, u2 = (i + 1) / steps;
+                const v1 = j / steps, v2 = (j + 1) / steps;
+
+                const p1 = `${cx + u1*uAx.x + v1*vAx.x},${cy + u1*uAx.y + v1*vAx.y}`;
+                const p2 = `${cx + u2*uAx.x + v1*vAx.x},${cy + u2*uAx.y + v1*vAx.y}`;
+                const p3 = `${cx + u2*uAx.x + v2*vAx.x},${cy + u2*uAx.y + v2*vAx.y}`;
+                const p4 = `${cx + u1*uAx.x + v2*vAx.x},${cy + u1*uAx.y + v2*vAx.y}`;
+                const pointsStr = `${p1} ${p2} ${p3} ${p4}`;
+
+                const [r, g, b] = colorFn(i, j);
+                const isActive = (r === targetR && g === targetG && b === targetB);
+
+                const dispR = r * CONFIG.MULTIPLIER;
+                const dispG = g * CONFIG.MULTIPLIER;
+                const dispB = b * CONFIG.MULTIPLIER;
+                const hexColor = rgbToShortHex(dispR, dispG, dispB);
+
+                const polygon = createSVGElement('polygon', {
+                    points: pointsStr,
+                    fill: `rgb(${dispR},${dispG},${dispB})`,
+                    class: 'cube-face',
+                    'data-r': r,
+                    'data-g': g,
+                    'data-b': b,
+                    'data-hex': hexColor
+                });
+
+                cubeGroup.appendChild(polygon);
+
+                // If active, clone the polygon into the highlight group so it renders on top
+                if (isActive) {
+                    const highlight = createSVGElement('polygon', {
+                        points: pointsStr,
+                        class: 'highlight-outline'
+                    });
+                    highlightGroup.appendChild(highlight);
+                }
+            }
+        }
+    }
+
+    // Build the 3 visible faces
+    buildFace(axYellow, axMagenta, (i, j) => [currentLevel, currentLevel - j, currentLevel - i]); // Right
+    buildFace(axCyan, axMagenta, (i, j) => [currentLevel - i, currentLevel - j, currentLevel]);   // Left
+    buildFace(axCyan, axYellow, (i, j) => [currentLevel - i, currentLevel, currentLevel - j]);    // Top
 }
 
-canvas.addEventListener('click', (e) => {
+// --- Interactive Logic (Event Delegation) ---
+
+// Core Sample Interactivity
+coreGroup.addEventListener('click', (e) => {
+    const block = e.target.closest('.core-block');
+    if (!block) return;
+
+    currentLevel = parseInt(block.getAttribute('data-level'), 10);
+    renderScene();
+});
+
+// Cube Interactivity
+cubeGroup.addEventListener('click', (e) => {
     if (currentLevel === 0) return;
 
-    const clickedCell = getCellAtMouse(e);
-    if (!clickedCell) return;
+    const face = e.target.closest('.cube-face');
+    if (!face) return;
 
-    // Mathematics of the Ray: Extrapolate the base color using the clicked cell's raw RGB data
-    const [r, g, b] = clickedCell.rawRGB;
+    const r = parseInt(face.getAttribute('data-r'), 10);
+    const g = parseInt(face.getAttribute('data-g'), 10);
+    const b = parseInt(face.getAttribute('data-b'), 10);
 
     baseRay[0] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((r * CONFIG.MAX_LEVEL) / currentLevel)));
     baseRay[1] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((g * CONFIG.MAX_LEVEL) / currentLevel)));
     baseRay[2] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((b * CONFIG.MAX_LEVEL) / currentLevel)));
 
-    requestRender();
+    renderScene();
 });
 
-canvas.addEventListener('mousemove', (e) => {
-    const hoveredCell = getCellAtMouse(e);
+// Tooltip Logic
+cubeGroup.addEventListener('pointerover', (e) => {
+    const face = e.target.closest('.cube-face');
+    if (!face) return;
 
-    if (!hoveredCell) {
-        pointerDisplay.style.display = 'none';
-        canvas.style.cursor = 'default';
-        return;
-    }
-
-    canvas.style.cursor = 'crosshair';
-    pointerDisplay.innerText = hoveredCell.hex;
+    pointerDisplay.innerText = face.getAttribute('data-hex');
     pointerDisplay.style.display = 'block';
-    pointerDisplay.style.left = `${e.clientX + 15}px`;
-    pointerDisplay.style.top = `${e.clientY + 15}px`;
 });
 
-canvas.addEventListener('mouseleave', () => {
+cubeGroup.addEventListener('pointermove', (e) => {
+    if (pointerDisplay.style.display === 'block') {
+        pointerDisplay.style.left = `${e.clientX + 15}px`;
+        pointerDisplay.style.top = `${e.clientY + 15}px`;
+    }
+});
+
+cubeGroup.addEventListener('pointerout', () => {
     pointerDisplay.style.display = 'none';
 });
 
-// --- Scroll Logic ---
+// Scroll Logic for Level Changes
 window.addEventListener('wheel', (e) => {
+    // Only intercept scroll if the mouse is over the SVG to avoid blocking page scroll unnecessarily
+    if (!e.target.closest('svg')) return;
+
     e.preventDefault();
 
     if (e.deltaY < 0 && currentLevel < CONFIG.MAX_LEVEL) {
         currentLevel++;
+        renderScene();
     } else if (e.deltaY > 0 && currentLevel > 0) {
         currentLevel--;
-    } else {
-        return;
+        renderScene();
     }
-
-    requestRender();
 }, { passive: false });
 
-// Initialize
-zoomCheckbox.addEventListener('change', requestRender);
-handleResize();
+// Zoom Toggle
+zoomCheckbox.addEventListener('change', (e) => {
+    isZoomed = e.target.checked;
+    renderScene();
+});
+
+// --- Initialization ---
+renderScene();
