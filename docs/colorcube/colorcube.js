@@ -262,8 +262,8 @@ svg.addEventListener('pointerover', (e) => {
 
 svg.addEventListener('pointermove', (e) => {
     if (pointerDisplay.style.display === 'block') {
-        pointerDisplay.style.left = `${e.clientX + 15}px`;
-        pointerDisplay.style.top = `${e.clientY + 15}px`;
+        pointerDisplay.style.left = `${e.clientX}px`;
+        pointerDisplay.style.top = `${e.clientY}px`;
     }
 });
 

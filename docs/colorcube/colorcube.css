@@ -134,4 +134,5 @@ p {
     font-size: 1rem;
     font-weight: bold;
     z-index: 100;
+    transform: translate(15px, 15px); /* Offset from the exact cursor coordinate */
 }
