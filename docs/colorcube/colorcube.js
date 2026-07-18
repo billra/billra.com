@@ -3,6 +3,7 @@ const CONFIG = {
     viewBoxWidth: 1000,
     viewBoxHeight: 800,
     baseEdgeLength: 320,
+    layoutOffsetX: 60,
     LEVELS: 16, // Scale the resolution of the entire application (e.g., 8, 32, 64)
     get MAX_LEVEL() { return this.LEVELS - 1; },
     get MULTIPLIER() { return 255 / this.MAX_LEVEL; },
@@ -67,7 +68,7 @@ function renderCoreSample() {
     const totalHeight = CONFIG.LEVELS * (blockSize + spacing);
 
     // Position on the left side, vertically centered
-    const startX = 60;
+    const startX = CONFIG.layoutOffsetX;
     const startY = (CONFIG.viewBoxHeight - totalHeight) / 2;
 
     for (let i = CONFIG.MAX_LEVEL; i >= 0; i--) {
@@ -114,7 +115,7 @@ function renderCube() {
     const L = isZoomed ? CONFIG.baseEdgeLength : (CONFIG.baseEdgeLength * (currentLevel / CONFIG.MAX_LEVEL));
 
     // Shift center slightly right to accommodate the core sample
-    const cx = (CONFIG.viewBoxWidth / 2) + 60;
+    const cx = (CONFIG.viewBoxWidth / 2) + CONFIG.layoutOffsetX;
     const cy = CONFIG.viewBoxHeight / 2 - 20;
 
     // Isometric Axes Math
