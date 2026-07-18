@@ -5,18 +5,12 @@
 
 :root {
     /* --- Palette --- */
-    --color-bg: #000;
-    --color-black: #000;
-    --color-white: #fff;
     --color-white-alpha: rgba(255, 255, 255, 0.1);
-    --color-tooltip-bg: rgba(0, 0, 0, 0.85);
-    --color-tooltip-border: #333;
 
     /* --- Typography --- */
     --text-primary: #eee;
     --text-secondary: #888;
     --font-main: Arial, sans-serif;
-    --font-mono: monospace;
 
     /* --- Geometry --- */
     --stroke-thin: 1px;
@@ -26,7 +20,7 @@
 body {
     margin: 0;
     padding: 0;
-    background-color: var(--color-bg);
+    background-color: black;
     color: var(--text-primary);
     font-family: var(--font-main);
     display: flex;
@@ -99,7 +93,7 @@ p {
 }
 
 .cube-face {
-    stroke: var(--color-black);
+    stroke: black;
     stroke-width: var(--stroke-thin);
     stroke-linejoin: round;
 }
@@ -116,7 +110,7 @@ p {
     stroke-linejoin: round;
 
     /* A tight black drop-shadow ensures perfect contrast against bright white blocks */
-    filter: drop-shadow(0px 0px 2px var(--color-black));
+    filter: drop-shadow(0px 0px 2px black);
 }
 
 .hover-outline {
@@ -129,25 +123,23 @@ p {
 }
 
 .highlight-outline {
-    stroke: var(--color-white);
+    stroke: white;
     stroke-width: var(--stroke-thick);
 }
 
 /* Tooltip Overlay */
 #pointer-display {
-    background-color: var(--color-tooltip-bg);
-    border: var(--stroke-thin) solid var(--color-tooltip-border);
-    color: var(--color-white);
+    background-color: rgba(0, 0, 0, 0.60);
+    border: var(--stroke-thin) solid #333;
+    color: white;
     border-radius: 4px;
     padding: 6px 10px;
     position: fixed;
     pointer-events: none; /* Prevents the tooltip from blocking hover events */
     display: none;
-    font-family: var(--font-mono);
+    font-family: monospace;
     font-size: 1rem;
     font-weight: bold;
     z-index: 100;
-
-    /* Offset from the exact cursor coordinate calculated in JS */
-    transform: translate(15px, 15px);
+    transform: translate(15px, 15px); /* Offset from the exact cursor coordinate calculated in JS */
 }
