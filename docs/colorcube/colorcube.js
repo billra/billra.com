@@ -4,11 +4,13 @@ const CONFIG = {
     viewBoxHeight: 800,
     baseEdgeLength: 320,
     layoutOffsetX: 60,
-    LEVELS: 16,
-    get MAX_LEVEL() { return this.LEVELS - 1; },
-    get COLOR_SCALE_FACTOR() { return 255 / this.MAX_LEVEL; },
-    SVG_NS: 'http://www.w3.org/2000/svg'
+    levels: 16,
+    svgNs: 'http://www.w3.org/2000/svg'
 };
+
+// Computed configuration constants
+CONFIG.maxLevel = CONFIG.levels - 1;
+CONFIG.colorScaleFactor = 255 / CONFIG.maxLevel;
 
 // Isometric Math Constants (Computed once)
 const ANGLE_CYAN_RAD = 7 * Math.PI / 6;
@@ -25,7 +27,7 @@ const AXES = {
 // Single source of truth. Contains both logical data and pointer state to allow
 // unidirectional data flow and guarantee perfectly accurate hover states.
 const state = new Proxy({
-    level: CONFIG.MAX_LEVEL,
+    level: CONFIG.maxLevel,
     baseRay: [15, 7, 0],
     isZoomed: false,
     pointerX: -1,
@@ -35,8 +37,8 @@ const state = new Proxy({
         if (target[property] === value) return true;
 
         // Fail Fast: Enforce strict preconditions on state data
-        if (property === 'level' && (!Number.isInteger(value) || value < 0 || value > CONFIG.MAX_LEVEL)) {
-            throw new RangeError(`Invalid level: ${value}. Must be an integer between 0 and ${CONFIG.MAX_LEVEL}.`);
+        if (property === 'level' && (!Number.isInteger(value) || value < 0 || value > CONFIG.maxLevel)) {
+            throw new RangeError(`Invalid level: ${value}. Must be an integer between 0 and ${CONFIG.maxLevel}.`);
         }
         if (property === 'baseRay' && (!Array.isArray(value) || value.length !== 3)) {
             throw new TypeError('baseRay must be an array of three numeric values.');
@@ -77,7 +79,11 @@ const state = new Proxy({
 // Pre-allocated SVG nodes. We update their attributes rather than destroying the DOM.
 const elementPool = {
     coreBlocks: [],
-    cubePolygons: []
+    cubePolygons: [],
+    overlays: {
+        highlight: {},
+        hover: {}
+    }
 };
 
 const svg = document.getElementById('app-svg');
@@ -95,6 +101,19 @@ const versionMeta = document.querySelector('meta[name="version"]');
 document.getElementById('version').textContent = `v${versionMeta.content}`;
 
 // --- Math & String Helpers ---
+
+/**
+ * Scales a 3-component color ray from a source resolution to a target resolution.
+ * Ensures output is always bounded within the 0 to CONFIG.maxLevel range.
+ */
+function scaleRay(ray, sourceLevel, targetLevel) {
+    if (sourceLevel === 0) return [0, 0, 0];
+    return ray.map(val => {
+        const scaled = Math.round((val * targetLevel) / sourceLevel);
+        return Math.min(CONFIG.maxLevel, Math.max(0, scaled));
+    });
+}
+
 /**
  * Converts standard 0-255 RGB values into a hex string. Returns a compact
  * 3-digit format (#RGB) if possible, otherwise falls back to the standard
@@ -116,7 +135,7 @@ function rgbToHex(r, g, b) {
 }
 
 function createSVGElement(tag, attributes = {}) {
-    const el = document.createElementNS(CONFIG.SVG_NS, tag);
+    const el = document.createElementNS(CONFIG.svgNs, tag);
     for (const [key, value] of Object.entries(attributes)) {
         el.setAttribute(key, value);
     }
@@ -126,7 +145,7 @@ function createSVGElement(tag, attributes = {}) {
 // --- Initialization (Upfront Allocation) ---
 function initScene() {
     // 1. Allocate Core Blocks (Max Level)
-    for (let i = CONFIG.MAX_LEVEL; i >= 0; i--) {
+    for (let i = CONFIG.maxLevel; i >= 0; i--) {
         const rect = createSVGElement('rect', {
             class: 'core-block',
             'data-action': 'setLevel',
@@ -138,8 +157,8 @@ function initScene() {
 
     // 2. Allocate Cube Polygons (Max Matrix for 3 Faces)
     const createFacePool = (faceId, uAxis, vAxis, colorFn) => {
-        for (let i = 0; i <= CONFIG.MAX_LEVEL; i++) {
-            for (let j = 0; j <= CONFIG.MAX_LEVEL; j++) {
+        for (let i = 0; i <= CONFIG.maxLevel; i++) {
+            for (let j = 0; j <= CONFIG.maxLevel; j++) {
                 const poly = createSVGElement('polygon', {
                     class: 'cube-face',
                     'data-action': 'setBaseRay'
@@ -155,38 +174,63 @@ function initScene() {
     createFacePool('left', AXES.cyan, AXES.magenta, (lvl, i, j) => [lvl - i, lvl - j, lvl]);
     createFacePool('top', AXES.cyan, AXES.yellow, (lvl, i, j) => [lvl - i, lvl, lvl - j]);
 
+    // 3. Allocate Stacked Overlays for Highlighting and Hovering (Replaces filter: drop-shadow)
+    const createOverlay = (tag, type, container) => {
+        const bg = createSVGElement(tag, { class: `${type}-bg`, style: 'display: none;' });
+        const fg = createSVGElement(tag, { class: `${type}-fg`, style: 'display: none;' });
+        container.appendChild(bg);
+        container.appendChild(fg);
+        return { bg, fg };
+    };
+
+    elementPool.overlays.highlight.rect = createOverlay('rect', 'highlight', highlightGroup);
+    elementPool.overlays.highlight.polygon = createOverlay('polygon', 'highlight', highlightGroup);
+    elementPool.overlays.hover.rect = createOverlay('rect', 'hover', hoverGroup);
+    elementPool.overlays.hover.polygon = createOverlay('polygon', 'hover', hoverGroup);
+
     // Apply the initial visual state
     updateScene();
 }
 
 // --- Render Updates ---
 function updateScene() {
-    // Clearing 4 highlight elements is cheap enough that pooling them adds unnecessary complexity.
-    highlightGroup.innerHTML = '';
     updateCoreSample();
     updateCube();
+}
+
+function hideOverlay(overlay) {
+    overlay.bg.style.display = 'none';
+    overlay.fg.style.display = 'none';
+}
+
+function showOverlay(overlay, attributes) {
+    for (const [key, val] of Object.entries(attributes)) {
+        overlay.bg.setAttribute(key, val);
+        overlay.fg.setAttribute(key, val);
+    }
+    overlay.bg.style.display = '';
+    overlay.fg.style.display = '';
 }
 
 function updateCoreSample() {
     const blockSize = 38;
     const spacing = 2;
-    const totalHeight = CONFIG.LEVELS * (blockSize + spacing);
+    const totalHeight = CONFIG.levels * (blockSize + spacing);
     const startX = CONFIG.layoutOffsetX;
     const startY = (CONFIG.viewBoxHeight - totalHeight) / 2;
+
+    hideOverlay(elementPool.overlays.highlight.rect);
 
     for (const item of elementPool.coreBlocks) {
         const i = item.logicalLevel;
         const dom = item.dom;
 
-        const r = Math.round((state.baseRay[0] * i) / CONFIG.MAX_LEVEL);
-        const g = Math.round((state.baseRay[1] * i) / CONFIG.MAX_LEVEL);
-        const b = Math.round((state.baseRay[2] * i) / CONFIG.MAX_LEVEL);
+        const [r, g, b] = scaleRay(state.baseRay, CONFIG.maxLevel, i);
+        const dispR = r * CONFIG.colorScaleFactor;
+        const dispG = g * CONFIG.colorScaleFactor;
+        const dispB = b * CONFIG.colorScaleFactor;
 
-        const dispR = r * CONFIG.COLOR_SCALE_FACTOR;
-        const dispG = g * CONFIG.COLOR_SCALE_FACTOR;
-        const dispB = b * CONFIG.COLOR_SCALE_FACTOR;
-
-        const yPos = startY + ((CONFIG.MAX_LEVEL - i) * (blockSize + spacing));
+        const yPos = startY + ((CONFIG.maxLevel - i) * (blockSize + spacing));
         const hexColor = rgbToHex(dispR, dispG, dispB);
 
         dom.setAttribute('x', startX);
@@ -197,23 +241,22 @@ function updateCoreSample() {
         dom.dataset.hex = hexColor;
 
         if (i === state.level) {
-            const highlight = dom.cloneNode();
-            highlight.setAttribute('class', 'highlight-outline');
-            highlight.removeAttribute('fill');
-            highlightGroup.appendChild(highlight);
+            showOverlay(elementPool.overlays.highlight.rect, {
+                x: startX, y: yPos, width: blockSize, height: blockSize
+            });
         }
     }
 }
 
 function updateCube() {
-    const edgeLength = state.isZoomed ? CONFIG.baseEdgeLength : (CONFIG.baseEdgeLength * (state.level / CONFIG.MAX_LEVEL));
+    const edgeLength = state.isZoomed ? CONFIG.baseEdgeLength : (CONFIG.baseEdgeLength * (state.level / CONFIG.maxLevel));
     const centerX = (CONFIG.viewBoxWidth / 2) + CONFIG.layoutOffsetX;
     const centerY = CONFIG.viewBoxHeight / 2 - 20;
 
-    const targetR = Math.round((state.baseRay[0] * state.level) / CONFIG.MAX_LEVEL);
-    const targetG = Math.round((state.baseRay[1] * state.level) / CONFIG.MAX_LEVEL);
-    const targetB = Math.round((state.baseRay[2] * state.level) / CONFIG.MAX_LEVEL);
+    const targetRay = scaleRay(state.baseRay, CONFIG.maxLevel, state.level);
     const steps = state.level + 1;
+
+    hideOverlay(elementPool.overlays.highlight.polygon);
 
     for (const item of elementPool.cubePolygons) {
         const { dom, i, j, uAxis, vAxis, colorFn } = item;
@@ -241,13 +284,14 @@ function updateCube() {
         const p4X = centerX + (u1 * uAxis.x + v2 * vAxis.x) * edgeLength;
         const p4Y = centerY + (u1 * uAxis.y + v2 * vAxis.y) * edgeLength;
 
+        const pointsAttr = `${p1X},${p1Y} ${p2X},${p2Y} ${p3X},${p3Y} ${p4X},${p4Y}`;
         const [r, g, b] = colorFn(state.level, i, j);
-        const dispR = r * CONFIG.COLOR_SCALE_FACTOR;
-        const dispG = g * CONFIG.COLOR_SCALE_FACTOR;
-        const dispB = b * CONFIG.COLOR_SCALE_FACTOR;
+        const dispR = r * CONFIG.colorScaleFactor;
+        const dispG = g * CONFIG.colorScaleFactor;
+        const dispB = b * CONFIG.colorScaleFactor;
         const hexColor = rgbToHex(dispR, dispG, dispB);
 
-        dom.setAttribute('points', `${p1X},${p1Y} ${p2X},${p2Y} ${p3X},${p3Y} ${p4X},${p4Y}`);
+        dom.setAttribute('points', pointsAttr);
         dom.setAttribute('fill', hexColor);
 
         dom.dataset.r = r;
@@ -255,29 +299,34 @@ function updateCube() {
         dom.dataset.b = b;
         dom.dataset.hex = hexColor;
 
-        if (r === targetR && g === targetG && b === targetB) {
-            const highlight = dom.cloneNode();
-            highlight.setAttribute('class', 'highlight-outline');
-            highlight.removeAttribute('fill');
-            highlightGroup.appendChild(highlight);
+        if (r === targetRay[0] && g === targetRay[1] && b === targetRay[2]) {
+            showOverlay(elementPool.overlays.highlight.polygon, { points: pointsAttr });
         }
     }
 }
 
 // --- Hover State Management ---
 function updateHoverUI(target) {
-    hoverGroup.innerHTML = '';
+    hideOverlay(elementPool.overlays.hover.rect);
+    hideOverlay(elementPool.overlays.hover.polygon);
 
     if (!target) {
         pointerDisplay.style.display = 'none';
         return;
     }
 
-    const clone = target.cloneNode();
-    clone.setAttribute('class', 'hover-outline');
-    clone.removeAttribute('fill');
-    clone.style.display = ''; // Ensure the clone doesn't copy 'display: none'
-    hoverGroup.appendChild(clone);
+    if (target.tagName === 'rect') {
+        showOverlay(elementPool.overlays.hover.rect, {
+            x: target.getAttribute('x'),
+            y: target.getAttribute('y'),
+            width: target.getAttribute('width'),
+            height: target.getAttribute('height')
+        });
+    } else if (target.tagName === 'polygon') {
+        showOverlay(elementPool.overlays.hover.polygon, {
+            points: target.getAttribute('points')
+        });
+    }
 
     // Reposition using the exact state coordinates
     pointerDisplay.innerText = target.dataset.hex;
@@ -309,8 +358,7 @@ const INTERACTION_HANDLERS = {
         const g = parseInt(target.dataset.g, 10);
         const b = parseInt(target.dataset.b, 10);
 
-        const scale = (val) => Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((val * CONFIG.MAX_LEVEL) / state.level)));
-        state.baseRay = [scale(r), scale(g), scale(b)];
+        state.baseRay = scaleRay([r, g, b], state.level, CONFIG.maxLevel);
     }
 };
 
@@ -336,7 +384,7 @@ window.addEventListener('wheel', (e) => {
     if (!e.target.closest('svg')) return;
     e.preventDefault();
 
-    if (e.deltaY < 0 && state.level < CONFIG.MAX_LEVEL) state.level++;
+    if (e.deltaY < 0 && state.level < CONFIG.maxLevel) state.level++;
     else if (e.deltaY > 0 && state.level > 0) state.level--;
 }, { passive: false });
 
