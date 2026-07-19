@@ -18,7 +18,12 @@ let mouseX = -1; // Tracks global X coordinate for layout change evaluations
 let mouseY = -1; // Tracks global Y coordinate for layout change evaluations
 
 // --- DOM Elements ---
+// --- DOM Elements ---
 const svg = document.getElementById('app-svg');
+svg.setAttribute(
+    'viewBox',
+    `0 0 ${CONFIG.viewBoxWidth} ${CONFIG.viewBoxHeight}`
+);
 const coreGroup = document.getElementById('core-sample-group');
 const cubeGroup = document.getElementById('cube-group');
 const highlightGroup = document.getElementById('highlight-group');
