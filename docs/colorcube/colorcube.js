@@ -93,7 +93,8 @@ function renderCoreSample() {
             width: blockSize,
             height: blockSize,
             fill: hexColor,
-            class: 'core-block interactive-shape',
+            class: 'core-block', // styling
+            'data-action': 'setLevel', // action
             'data-level': i,
             'data-hex': hexColor
         });
@@ -152,7 +153,8 @@ function renderCube() {
                 const polygon = createSVGElement('polygon', {
                     points: pointsStr,
                     fill: `rgb(${dispR},${dispG},${dispB})`,
-                    class: 'cube-face interactive-shape',
+                    class: 'cube-face', // styling
+                    'data-action': 'setBaseRay', // action
                     'data-r': r,
                     'data-g': g,
                     'data-b': b,
@@ -193,10 +195,9 @@ function updateHoverUI(target) {
     const clone = target.cloneNode();
     clone.setAttribute('class', 'hover-outline');
     clone.removeAttribute('fill');
-
     hoverGroup.appendChild(clone);
 
-    pointerDisplay.innerText = target.getAttribute('data-hex');
+    pointerDisplay.innerText = target.dataset.hex; // dataset API
     pointerDisplay.style.display = 'block';
 }
 
@@ -212,39 +213,48 @@ function refreshHoverState() {
 
 // --- Interactive Events ---
 
+// 1. Define the behaviors based on data-actions
+const INTERACTION_HANDLERS = {
+    setLevel: (target) => {
+        currentLevel = parseInt(target.dataset.level, 10);
+    },
+    setBaseRay: (target) => {
+        if (currentLevel === 0) return;
+
+        const r = parseInt(target.dataset.r, 10);
+        const g = parseInt(target.dataset.g, 10);
+        const b = parseInt(target.dataset.b, 10);
+
+        // Concise scaling function to clean up the math
+        const scale = (val) => Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((val * CONFIG.MAX_LEVEL) / currentLevel)));
+
+        baseRay = [scale(r), scale(g), scale(b)];
+    }
+};
+
 // Global mouse tracker (needed for refreshHoverState)
 window.addEventListener('pointermove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
 });
 
-// Clicks: Unified Core Sample & Cube handling
+// 2. The unified click dispatcher
 svg.addEventListener('click', (e) => {
-    const target = e.target.closest('.interactive-shape');
+    const target = e.target.closest('[data-action]');
     if (!target) return;
 
-    if (target.classList.contains('core-block')) {
-        currentLevel = parseInt(target.getAttribute('data-level'), 10);
-    } else if (target.classList.contains('cube-face')) {
-        if (currentLevel === 0) return;
+    const action = target.dataset.action;
 
-        const r = parseInt(target.getAttribute('data-r'), 10);
-        const g = parseInt(target.getAttribute('data-g'), 10);
-        const b = parseInt(target.getAttribute('data-b'), 10);
-
-        baseRay[0] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((r * CONFIG.MAX_LEVEL) / currentLevel)));
-        baseRay[1] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((g * CONFIG.MAX_LEVEL) / currentLevel)));
-        baseRay[2] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((b * CONFIG.MAX_LEVEL) / currentLevel)));
+    // Execute the bound action if it exists
+    if (INTERACTION_HANDLERS[action]) {
+        INTERACTION_HANDLERS[action](target);
+        renderScene();
+        refreshHoverState();
     }
-
-    renderScene();
-    refreshHoverState(); // Re-evaluate hover state since layout/active highlights changed
 });
 
-
-// Hovers & Tooltips (Delegated from the parent SVG)
 svg.addEventListener('pointerover', (e) => {
-    updateHoverUI(e.target.closest('.interactive-shape'));
+    updateHoverUI(e.target.closest('[data-action]'));
 });
 
 svg.addEventListener('pointermove', (e) => {
@@ -256,7 +266,7 @@ svg.addEventListener('pointermove', (e) => {
 
 svg.addEventListener('pointerout', (e) => {
     // We only hide everything if the pointer actually left a valid shape entirely
-    const newTarget = e.relatedTarget?.closest('.interactive-shape');
+    const newTarget = e.relatedTarget?.closest('[data-action]');
     if (!newTarget) {
         updateHoverUI(null);
     }

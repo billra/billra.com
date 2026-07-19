@@ -87,7 +87,7 @@ p {
 }
 
 /* Base Interactive Shapes */
-.interactive-shape {
+[data-action] {
     cursor: pointer;
 }
 
