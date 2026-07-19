@@ -4,31 +4,68 @@ const CONFIG = {
     viewBoxHeight: 800,
     baseEdgeLength: 320,
     layoutOffsetX: 60,
-    LEVELS: 16, // Scale the resolution of the entire application (e.g., 8, 32, 64)
+    LEVELS: 16,
     get MAX_LEVEL() { return this.LEVELS - 1; },
-    get MULTIPLIER() { return 255 / this.MAX_LEVEL; },
+    get COLOR_SCALE_FACTOR() { return 255 / this.MAX_LEVEL; },
     SVG_NS: 'http://www.w3.org/2000/svg'
 };
 
+// Isometric Math Constants (Computed once)
+const ANGLE_CYAN_RAD = 7 * Math.PI / 6;
+const ANGLE_YELLOW_RAD = 11 * Math.PI / 6;
+const ANGLE_MAGENTA_RAD = Math.PI / 2;
+
+const AXES = {
+    cyan: { x: Math.cos(ANGLE_CYAN_RAD), y: Math.sin(ANGLE_CYAN_RAD) },
+    yellow: { x: Math.cos(ANGLE_YELLOW_RAD), y: Math.sin(ANGLE_YELLOW_RAD) },
+    magenta: { x: Math.cos(ANGLE_MAGENTA_RAD), y: Math.sin(ANGLE_MAGENTA_RAD) }
+};
+
 // --- State Management ---
-// We use a Proxy to automatically trigger UI updates whenever data changes.
+// Single source of truth. Contains both logical data and pointer state to allow
+// unidirectional data flow and guarantee perfectly accurate hover states.
 const state = new Proxy({
     level: CONFIG.MAX_LEVEL,
     baseRay: [15, 7, 0],
-    isZoomed: false
+    isZoomed: false,
+    pointerX: -1,
+    pointerY: -1
 }, {
     set(target, property, value) {
-        // Prevent unnecessary re-renders if the value hasn't actually changed
         if (target[property] === value) return true;
+
+        // Fail Fast: Enforce strict preconditions on state data
+        if (property === 'level' && (!Number.isInteger(value) || value < 0 || value > CONFIG.MAX_LEVEL)) {
+            throw new RangeError(`Invalid level: ${value}. Must be an integer between 0 and ${CONFIG.MAX_LEVEL}.`);
+        }
+        if (property === 'baseRay' && (!Array.isArray(value) || value.length !== 3)) {
+            throw new TypeError('baseRay must be an array of three numeric values.');
+        }
 
         target[property] = value;
 
-        // Batch renders to the next animation frame for performance
+        // Pointer movements only require a lightweight hover refresh
+        if (property === 'pointerX' || property === 'pointerY') {
+            if (!this.hoverScheduled) {
+                this.hoverScheduled = true;
+                requestAnimationFrame(() => {
+                    refreshHoverState();
+                    this.hoverScheduled = false;
+                });
+            }
+            return true;
+        }
+
+        // Logical state changes require a full scene update
         if (!this.renderScheduled) {
             this.renderScheduled = true;
             requestAnimationFrame(() => {
-                renderScene();
-                refreshHoverState();
+                updateScene();
+
+                // Double-RAF: Defers the hover read (elementFromPoint) until after
+                // the browser has painted the new geometry, eliminating layout thrashing.
+                requestAnimationFrame(() => refreshHoverState());
+
                 this.renderScheduled = false;
             });
         }
@@ -36,15 +73,15 @@ const state = new Proxy({
     }
 });
 
-let mouseX = -1; // Tracks global X coordinate for layout change evaluations
-let mouseY = -1; // Tracks global Y coordinate for layout change evaluations
+// --- DOM Cache (Object Pooling) ---
+// Pre-allocated SVG nodes. We update their attributes rather than destroying the DOM.
+const elementPool = {
+    coreBlocks: [],
+    cubePolygons: []
+};
 
-// --- DOM Elements ---
 const svg = document.getElementById('app-svg');
-svg.setAttribute(
-    'viewBox',
-    `0 0 ${CONFIG.viewBoxWidth} ${CONFIG.viewBoxHeight}`
-);
+svg.setAttribute('viewBox', `0 0 ${CONFIG.viewBoxWidth} ${CONFIG.viewBoxHeight}`);
 const coreGroup = document.getElementById('core-sample-group');
 const cubeGroup = document.getElementById('cube-group');
 const highlightGroup = document.getElementById('highlight-group');
@@ -57,17 +94,15 @@ document.getElementById('page-title').textContent = document.title;
 const versionMeta = document.querySelector('meta[name="version"]');
 document.getElementById('version').textContent = `v${versionMeta.content}`;
 
-// --- Math Helpers ---
+// --- Math & String Helpers ---
 /**
- * Converts standard 0-255 RGB values into a shorthand 3-digit hex string (#RGB).
- * Assumes inputs are perfectly scaled multiples of (255 / 15).
+ * Converts standard 0-255 RGB integers into an idiomatic, standard #RRGGBB hex string.
  */
-function rgbToShortHex(r, g, b) {
-    const hexDigit = (c) => Math.floor(c / 17).toString(16).toUpperCase();
-    return `#${hexDigit(r)}${hexDigit(g)}${hexDigit(b)}`;
+function rgbToHex(r, g, b) {
+    const toHex = (c) => Math.round(c).toString(16).padStart(2, '0').toUpperCase();
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
-// --- DOM Generators ---
 function createSVGElement(tag, attributes = {}) {
     const el = document.createElementNS(CONFIG.SVG_NS, tag);
     for (const [key, value] of Object.entries(attributes)) {
@@ -76,56 +111,81 @@ function createSVGElement(tag, attributes = {}) {
     return el;
 }
 
-// --- Render Logic ---
-function renderScene() {
-    // Clear previous renders to prepare for new geometry
-    coreGroup.innerHTML = '';
-    cubeGroup.innerHTML = '';
-    highlightGroup.innerHTML = '';
+// --- Initialization (Upfront Allocation) ---
+function initScene() {
+    // 1. Allocate Core Blocks (Max Level)
+    for (let i = CONFIG.MAX_LEVEL; i >= 0; i--) {
+        const rect = createSVGElement('rect', {
+            class: 'core-block',
+            'data-action': 'setLevel',
+            'data-level': i
+        });
+        elementPool.coreBlocks.push({ dom: rect, logicalLevel: i });
+        coreGroup.appendChild(rect);
+    }
 
-    renderCoreSample();
-    renderCube();
+    // 2. Allocate Cube Polygons (Max Matrix for 3 Faces)
+    const createFacePool = (faceId, uAxis, vAxis, colorFn) => {
+        for (let i = 0; i <= CONFIG.MAX_LEVEL; i++) {
+            for (let j = 0; j <= CONFIG.MAX_LEVEL; j++) {
+                const poly = createSVGElement('polygon', {
+                    class: 'cube-face',
+                    'data-action': 'setBaseRay'
+                });
+                // We store the math references statically on the cached object
+                elementPool.cubePolygons.push({ dom: poly, faceId, i, j, uAxis, vAxis, colorFn });
+                cubeGroup.appendChild(poly);
+            }
+        }
+    };
+
+    createFacePool('right', AXES.yellow, AXES.magenta, (lvl, i, j) => [lvl, lvl - j, lvl - i]);
+    createFacePool('left', AXES.cyan, AXES.magenta, (lvl, i, j) => [lvl - i, lvl - j, lvl]);
+    createFacePool('top', AXES.cyan, AXES.yellow, (lvl, i, j) => [lvl - i, lvl, lvl - j]);
+
+    // Apply the initial visual state
+    updateScene();
 }
 
-function renderCoreSample() {
+// --- Render Updates ---
+function updateScene() {
+    // Clearing 4 highlight elements is cheap enough that pooling them adds unnecessary complexity.
+    highlightGroup.innerHTML = '';
+    updateCoreSample();
+    updateCube();
+}
+
+function updateCoreSample() {
     const blockSize = 38;
     const spacing = 2;
     const totalHeight = CONFIG.LEVELS * (blockSize + spacing);
-
-    // Position on the left side, vertically centered
     const startX = CONFIG.layoutOffsetX;
     const startY = (CONFIG.viewBoxHeight - totalHeight) / 2;
 
-    for (let i = CONFIG.MAX_LEVEL; i >= 0; i--) {
+    for (const item of elementPool.coreBlocks) {
+        const i = item.logicalLevel;
+        const dom = item.dom;
+
         const r = Math.round((state.baseRay[0] * i) / CONFIG.MAX_LEVEL);
         const g = Math.round((state.baseRay[1] * i) / CONFIG.MAX_LEVEL);
         const b = Math.round((state.baseRay[2] * i) / CONFIG.MAX_LEVEL);
 
-        const dispR = r * CONFIG.MULTIPLIER;
-        const dispG = g * CONFIG.MULTIPLIER;
-        const dispB = b * CONFIG.MULTIPLIER;
+        const dispR = r * CONFIG.COLOR_SCALE_FACTOR;
+        const dispG = g * CONFIG.COLOR_SCALE_FACTOR;
+        const dispB = b * CONFIG.COLOR_SCALE_FACTOR;
 
         const yPos = startY + ((CONFIG.MAX_LEVEL - i) * (blockSize + spacing));
-        const hexColor = rgbToShortHex(dispR, dispG, dispB);
+        const hexColor = rgbToHex(dispR, dispG, dispB);
 
-        // 1. Draw the base core block
-        const rect = createSVGElement('rect', {
-            x: startX,
-            y: yPos,
-            width: blockSize,
-            height: blockSize,
-            fill: hexColor,
-            class: 'core-block', // styling
-            'data-action': 'setLevel', // action
-            'data-level': i,
-            'data-hex': hexColor
-        });
+        dom.setAttribute('x', startX);
+        dom.setAttribute('y', yPos);
+        dom.setAttribute('width', blockSize);
+        dom.setAttribute('height', blockSize);
+        dom.setAttribute('fill', hexColor);
+        dom.dataset.hex = hexColor;
 
-        coreGroup.appendChild(rect);
-
-        // 2. Clone active geometry to the highlight layer to avoid clipping
         if (i === state.level) {
-            const highlight = rect.cloneNode();
+            const highlight = dom.cloneNode();
             highlight.setAttribute('class', 'highlight-outline');
             highlight.removeAttribute('fill');
             highlightGroup.appendChild(highlight);
@@ -133,109 +193,99 @@ function renderCoreSample() {
     }
 }
 
-function renderCube() {
-    const L = state.isZoomed ? CONFIG.baseEdgeLength : (CONFIG.baseEdgeLength * (state.level / CONFIG.MAX_LEVEL));
-
-    // Shift center slightly right to accommodate the core sample
-    const cx = (CONFIG.viewBoxWidth / 2) + CONFIG.layoutOffsetX;
-    const cy = CONFIG.viewBoxHeight / 2 - 20;
-
-    // Isometric Axes Math
-    const axCyan = { x: L * Math.cos(7 * Math.PI / 6), y: L * Math.sin(7 * Math.PI / 6) };
-    const axYellow = { x: L * Math.cos(11 * Math.PI / 6), y: L * Math.sin(11 * Math.PI / 6) };
-    const axMagenta = { x: L * Math.cos(Math.PI / 2), y: L * Math.sin(Math.PI / 2) };
+function updateCube() {
+    const edgeLength = state.isZoomed ? CONFIG.baseEdgeLength : (CONFIG.baseEdgeLength * (state.level / CONFIG.MAX_LEVEL));
+    const centerX = (CONFIG.viewBoxWidth / 2) + CONFIG.layoutOffsetX;
+    const centerY = CONFIG.viewBoxHeight / 2 - 20;
 
     const targetR = Math.round((state.baseRay[0] * state.level) / CONFIG.MAX_LEVEL);
     const targetG = Math.round((state.baseRay[1] * state.level) / CONFIG.MAX_LEVEL);
     const targetB = Math.round((state.baseRay[2] * state.level) / CONFIG.MAX_LEVEL);
+    const steps = state.level + 1;
 
-    function buildFace(uAx, vAx, colorFn) {
-        const steps = state.level + 1;
+    for (const item of elementPool.cubePolygons) {
+        const { dom, i, j, uAxis, vAxis, colorFn } = item;
 
-        for (let i = 0; i <= state.level; i++) {
-            for (let j = 0; j <= state.level; j++) {
-                const u1 = i / steps, u2 = (i + 1) / steps;
-                const v1 = j / steps, v2 = (j + 1) / steps;
+        // Cull geometry outside the current resolution boundary
+        if (i > state.level || j > state.level) {
+            dom.style.display = 'none';
+            continue;
+        }
 
-                const p1 = `${cx + u1*uAx.x + v1*vAx.x},${cy + u1*uAx.y + v1*vAx.y}`;
-                const p2 = `${cx + u2*uAx.x + v1*vAx.x},${cy + u2*uAx.y + v1*vAx.y}`;
-                const p3 = `${cx + u2*uAx.x + v2*vAx.x},${cy + u2*uAx.y + v2*vAx.y}`;
-                const p4 = `${cx + u1*uAx.x + v2*vAx.x},${cy + u1*uAx.y + v2*vAx.y}`;
-                const pointsStr = `${p1} ${p2} ${p3} ${p4}`;
+        dom.style.display = ''; // Ensure visible
 
-                const [r, g, b] = colorFn(i, j);
-                const isActive = (r === targetR && g === targetG && b === targetB);
+        const u1 = i / steps, u2 = (i + 1) / steps;
+        const v1 = j / steps, v2 = (j + 1) / steps;
 
-                const dispR = r * CONFIG.MULTIPLIER;
-                const dispG = g * CONFIG.MULTIPLIER;
-                const dispB = b * CONFIG.MULTIPLIER;
-                const hexColor = rgbToShortHex(dispR, dispG, dispB);
+        const p1X = centerX + (u1 * uAxis.x + v1 * vAxis.x) * edgeLength;
+        const p1Y = centerY + (u1 * uAxis.y + v1 * vAxis.y) * edgeLength;
 
-                // 1. Draw the base face polygon
-                const polygon = createSVGElement('polygon', {
-                    points: pointsStr,
-                    fill: `rgb(${dispR},${dispG},${dispB})`,
-                    class: 'cube-face', // styling
-                    'data-action': 'setBaseRay', // action
-                    'data-r': r,
-                    'data-g': g,
-                    'data-b': b,
-                    'data-hex': hexColor
-                });
+        const p2X = centerX + (u2 * uAxis.x + v1 * vAxis.x) * edgeLength;
+        const p2Y = centerY + (u2 * uAxis.y + v1 * vAxis.y) * edgeLength;
 
-                cubeGroup.appendChild(polygon);
+        const p3X = centerX + (u2 * uAxis.x + v2 * vAxis.x) * edgeLength;
+        const p3Y = centerY + (u2 * uAxis.y + v2 * vAxis.y) * edgeLength;
 
-                // 2. Clone active geometry to the highlight layer to avoid clipping
-                if (isActive) {
-                    const highlight = polygon.cloneNode();
-                    highlight.setAttribute('class', 'highlight-outline');
-                    highlight.removeAttribute('fill');
-                    highlightGroup.appendChild(highlight);
-                }
-            }
+        const p4X = centerX + (u1 * uAxis.x + v2 * vAxis.x) * edgeLength;
+        const p4Y = centerY + (u1 * uAxis.y + v2 * vAxis.y) * edgeLength;
+
+        const [r, g, b] = colorFn(state.level, i, j);
+        const dispR = r * CONFIG.COLOR_SCALE_FACTOR;
+        const dispG = g * CONFIG.COLOR_SCALE_FACTOR;
+        const dispB = b * CONFIG.COLOR_SCALE_FACTOR;
+        const hexColor = rgbToHex(dispR, dispG, dispB);
+
+        dom.setAttribute('points', `${p1X},${p1Y} ${p2X},${p2Y} ${p3X},${p3Y} ${p4X},${p4Y}`);
+        dom.setAttribute('fill', hexColor);
+
+        dom.dataset.r = r;
+        dom.dataset.g = g;
+        dom.dataset.b = b;
+        dom.dataset.hex = hexColor;
+
+        if (r === targetR && g === targetG && b === targetB) {
+            const highlight = dom.cloneNode();
+            highlight.setAttribute('class', 'highlight-outline');
+            highlight.removeAttribute('fill');
+            highlightGroup.appendChild(highlight);
         }
     }
-
-    // Build the 3 visible isometric faces
-    buildFace(axYellow, axMagenta, (i, j) => [state.level, state.level - j, state.level - i]); // Right
-    buildFace(axCyan, axMagenta, (i, j) => [state.level - i, state.level - j, state.level]);   // Left
-    buildFace(axCyan, axYellow, (i, j) => [state.level - i, state.level, state.level - j]);    // Top
 }
 
 // --- Hover State Management ---
 function updateHoverUI(target) {
-    // Clear previous hover
     hoverGroup.innerHTML = '';
 
     if (!target) {
-        // We are pointing at empty space; hide everything
         pointerDisplay.style.display = 'none';
         return;
     }
 
-    // Unify: Clone the shape and override styling
     const clone = target.cloneNode();
     clone.setAttribute('class', 'hover-outline');
     clone.removeAttribute('fill');
+    clone.style.display = ''; // Ensure the clone doesn't copy 'display: none'
     hoverGroup.appendChild(clone);
 
-    pointerDisplay.innerText = target.dataset.hex; // dataset API
+    // Reposition using the exact state coordinates
+    pointerDisplay.innerText = target.dataset.hex;
+    pointerDisplay.style.left = `${state.pointerX}px`;
+    pointerDisplay.style.top = `${state.pointerY}px`;
     pointerDisplay.style.display = 'block';
 }
 
 function refreshHoverState() {
-    if (mouseX === -1) return;
+    if (state.pointerX === -1 || state.pointerY === -1) return;
 
-    // Ask the browser what element is physically under the cursor right now.
-    const el = document.elementFromPoint(mouseX, mouseY);
+    // Because rendering is pooled, `elementFromPoint` correctly identifies the shape
+    // immediately under the cursor, resolving the scrolling mismatch bug.
+    const el = document.elementFromPoint(state.pointerX, state.pointerY);
     const target = el ? el.closest('[data-action]') : null;
 
     updateHoverUI(target);
 }
 
 // --- Interactive Events ---
-
-// 1. Define the behaviors based on data-actions
 const INTERACTION_HANDLERS = {
     setLevel: (target) => {
         state.level = parseInt(target.dataset.level, 10);
@@ -247,72 +297,41 @@ const INTERACTION_HANDLERS = {
         const g = parseInt(target.dataset.g, 10);
         const b = parseInt(target.dataset.b, 10);
 
-        // Concise scaling function to clean up the math
         const scale = (val) => Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((val * CONFIG.MAX_LEVEL) / state.level)));
-
         state.baseRay = [scale(r), scale(g), scale(b)];
     }
 };
 
-// Global mouse tracker (needed for refreshHoverState)
 window.addEventListener('pointermove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
+    state.pointerX = e.clientX;
+    state.pointerY = e.clientY;
 });
 
-// 2. The unified click dispatcher
 svg.addEventListener('click', (e) => {
     const target = e.target.closest('[data-action]');
-    if (!target) return;
-
-    const action = target.dataset.action;
-
-    // Execute the bound action if it exists
-    if (INTERACTION_HANDLERS[action]) {
-        INTERACTION_HANDLERS[action](target);
-        // Renders are handled automatically by the state Proxy.
-    }
-});
-
-svg.addEventListener('pointerover', (e) => {
-    updateHoverUI(e.target.closest('[data-action]'));
-});
-
-svg.addEventListener('pointermove', (e) => {
-    if (pointerDisplay.style.display === 'block') {
-        pointerDisplay.style.left = `${e.clientX}px`;
-        pointerDisplay.style.top = `${e.clientY}px`;
+    if (target && INTERACTION_HANDLERS[target.dataset.action]) {
+        INTERACTION_HANDLERS[target.dataset.action](target);
     }
 });
 
 svg.addEventListener('pointerout', (e) => {
-    // We only hide everything if the pointer actually left a valid shape entirely
     const newTarget = e.relatedTarget?.closest('[data-action]');
-    if (!newTarget) {
-        updateHoverUI(null);
-    }
+    if (!newTarget) updateHoverUI(null);
 });
 
-// Scroll Logic for Level Changes
+// Scroll Logic
 window.addEventListener('wheel', (e) => {
     if (!e.target.closest('svg')) return;
-
     e.preventDefault();
 
-    if (e.deltaY < 0 && state.level < CONFIG.MAX_LEVEL) {
-        state.level++;
-    } else if (e.deltaY > 0 && state.level > 0) {
-        state.level--;
-    }
-    // Renders are handled automatically by the state Proxy.
+    if (e.deltaY < 0 && state.level < CONFIG.MAX_LEVEL) state.level++;
+    else if (e.deltaY > 0 && state.level > 0) state.level--;
 }, { passive: false });
 
 // Zoom Toggle
 zoomCheckbox.addEventListener('change', (e) => {
     state.isZoomed = e.target.checked;
-    // Renders are handled automatically by the state Proxy.
 });
 
-// --- Initialization ---
-// Bootstraps the initial UI
-renderScene();
+// --- Boot ---
+initScene();
