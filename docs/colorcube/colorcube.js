@@ -18,7 +18,6 @@ let mouseX = -1; // Tracks global X coordinate for layout change evaluations
 let mouseY = -1; // Tracks global Y coordinate for layout change evaluations
 
 // --- DOM Elements ---
-// --- DOM Elements ---
 const svg = document.getElementById('app-svg');
 svg.setAttribute(
     'viewBox',
@@ -27,8 +26,7 @@ svg.setAttribute(
 const coreGroup = document.getElementById('core-sample-group');
 const cubeGroup = document.getElementById('cube-group');
 const highlightGroup = document.getElementById('highlight-group');
-const hoverCube = document.getElementById('hover-cube');
-const hoverCore = document.getElementById('hover-core');
+const hoverGroup = document.getElementById('hover-group');
 const zoomCheckbox = document.getElementById('zoom');
 const pointerDisplay = document.getElementById('pointer-display');
 
@@ -95,22 +93,18 @@ function renderCoreSample() {
             width: blockSize,
             height: blockSize,
             fill: hexColor,
-            class: 'core-block',
+            class: 'core-block interactive-shape',
             'data-level': i,
             'data-hex': hexColor
         });
 
         coreGroup.appendChild(rect);
 
-        // 2. Draw the white active highlight purely in the foreground group
+        // 2. Clone active geometry to the highlight layer to avoid clipping
         if (i === currentLevel) {
-            const highlight = createSVGElement('rect', {
-                x: startX,
-                y: yPos,
-                width: blockSize,
-                height: blockSize,
-                class: 'highlight-outline'
-            });
+            const highlight = rect.cloneNode();
+            highlight.setAttribute('class', 'highlight-outline');
+            highlight.removeAttribute('fill');
             highlightGroup.appendChild(highlight);
         }
     }
@@ -158,7 +152,7 @@ function renderCube() {
                 const polygon = createSVGElement('polygon', {
                     points: pointsStr,
                     fill: `rgb(${dispR},${dispG},${dispB})`,
-                    class: 'cube-face',
+                    class: 'cube-face interactive-shape',
                     'data-r': r,
                     'data-g': g,
                     'data-b': b,
@@ -169,10 +163,9 @@ function renderCube() {
 
                 // 2. Clone active geometry to the highlight layer to avoid clipping
                 if (isActive) {
-                    const highlight = createSVGElement('polygon', {
-                        points: pointsStr,
-                        class: 'highlight-outline'
-                    });
+                    const highlight = polygon.cloneNode();
+                    highlight.setAttribute('class', 'highlight-outline');
+                    highlight.removeAttribute('fill');
                     highlightGroup.appendChild(highlight);
                 }
             }
@@ -187,26 +180,21 @@ function renderCube() {
 
 // --- Hover State Management ---
 function updateHoverUI(target) {
+    // Clear previous hover
+    hoverGroup.innerHTML = '';
+
     if (!target) {
         // We are pointing at empty space; hide everything
         pointerDisplay.style.display = 'none';
-        hoverCube.style.opacity = '0';
-        hoverCore.style.opacity = '0';
         return;
     }
 
-    if (target.classList.contains('cube-face')) {
-        hoverCube.setAttribute('points', target.getAttribute('points'));
-        hoverCube.style.opacity = '1';
-        hoverCore.style.opacity = '0';
-    } else if (target.classList.contains('core-block')) {
-        hoverCore.setAttribute('x', target.getAttribute('x'));
-        hoverCore.setAttribute('y', target.getAttribute('y'));
-        hoverCore.setAttribute('width', target.getAttribute('width'));
-        hoverCore.setAttribute('height', target.getAttribute('height'));
-        hoverCore.style.opacity = '1';
-        hoverCube.style.opacity = '0';
-    }
+    // Unify: Clone the shape and override styling
+    const clone = target.cloneNode();
+    clone.setAttribute('class', 'hover-outline');
+    clone.removeAttribute('fill');
+
+    hoverGroup.appendChild(clone);
 
     pointerDisplay.innerText = target.getAttribute('data-hex');
     pointerDisplay.style.display = 'block';
@@ -216,9 +204,8 @@ function refreshHoverState() {
     if (mouseX === -1) return;
 
     // Ask the browser what element is physically under the cursor right now.
-    // Because pointerDisplay has pointer-events: none, this correctly sees through it.
     const el = document.elementFromPoint(mouseX, mouseY);
-    const target = el ? el.closest('.cube-face, .core-block') : null;
+    const target = el ? el.closest('.interactive-shape') : null;
 
     updateHoverUI(target);
 }
@@ -231,38 +218,33 @@ window.addEventListener('pointermove', (e) => {
     mouseY = e.clientY;
 });
 
-// Clicks: Core Sample
-coreGroup.addEventListener('click', (e) => {
-    const block = e.target.closest('.core-block');
-    if (!block) return;
+// Clicks: Unified Core Sample & Cube handling
+svg.addEventListener('click', (e) => {
+    const target = e.target.closest('.interactive-shape');
+    if (!target) return;
 
-    currentLevel = parseInt(block.getAttribute('data-level'), 10);
-    renderScene();
-    refreshHoverState(); // Re-evaluate hover state since layout changed
-});
+    if (target.classList.contains('core-block')) {
+        currentLevel = parseInt(target.getAttribute('data-level'), 10);
+    } else if (target.classList.contains('cube-face')) {
+        if (currentLevel === 0) return;
 
-// Clicks: Cube
-cubeGroup.addEventListener('click', (e) => {
-    if (currentLevel === 0) return;
+        const r = parseInt(target.getAttribute('data-r'), 10);
+        const g = parseInt(target.getAttribute('data-g'), 10);
+        const b = parseInt(target.getAttribute('data-b'), 10);
 
-    const face = e.target.closest('.cube-face');
-    if (!face) return;
-
-    const r = parseInt(face.getAttribute('data-r'), 10);
-    const g = parseInt(face.getAttribute('data-g'), 10);
-    const b = parseInt(face.getAttribute('data-b'), 10);
-
-    baseRay[0] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((r * CONFIG.MAX_LEVEL) / currentLevel)));
-    baseRay[1] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((g * CONFIG.MAX_LEVEL) / currentLevel)));
-    baseRay[2] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((b * CONFIG.MAX_LEVEL) / currentLevel)));
+        baseRay[0] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((r * CONFIG.MAX_LEVEL) / currentLevel)));
+        baseRay[1] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((g * CONFIG.MAX_LEVEL) / currentLevel)));
+        baseRay[2] = Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((b * CONFIG.MAX_LEVEL) / currentLevel)));
+    }
 
     renderScene();
-    refreshHoverState(); // Re-evaluate hover state since active highlights changed
+    refreshHoverState(); // Re-evaluate hover state since layout/active highlights changed
 });
+
 
 // Hovers & Tooltips (Delegated from the parent SVG)
 svg.addEventListener('pointerover', (e) => {
-    updateHoverUI(e.target.closest('.cube-face, .core-block'));
+    updateHoverUI(e.target.closest('.interactive-shape'));
 });
 
 svg.addEventListener('pointermove', (e) => {
@@ -273,9 +255,8 @@ svg.addEventListener('pointermove', (e) => {
 });
 
 svg.addEventListener('pointerout', (e) => {
-    // We only hide everything if the pointer actually left a valid shape entirely,
-    // avoiding flicker when smoothly gliding between adjacent blocks.
-    const newTarget = e.relatedTarget?.closest('.cube-face, .core-block');
+    // We only hide everything if the pointer actually left a valid shape entirely
+    const newTarget = e.relatedTarget?.closest('.interactive-shape');
     if (!newTarget) {
         updateHoverUI(null);
     }
@@ -283,7 +264,6 @@ svg.addEventListener('pointerout', (e) => {
 
 // Scroll Logic for Level Changes
 window.addEventListener('wheel', (e) => {
-    // Only intercept scroll if the mouse is over the SVG to avoid blocking page scroll
     if (!e.target.closest('svg')) return;
 
     e.preventDefault();
@@ -299,7 +279,7 @@ window.addEventListener('wheel', (e) => {
 
     if (levelChanged) {
         renderScene();
-        refreshHoverState(); // Re-evaluate what's under the cursor as geometry scales
+        refreshHoverState();
     }
 }, { passive: false });
 
@@ -307,7 +287,7 @@ window.addEventListener('wheel', (e) => {
 zoomCheckbox.addEventListener('change', (e) => {
     isZoomed = e.target.checked;
     renderScene();
-    refreshHoverState(); // Re-evaluate what's under the cursor as geometry scales
+    refreshHoverState();
 });
 
 // --- Initialization ---

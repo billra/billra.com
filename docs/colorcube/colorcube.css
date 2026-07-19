@@ -87,7 +87,7 @@ p {
 }
 
 /* Base Interactive Shapes */
-.cube-face, .core-block {
+.interactive-shape {
     cursor: pointer;
 }
 
@@ -107,7 +107,6 @@ p {
     fill: none;
     pointer-events: none; /* Allows mouse events to pass through to the shapes below */
     stroke-linejoin: round;
-
     /* A tight black drop-shadow ensures perfect contrast against bright white blocks */
     filter: drop-shadow(0px 0px 2px black);
 }
@@ -115,10 +114,6 @@ p {
 .hover-outline {
     stroke: var(--text-secondary);
     stroke-width: var(--stroke-thick);
-    opacity: 0; /* Hidden by default */
-
-    /* Smoothly glides between attributes when moving across the SVG */
-    transition: opacity 0.15s ease, x 0.1s ease, y 0.1s ease;
 }
 
 .highlight-outline {

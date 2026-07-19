@@ -3,7 +3,7 @@
 <head>
     <title>Color Cube</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="3.11">
+    <meta name="version" content="3.12">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="colorcube.css">
@@ -26,10 +26,7 @@
             <g id="cube-group"></g>
 
             <!-- Dynamic Hover Layer: Renders above the shapes but below the active highlights -->
-            <g id="hover-group">
-                <polygon id="hover-cube" class="hover-outline"></polygon>
-                <rect id="hover-core" class="hover-outline"></rect>
-            </g>
+            <g id="hover-group"></g>
 
             <!-- Foreground Highlight Layer: Ensures the white selection stroke is never clipped -->
             <g id="highlight-group"></g>
