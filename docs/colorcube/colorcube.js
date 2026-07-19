@@ -96,11 +96,23 @@ document.getElementById('version').textContent = `v${versionMeta.content}`;
 
 // --- Math & String Helpers ---
 /**
- * Converts standard 0-255 RGB integers into an idiomatic, standard #RRGGBB hex string.
+ * Converts standard 0-255 RGB values into a hex string. Returns a compact
+ * 3-digit format (#RGB) if possible, otherwise falls back to the standard
+ * 6-digit format (#RRGGBB).
  */
 function rgbToHex(r, g, b) {
     const toHex = (c) => Math.round(c).toString(16).padStart(2, '0').toUpperCase();
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+
+    const hexR = toHex(r);
+    const hexG = toHex(g);
+    const hexB = toHex(b);
+
+    // If both digits of every channel are identical (e.g., 'FF', '00', 'AA'), use the 3-digit short form.
+    if (hexR[0] === hexR[1] && hexG[0] === hexG[1] && hexB[0] === hexB[1]) {
+        return `#${hexR[0]}${hexG[0]}${hexB[0]}`;
+    }
+
+    return `#${hexR}${hexG}${hexB}`;
 }
 
 function createSVGElement(tag, attributes = {}) {
