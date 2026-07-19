@@ -11,9 +11,31 @@ const CONFIG = {
 };
 
 // --- State Management ---
-let currentLevel = CONFIG.MAX_LEVEL;
-let baseRay = [15, 7, 0];
-let isZoomed = false;
+// We use a Proxy to automatically trigger UI updates whenever data changes.
+const state = new Proxy({
+    level: CONFIG.MAX_LEVEL,
+    baseRay: [15, 7, 0],
+    isZoomed: false
+}, {
+    set(target, property, value) {
+        // Prevent unnecessary re-renders if the value hasn't actually changed
+        if (target[property] === value) return true;
+
+        target[property] = value;
+
+        // Batch renders to the next animation frame for performance
+        if (!this.renderScheduled) {
+            this.renderScheduled = true;
+            requestAnimationFrame(() => {
+                renderScene();
+                refreshHoverState();
+                this.renderScheduled = false;
+            });
+        }
+        return true;
+    }
+});
+
 let mouseX = -1; // Tracks global X coordinate for layout change evaluations
 let mouseY = -1; // Tracks global Y coordinate for layout change evaluations
 
@@ -75,9 +97,9 @@ function renderCoreSample() {
     const startY = (CONFIG.viewBoxHeight - totalHeight) / 2;
 
     for (let i = CONFIG.MAX_LEVEL; i >= 0; i--) {
-        const r = Math.round((baseRay[0] * i) / CONFIG.MAX_LEVEL);
-        const g = Math.round((baseRay[1] * i) / CONFIG.MAX_LEVEL);
-        const b = Math.round((baseRay[2] * i) / CONFIG.MAX_LEVEL);
+        const r = Math.round((state.baseRay[0] * i) / CONFIG.MAX_LEVEL);
+        const g = Math.round((state.baseRay[1] * i) / CONFIG.MAX_LEVEL);
+        const b = Math.round((state.baseRay[2] * i) / CONFIG.MAX_LEVEL);
 
         const dispR = r * CONFIG.MULTIPLIER;
         const dispG = g * CONFIG.MULTIPLIER;
@@ -102,7 +124,7 @@ function renderCoreSample() {
         coreGroup.appendChild(rect);
 
         // 2. Clone active geometry to the highlight layer to avoid clipping
-        if (i === currentLevel) {
+        if (i === state.level) {
             const highlight = rect.cloneNode();
             highlight.setAttribute('class', 'highlight-outline');
             highlight.removeAttribute('fill');
@@ -112,7 +134,7 @@ function renderCoreSample() {
 }
 
 function renderCube() {
-    const L = isZoomed ? CONFIG.baseEdgeLength : (CONFIG.baseEdgeLength * (currentLevel / CONFIG.MAX_LEVEL));
+    const L = state.isZoomed ? CONFIG.baseEdgeLength : (CONFIG.baseEdgeLength * (state.level / CONFIG.MAX_LEVEL));
 
     // Shift center slightly right to accommodate the core sample
     const cx = (CONFIG.viewBoxWidth / 2) + CONFIG.layoutOffsetX;
@@ -123,15 +145,15 @@ function renderCube() {
     const axYellow = { x: L * Math.cos(11 * Math.PI / 6), y: L * Math.sin(11 * Math.PI / 6) };
     const axMagenta = { x: L * Math.cos(Math.PI / 2), y: L * Math.sin(Math.PI / 2) };
 
-    const targetR = Math.round((baseRay[0] * currentLevel) / CONFIG.MAX_LEVEL);
-    const targetG = Math.round((baseRay[1] * currentLevel) / CONFIG.MAX_LEVEL);
-    const targetB = Math.round((baseRay[2] * currentLevel) / CONFIG.MAX_LEVEL);
+    const targetR = Math.round((state.baseRay[0] * state.level) / CONFIG.MAX_LEVEL);
+    const targetG = Math.round((state.baseRay[1] * state.level) / CONFIG.MAX_LEVEL);
+    const targetB = Math.round((state.baseRay[2] * state.level) / CONFIG.MAX_LEVEL);
 
     function buildFace(uAx, vAx, colorFn) {
-        const steps = currentLevel + 1;
+        const steps = state.level + 1;
 
-        for (let i = 0; i <= currentLevel; i++) {
-            for (let j = 0; j <= currentLevel; j++) {
+        for (let i = 0; i <= state.level; i++) {
+            for (let j = 0; j <= state.level; j++) {
                 const u1 = i / steps, u2 = (i + 1) / steps;
                 const v1 = j / steps, v2 = (j + 1) / steps;
 
@@ -175,9 +197,9 @@ function renderCube() {
     }
 
     // Build the 3 visible isometric faces
-    buildFace(axYellow, axMagenta, (i, j) => [currentLevel, currentLevel - j, currentLevel - i]); // Right
-    buildFace(axCyan, axMagenta, (i, j) => [currentLevel - i, currentLevel - j, currentLevel]);   // Left
-    buildFace(axCyan, axYellow, (i, j) => [currentLevel - i, currentLevel, currentLevel - j]);    // Top
+    buildFace(axYellow, axMagenta, (i, j) => [state.level, state.level - j, state.level - i]); // Right
+    buildFace(axCyan, axMagenta, (i, j) => [state.level - i, state.level - j, state.level]);   // Left
+    buildFace(axCyan, axYellow, (i, j) => [state.level - i, state.level, state.level - j]);    // Top
 }
 
 // --- Hover State Management ---
@@ -206,7 +228,7 @@ function refreshHoverState() {
 
     // Ask the browser what element is physically under the cursor right now.
     const el = document.elementFromPoint(mouseX, mouseY);
-    const target = el ? el.closest('.interactive-shape') : null;
+    const target = el ? el.closest('[data-action]') : null;
 
     updateHoverUI(target);
 }
@@ -216,19 +238,19 @@ function refreshHoverState() {
 // 1. Define the behaviors based on data-actions
 const INTERACTION_HANDLERS = {
     setLevel: (target) => {
-        currentLevel = parseInt(target.dataset.level, 10);
+        state.level = parseInt(target.dataset.level, 10);
     },
     setBaseRay: (target) => {
-        if (currentLevel === 0) return;
+        if (state.level === 0) return;
 
         const r = parseInt(target.dataset.r, 10);
         const g = parseInt(target.dataset.g, 10);
         const b = parseInt(target.dataset.b, 10);
 
         // Concise scaling function to clean up the math
-        const scale = (val) => Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((val * CONFIG.MAX_LEVEL) / currentLevel)));
+        const scale = (val) => Math.min(CONFIG.MAX_LEVEL, Math.max(0, Math.round((val * CONFIG.MAX_LEVEL) / state.level)));
 
-        baseRay = [scale(r), scale(g), scale(b)];
+        state.baseRay = [scale(r), scale(g), scale(b)];
     }
 };
 
@@ -248,8 +270,7 @@ svg.addEventListener('click', (e) => {
     // Execute the bound action if it exists
     if (INTERACTION_HANDLERS[action]) {
         INTERACTION_HANDLERS[action](target);
-        renderScene();
-        refreshHoverState();
+        // Renders are handled automatically by the state Proxy.
     }
 });
 
@@ -278,27 +299,20 @@ window.addEventListener('wheel', (e) => {
 
     e.preventDefault();
 
-    let levelChanged = false;
-    if (e.deltaY < 0 && currentLevel < CONFIG.MAX_LEVEL) {
-        currentLevel++;
-        levelChanged = true;
-    } else if (e.deltaY > 0 && currentLevel > 0) {
-        currentLevel--;
-        levelChanged = true;
+    if (e.deltaY < 0 && state.level < CONFIG.MAX_LEVEL) {
+        state.level++;
+    } else if (e.deltaY > 0 && state.level > 0) {
+        state.level--;
     }
-
-    if (levelChanged) {
-        renderScene();
-        refreshHoverState();
-    }
+    // Renders are handled automatically by the state Proxy.
 }, { passive: false });
 
 // Zoom Toggle
 zoomCheckbox.addEventListener('change', (e) => {
-    isZoomed = e.target.checked;
-    renderScene();
-    refreshHoverState();
+    state.isZoomed = e.target.checked;
+    // Renders are handled automatically by the state Proxy.
 });
 
 // --- Initialization ---
+// Bootstraps the initial UI
 renderScene();
