@@ -251,12 +251,17 @@ function updateCoreSample() {
 }
 
 function updateCube() {
-    const edgeLength = state.isZoomed ? CONFIG.baseEdgeLength : (CONFIG.baseEdgeLength * (state.level / CONFIG.maxLevel));
+    const steps = state.level + 1;
+
+    // Scale based on total steps out of total levels, not maxLevel
+    const edgeLength = state.isZoomed
+        ? CONFIG.baseEdgeLength
+        : (CONFIG.baseEdgeLength * (steps / CONFIG.levels));
+
     const centerX = (CONFIG.viewBoxWidth / 2) + CONFIG.layoutOffsetX;
     const centerY = CONFIG.viewBoxHeight / 2 - 20;
 
     const targetRay = scaleRay(state.baseRay, CONFIG.maxLevel, state.level);
-    const steps = state.level + 1;
 
     hideOverlay(elementPool.overlays.highlight.path);
     let highlightPath = '';
