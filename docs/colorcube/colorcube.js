@@ -184,7 +184,9 @@ function initScene() {
     };
 
     elementPool.overlays.highlight.rect = createOverlay('rect', 'highlight', highlightGroup);
-    elementPool.overlays.highlight.polygon = createOverlay('polygon', 'highlight', highlightGroup);
+    // Modified: use a <path> for the 3D highlight so we can compound multiple faces seamlessly
+    elementPool.overlays.highlight.path = createOverlay('path', 'highlight', highlightGroup);
+
     elementPool.overlays.hover.rect = createOverlay('rect', 'hover', hoverGroup);
     elementPool.overlays.hover.polygon = createOverlay('polygon', 'hover', hoverGroup);
 
@@ -256,7 +258,8 @@ function updateCube() {
     const targetRay = scaleRay(state.baseRay, CONFIG.maxLevel, state.level);
     const steps = state.level + 1;
 
-    hideOverlay(elementPool.overlays.highlight.polygon);
+    hideOverlay(elementPool.overlays.highlight.path);
+    let highlightPath = '';
 
     for (const item of elementPool.cubePolygons) {
         const { dom, i, j, uAxis, vAxis, colorFn } = item;
@@ -300,8 +303,14 @@ function updateCube() {
         dom.dataset.hex = hexColor;
 
         if (r === targetRay[0] && g === targetRay[1] && b === targetRay[2]) {
-            showOverlay(elementPool.overlays.highlight.polygon, { points: pointsAttr });
+            // Build the compound path string for the highlights
+            highlightPath += `M ${p1X},${p1Y} L ${p2X},${p2Y} L ${p3X},${p3Y} L ${p4X},${p4Y} Z `;
         }
+    }
+
+    // Apply the concatenated path string to the single highlight overlay element
+    if (highlightPath) {
+        showOverlay(elementPool.overlays.highlight.path, { d: highlightPath.trim() });
     }
 }
 
