@@ -389,7 +389,8 @@ svg.addEventListener('click', (e) => {
 });
 
 svg.addEventListener('pointerout', (e) => {
-    const newTarget = e.relatedTarget?.closest('[data-action]');
+    // extra `?.` before calling the function for Firefox
+    const newTarget = e.relatedTarget?.closest?.('[data-action]');
     if (!newTarget) updateHoverUI(null);
 });
 
