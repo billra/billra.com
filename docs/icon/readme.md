@@ -217,3 +217,74 @@ Running this strips out any physical pixel dimension (`pHYs`) or color profile
 (`sRGB`/`iCCP`) chunks that browsers like Chrome and Firefox habitually inject.
 This ensures your final `.ico` file gets as close to that 164-byte threshold as
 dynamically possible.
+
+## PNG optimization
+
+I have complete control of the source image. I will _not_ be using more colors
+than the palette allows. Does this change my selection for choice of tools? Or
+perhaps this makes things so simple that I could "roll my own"?
+
+---
+
+If you have absolute control over the source image and guarantee it contains 16
+or fewer colors, you can absolutely "roll your own" encoder.
+
+In fact, dropping heavy libraries is the best path forward here.
+
+### The "Roll Your Own" Strategy
+
+By writing a custom script, you can enforce the exact byte-saving tricks that
+generic tools miss. All you need is a tiny, lightweight Zlib library like
+**Pako** to handle the DEFLATE compression for the `IDAT` chunk. Everything else
+is just basic array manipulation.
+
+Here is the exact pipeline you would build:
+
+#### 1. The "Smart" Palette Extraction
+
+Instead of letting an algorithm arrange your colors, your script will read the
+canvas and build a custom palette array with strict rules:
+
+- Scan the canvas pixel by pixel.
+- If you encounter a transparent pixel (Alpha < 255), immediately assign it to
+  **Index 0**.
+- Assign the remaining solid colors to Indices 1 through 15.
+- Because your transparent color is guaranteed to be at Index 0, you can
+  hardcode your `tRNS` chunk to be exactly 1 byte long.
+
+#### 2. Manual 4-Bit Pixel Packing
+
+A 4-bit PNG requires you to pack two pixels into every single byte.
+
+- A 16-pixel row normally takes 16 bytes.
+- By doing a bitwise shift (e.g., `(pixel1 << 4) | pixel2`), you compress that
+  row into exactly 8 bytes.
+- Add 1 byte at the start of each row for the PNG filter (just use `0` for
+  "None," which works perfectly for 16x16 images).
+- Your final uncompressed image payload is exactly 144 bytes (9 bytes per row ×
+  16 rows).
+
+#### 3. Max DEFLATE via Pako
+
+You pass that 144-byte array into Pako with the compression cranked to the
+absolute maximum:
+
+```javascript
+const compressedData = pako.deflate(packedPixels, { level: 9, strategy: 2 });
+```
+
+#### 4. Chunk Assembly
+
+Finally, you stitch the byte arrays together:
+
+- **ICO Header:** 22 bytes
+- **PNG Signature:** 8 bytes
+- **IHDR:** 25 bytes (declaring 4-bit Indexed color)
+- **PLTE:** `12 + (colorCount * 3)` bytes
+- **tRNS:** 17 bytes (12 bytes wrapper + 1 byte payload)
+- **IDAT:** `12 + compressedData.length` bytes
+- **IEND:** 12 bytes
+
+By rolling your own, you get the absolute smallest mathematically possible file
+without loading WebAssembly (OxiPNG) or a heavy color-math library (UPNG.js).
+You have complete control over every single byte.
