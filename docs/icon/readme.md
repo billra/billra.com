@@ -1,4 +1,20 @@
-# Icon Editor
+# Icon Editor <!-- omit from toc -->
+
+- [Example](#example)
+  - [ICONDIR and ICONDIRENTRY](#icondir-and-icondirentry)
+  - [PNG Signature and Data](#png-signature-and-data)
+- [Retrieving PNG Data](#retrieving-png-data)
+- [Clean PNG](#clean-png)
+  - [Sneaky Metadata (Ancillary Chunks)](#sneaky-metadata-ancillary-chunks)
+  - [What to Expect](#what-to-expect)
+- [The Stripper Function](#the-stripper-function)
+  - [How to use it in your workflow](#how-to-use-it-in-your-workflow)
+- [PNG optimization](#png-optimization)
+- [The "Roll Your Own" Strategy](#the-roll-your-own-strategy)
+  - [1. The "Smart" Palette Extraction](#1-the-smart-palette-extraction)
+  - [2. Manual 4-Bit Pixel Packing](#2-manual-4-bit-pixel-packing)
+  - [3. Max DEFLATE via Pako](#3-max-deflate-via-pako)
+  - [4. Chunk Assembly](#4-chunk-assembly)
 
 ## Example
 
@@ -231,7 +247,7 @@ or fewer colors, you can absolutely "roll your own" encoder.
 
 In fact, dropping heavy libraries is the best path forward here.
 
-### The "Roll Your Own" Strategy
+## The "Roll Your Own" Strategy
 
 By writing a custom script, you can enforce the exact byte-saving tricks that
 generic tools miss. All you need is a tiny, lightweight Zlib library like
@@ -240,7 +256,7 @@ is just basic array manipulation.
 
 Here is the exact pipeline you would build:
 
-#### 1. The "Smart" Palette Extraction
+### 1. The "Smart" Palette Extraction
 
 Instead of letting an algorithm arrange your colors, your script will read the
 canvas and build a custom palette array with strict rules:
@@ -252,7 +268,7 @@ canvas and build a custom palette array with strict rules:
 - Because your transparent color is guaranteed to be at Index 0, you can
   hardcode your `tRNS` chunk to be exactly 1 byte long.
 
-#### 2. Manual 4-Bit Pixel Packing
+### 2. Manual 4-Bit Pixel Packing
 
 A 4-bit PNG requires you to pack two pixels into every single byte.
 
@@ -264,7 +280,7 @@ A 4-bit PNG requires you to pack two pixels into every single byte.
 - Your final uncompressed image payload is exactly 144 bytes (9 bytes per row ×
   16 rows).
 
-#### 3. Max DEFLATE via Pako
+### 3. Max DEFLATE via Pako
 
 You pass that 144-byte array into Pako with the compression cranked to the
 absolute maximum:
@@ -273,7 +289,7 @@ absolute maximum:
 const compressedData = pako.deflate(packedPixels, { level: 9, strategy: 2 });
 ```
 
-#### 4. Chunk Assembly
+### 4. Chunk Assembly
 
 Finally, you stitch the byte arrays together:
 
