@@ -83,3 +83,137 @@ canvas.toBlob(async (blob) => {
   console.log(`Generated ${uint8Array.length} bytes of PNG data.`);
 }, 'image/png');
 ```
+
+## Clean PNG
+
+### Sneaky Metadata (Ancillary Chunks)
+
+Your 142-byte PNG payload is incredibly lean — it contains only the required
+`IHDR` (header), `IDAT` (pixel data), and `IEND` (footer) chunks.
+
+Different browsers inject extra metadata chunks into their canvas exports. For
+example:
+
+- **Chrome/Edge** might inject an `sRGB` chunk to define the color space.
+- **Firefox** might inject a `pHYs` chunk to define pixel aspect ratios.
+These extra chunks can silently add 20 to 50 bytes to your final payload.
+
+### What to Expect
+
+If you run the solid green 16x16 canvas code in a modern browser, the resulting
+`.ico` file (22-byte header + PNG blob) usually lands between
+**180 and 220 bytes**. It is still incredibly lightweight and perfectly fine for
+network transmission, but not quite hand-optimized.
+
+---
+
+How can I strip unnecessary metadata chunks from a PNG ArrayBuffer in JavaScript
+to get the smallest possible file size?
+
+---
+
+To strip out the metadata, you need to parse the PNG file structure.
+Fortunately, the PNG format is incredibly elegant and easy to manipulate in
+memory.
+
+A PNG file consists of an 8-byte signature followed by a series of blocks called
+**chunks**. Each chunk has a strict 4-part structure:
+
+1. **Length:** 4 bytes (How big the payload is)
+2. **Type:** 4 bytes (e.g., `IHDR`, `IDAT`, `sRGB`)
+3. **Data:** [Length] bytes (The actual payload)
+4. **CRC:** 4 bytes (A cyclic redundancy check to ensure the data isn't corrupted)
+
+To get the absolute smallest payload from a `canvas` export, we only need to
+keep three essential chunks: `IHDR` (the header), `IDAT` (the pixel data), and
+`IEND` (the end marker). We can discard everything else (`pHYs`, `sRGB`, `tEXt`,
+etc.).
+
+## The Stripper Function
+
+Here is the JavaScript to iterate through the `Uint8Array`, identify the chunk
+types, and reconstruct a pristine, bare-minimum PNG.
+
+```javascript
+/**
+ * Strips non-essential chunks from a PNG Uint8Array.
+ * Keeps only IHDR, IDAT, and IEND.
+ */
+function stripPngMetadata(pngBytes) {
+  // Ensure the file is actually a PNG by checking the 8-byte signature
+  const signature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+  for (let i = 0; i < 8; i++) {
+    if (pngBytes[i] !== signature[i]) throw new Error("Not a valid PNG");
+  }
+
+  // DataView allows us to safely read 32-bit integers (Big-Endian)
+  const view = new DataView(pngBytes.buffer, pngBytes.byteOffset, pngBytes.byteLength);
+  const keptChunks = [pngBytes.slice(0, 8)]; // Keep the signature
+  let offset = 8;
+
+  while (offset < pngBytes.length) {
+    // Read the chunk length (4 bytes)
+    const dataLength = view.getUint32(offset, false);
+
+    // Read the chunk type (4 ASCII characters)
+    const chunkType = String.fromCharCode(
+      pngBytes[offset + 4],
+      pngBytes[offset + 5],
+      pngBytes[offset + 6],
+      pngBytes[offset + 7]
+    );
+
+    // Total size = Length (4) + Type (4) + Data (dataLength) + CRC (4)
+    const chunkTotalLength = 12 + dataLength;
+
+    // Only keep the required chunks for a standard 32-bit RGBA image
+    if (chunkType === 'IHDR' || chunkType === 'IDAT' || chunkType === 'IEND') {
+      keptChunks.push(pngBytes.slice(offset, offset + chunkTotalLength));
+    }
+
+    // Move to the next chunk
+    offset += chunkTotalLength;
+
+    // Stop parsing once we hit the end marker
+    if (chunkType === 'IEND') break;
+  }
+
+  // Calculate the new total file size
+  const totalSize = keptChunks.reduce((sum, chunk) => sum + chunk.length, 0);
+
+  // Reconstruct the stripped PNG
+  const strippedPng = new Uint8Array(totalSize);
+  let writeOffset = 0;
+  for (const chunk of keptChunks) {
+    strippedPng.set(chunk, writeOffset);
+    writeOffset += chunk.length;
+  }
+
+  return strippedPng;
+}
+```
+
+### How to use it in your workflow
+
+You can drop this directly into your existing canvas extraction logic. Here is
+how it looks in practice:
+
+```javascript
+canvas.toBlob(async (blob) => {
+  const arrayBuffer = await blob.arrayBuffer();
+  const originalBytes = new Uint8Array(arrayBuffer);
+
+  // Strip the browser's injected metadata
+  const optimizedBytes = stripPngMetadata(originalBytes);
+
+  console.log(`Original: ${originalBytes.length} bytes`);
+  console.log(`Optimized: ${optimizedBytes.length} bytes`);
+
+  // Now you can append 'optimizedBytes' to your 22-byte ICO header!
+}, 'image/png');
+```
+
+Running this strips out any physical pixel dimension (`pHYs`) or color profile
+(`sRGB`/`iCCP`) chunks that browsers like Chrome and Firefox habitually inject.
+This ensures your final `.ico` file gets as close to that 164-byte threshold as
+dynamically possible.
