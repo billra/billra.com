@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Roll Your Own: 16x16 PNG ICO</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 2rem; background: #f0f0f0; }
+    canvas { border: 1px solid #ccc; background: #fff; width: 64px; image-rendering: pixelated; }
+    button { display: block; margin-top: 1rem; padding: 0.5rem 1rem; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h3>Source 16x16 Canvas</h3>
+  <!-- We'll scale it up in CSS so you can see it -->
+  <canvas id="iconCanvas" width="16" height="16"></canvas>
+  <button id="generateBtn">Generate Ultra-Small ICO</button>
+  <pre id="output"></pre>
+
+  <script type="module">
+    import pako from 'https://esm.sh/pako@2.1.0';
+
+    // 1. Setup a test image (A red circle with a transparent background and a blue dot)
+    const canvas = document.getElementById('iconCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 16, 16);
+    ctx.fillStyle = '#ff0000';
+    ctx.beginPath(); ctx.arc(8, 8, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#0000ff';
+    ctx.fillRect(7, 7, 2, 2);
+
+    document.getElementById('generateBtn').addEventListener('click', () => {
+      const imgData = ctx.getImageData(0, 0, 16, 16).data;
+
+      // 2. Extract Custom Palette (Force transparency to Index 0)
+      const palette = [];
+      let transparentIndex = -1;
+
+      // Helper to find existing color in palette
+      const findColor = (r, g, b, a) => palette.findIndex(c => c.r === r && c.g === g && c.b === b && c.a === a);
+
+      for (let i = 0; i < imgData.length; i += 4) {
+        const r = imgData[i], g = imgData[i+1], b = imgData[i+2], a = imgData[i+3];
+        let idx = findColor(r, g, b, a);
+
+        if (idx === -1) {
+          if (palette.length >= 16) throw new Error("Image has more than 16 colors!");
+
+          if (a < 255 && transparentIndex === -1) {
+            // First transparent color found! Force it to the front.
+            palette.unshift({ r, g, b, a });
+            transparentIndex = 0;
+          } else {
+            palette.push({ r, g, b, a });
+          }
+        }
+      }
+
+      // 3. Pack 4-bit Pixels (2 pixels per byte + 1 filter byte per row)
+      const packedPixels = new Uint8Array(16 * 9); // 16 rows * (1 byte filter + 8 bytes data)
+      let writePos = 0;
+
+      for (let y = 0; y < 16; y++) {
+        packedPixels[writePos++] = 0; // PNG Filter 0 (None)
+
+        for (let x = 0; x < 16; x += 2) {
+          // Get pixel 1
+          let p1Offset = (y * 16 + x) * 4;
+          let p1Idx = findColor(imgData[p1Offset], imgData[p1Offset+1], imgData[p1Offset+2], imgData[p1Offset+3]);
+
+          // Get pixel 2
+          let p2Offset = (y * 16 + (x + 1)) * 4;
+          let p2Idx = findColor(imgData[p2Offset], imgData[p2Offset+1], imgData[p2Offset+2], imgData[p2Offset+3]);
+
+          // Combine two 4-bit indices into one 8-bit byte
+          packedPixels[writePos++] = (p1Idx << 4) | p2Idx;
+        }
+      }
+
+      // 4. Max DEFLATE
+      const compressedData = pako.deflate(packedPixels, { level: 9, strategy: 2 });
+
+      // 5. Build PNG Chunks
+      const pngSignature = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+
+      // IHDR (13 bytes)
+      const ihdrData = new Uint8Array(13);
+      const ihdrView = new DataView(ihdrData.buffer);
+      ihdrView.setUint32(0, 16, false); // Width
+      ihdrView.setUint32(4, 16, false); // Height
+      ihdrData[8] = 4;                  // 4-bit depth
+      ihdrData[9] = 3;                  // Color Type 3 (Indexed)
+      const ihdrChunk = createChunk('IHDR', ihdrData);
+
+      // PLTE
+      const plteData = new Uint8Array(palette.length * 3);
+      palette.forEach((c, i) => {
+        plteData[i*3] = c.r; plteData[i*3+1] = c.g; plteData[i*3+2] = c.b;
+      });
+      const plteChunk = createChunk('PLTE', plteData);
+
+      // tRNS (Only if we have a transparent color at index 0)
+      let trnsChunk = new Uint8Array(0);
+      if (transparentIndex === 0) {
+        trnsChunk = createChunk('tRNS', new Uint8Array([palette[0].a]));
+      }
+
+      // IDAT & IEND
+      const idatChunk = createChunk('IDAT', compressedData);
+      const iendChunk = createChunk('IEND', new Uint8Array(0));
+
+      // 6. Assemble PNG Payload
+      const pngPayloadSize = pngSignature.length + ihdrChunk.length + plteChunk.length + trnsChunk.length + idatChunk.length + iendChunk.length;
+      const pngPayload = new Uint8Array(pngPayloadSize);
+      let offset = 0;
+      [pngSignature, ihdrChunk, plteChunk, trnsChunk, idatChunk, iendChunk].forEach(c => {
+        pngPayload.set(c, offset);
+        offset += c.length;
+      });
+
+      // 7. Assemble final ICO Header (22 bytes)
+      const finalIco = new Uint8Array(22 + pngPayloadSize);
+      const icoView = new DataView(finalIco.buffer);
+
+      icoView.setUint16(0, 0, true);  // Reserved
+      icoView.setUint16(2, 1, true);  // Type (Icon)
+      icoView.setUint16(4, 1, true);  // Image Count
+
+      finalIco[6] = 16;                           // Width
+      finalIco[7] = 16;                           // Height
+      finalIco[8] = palette.length;               // Colors
+      finalIco[9] = 0;                            // Reserved
+      icoView.setUint16(10, 1, true);             // Planes
+      icoView.setUint16(12, 4, true);             // BPP
+      icoView.setUint32(14, pngPayloadSize, true); // Image Size
+      icoView.setUint32(18, 22, true);             // Offset
+
+      // Append PNG
+      finalIco.set(pngPayload, 22);
+
+      // Report & Download
+      document.getElementById('output').textContent = `Success! Generated ${finalIco.length} byte .ico file.`;
+
+      const blob = new Blob([finalIco], { type: 'image/x-icon' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'ultra_optimized.ico';
+      a.click();
+    });
+
+    // --- UTILS --- //
+
+    // PNG Chunk Generator
+    function createChunk(type, data) {
+      const chunk = new Uint8Array(4 + 4 + data.length + 4);
+      const view = new DataView(chunk.buffer);
+
+      view.setUint32(0, data.length, false); // Length
+      for (let i = 0; i < 4; i++) chunk[4 + i] = type.charCodeAt(i); // Type
+      chunk.set(data, 8); // Data
+      view.setUint32(8 + data.length, crc32(type, data), false); // CRC
+
+      return chunk;
+    }
+
+    // CRC32 Calculation (Required for PNG Chunks)
+    const crcTable = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let k = 0; k < 8; k++) c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+      crcTable[i] = c;
+    }
+
+    function crc32(type, data) {
+      let crc = 0xFFFFFFFF;
+      for (let i = 0; i < 4; i++) crc = crcTable[(crc ^ type.charCodeAt(i)) & 0xFF] ^ (crc >>> 8);
+      for (let i = 0; i < data.length; i++) crc = crcTable[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
+      return (crc ^ 0xFFFFFFFF) >>> 0;
+    }
+  </script>
+</body>
+</html>
+
+<!--
+
+Why this approach wins on size
+
+- Zero Waste in PLTE: It calculates the exact number of colors you actually use.
+  If you only draw with 3 colors, your PLTE chunk is only 9 bytes long, rather
+  than defaulting to a fixed 16-color, 48-byte palette.
+
+- 1-Byte tRNS: By using .unshift() in the palette builder array, we enforce that
+  the very first color evaluated with alpha < 255 is assigned to index 0. This
+  guarantees our tRNS data payload is exactly 1 byte.
+
+- Perfect IDAT Packaging: The bitwise shift (p1Idx << 4) | p2Idx flawlessly
+  packs two 4-bit pixels into a single 8-bit byte. This cuts the uncompressed
+  pixel array exactly in half before handing it over to Pako's deflate.
+
+-->
