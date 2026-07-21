@@ -69,24 +69,17 @@ const canvas = document.createElement('canvas');
 canvas.width = 16;
 canvas.height = 16;
 const ctx = canvas.getContext('2d');
-ctx.fillStyle = '#00FF00';    // Example: Fill green
+ctx.fillStyle = '#00FF00';
 ctx.fillRect(0, 0, 16, 16);
 
-// Generate PNG Blob (binary stream)
-canvas.toBlob(function(blob) {
-  // 'blob' is a PNG image; you can upload, save, or process it further
-  // For example, to get binary data:
-  const reader = new FileReader();
-  reader.onload = function() {
-    const pngArrayBuffer = reader.result;
-    // pngArrayBuffer is an ArrayBuffer (binary PNG)
-  };
-  reader.readAsArrayBuffer(blob);
+// Generate PNG Blob and extract bytes (Modern async approach)
+canvas.toBlob(async (blob) => {
+  // Convert directly to ArrayBuffer
+  const pngArrayBuffer = await blob.arrayBuffer();
+
+  // Get raw bytes
+  const uint8Array = new Uint8Array(pngArrayBuffer);
+
+  console.log(`Generated ${uint8Array.length} bytes of PNG data.`);
 }, 'image/png');
-```
-
-To get the **raw bytes** (Uint8Array), wrap the `ArrayBuffer`:
-
-```js
-const uint8Array = new Uint8Array(pngArrayBuffer);
 ```
