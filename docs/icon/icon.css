@@ -53,13 +53,49 @@ p {
     gap: 15px;
 }
 
-#colorPicker {
+.toolbar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+
+.tool-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #222;
+    padding: 6px;
+    border-radius: 8px;
+    border: 1px solid #444;
+}
+
+#colorPicker, .eraser-swatch {
     cursor: pointer;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     padding: 0;
-    border: none;
+    border: 1px solid var(--text-secondary);
+    border-radius: 4px;
+    transition: outline 0.1s ease-in-out;
+}
+
+#colorPicker {
     background: none;
+    border: none;
+}
+
+.eraser-swatch {
+    background-color: #fff;
+    /* Tighter checkerboard pattern specifically for the small button */
+    background-image: conic-gradient(#ccc 90deg, #fff 90deg 180deg, #ccc 180deg 270deg, #fff 270deg);
+    background-size: 12px 12px;
+}
+
+/* Visually highlights whichever tool is currently selected */
+.active-tool {
+    outline: 2px solid white;
+    outline-offset: 2px;
 }
 
 .layout-container {

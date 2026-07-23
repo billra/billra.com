@@ -8,7 +8,8 @@ CONFIG.totalPixels = CONFIG.gridSize * CONFIG.gridSize;
 const elements = {
     grid: document.getElementById('grid-container'),
     colorPicker: document.getElementById('colorPicker'),
-    pixels: [] // Holds the DOM nodes for instant updates
+    btnEraser: document.getElementById('btn-eraser'),
+    pixels: []
 };
 
 // --- Inject Metadata ---
@@ -17,16 +18,13 @@ const versionMeta = document.querySelector('meta[name="version"]');
 if (versionMeta) document.getElementById('version').textContent = `v${versionMeta.content}`;
 
 // --- State Management ---
-// To track array changes seamlessly, we use a nested proxy specifically for the pixel data.
 const pixelsProxy = new Proxy(new Array(CONFIG.totalPixels).fill(null), {
     set(target, index, value) {
         if (target[index] === value) return true;
         target[index] = value;
 
-        // Ensure index is a number before attempting DOM lookup
         const numIndex = parseInt(index, 10);
         if (!isNaN(numIndex) && elements.pixels[numIndex]) {
-            // Null implies transparent. Otherwise, apply the color string.
             elements.pixels[numIndex].style.backgroundColor = value || 'transparent';
         }
         return true;
@@ -40,7 +38,22 @@ const state = new Proxy({
 }, {
     set(target, property, value) {
         if (target[property] === value) return true;
+
         target[property] = value;
+
+        // Unidirectional UI update for the active tool
+        if (property === 'currentColor') {
+            if (value === null) {
+                elements.colorPicker.classList.remove('active-tool');
+                elements.btnEraser.classList.add('active-tool');
+            } else {
+                elements.btnEraser.classList.remove('active-tool');
+                elements.colorPicker.classList.add('active-tool');
+                // Ensure the color picker UI matches the state if set programmatically
+                elements.colorPicker.value = value;
+            }
+        }
+
         return true;
     }
 });
@@ -68,19 +81,29 @@ const handlePaint = (e) => {
     }
 };
 
+// Tool Selection
 elements.colorPicker.addEventListener('input', (e) => {
     state.currentColor = e.target.value;
 });
 
-// Using event delegation on the grid container for performance
+// Using 'click' ensures that clicking the color picker when the eraser
+// is active immediately switches the mode back to paint.
+elements.colorPicker.addEventListener('click', (e) => {
+    state.currentColor = e.target.value;
+});
+
+elements.btnEraser.addEventListener('click', () => {
+    state.currentColor = null;
+});
+
+// Grid Painting
 elements.grid.addEventListener('pointerdown', (e) => {
     state.isDrawing = true;
-    handlePaint(e); // Paint the first clicked pixel immediately
+    handlePaint(e);
 });
 
 elements.grid.addEventListener('pointerover', handlePaint);
 
-// Bind pointerup to window so dragging outside the grid cleanly stops drawing
 window.addEventListener('pointerup', () => {
     state.isDrawing = false;
 });

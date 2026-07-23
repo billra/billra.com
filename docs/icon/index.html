@@ -3,7 +3,7 @@
 <head>
     <title>16x16 ICO Editor</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.0">
+    <meta name="version" content="1.1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="icon.css">
@@ -13,16 +13,18 @@
 
     <header class="header">
         <h1><span id="page-title"></span> <span id="version"></span></h1>
-        <p>Select a color and drag across the grid to paint.</p>
+        <p>Select a color or the eraser, and drag across the grid to paint.</p>
 
         <div class="toolbar">
-            <input type="color" id="colorPicker" value="#ff0000" title="Choose Color">
+            <div class="tool-group">
+                <input type="color" id="colorPicker" value="#ff0000" title="Choose Color" class="active-tool">
+                <button id="btn-eraser" class="eraser-swatch" title="Eraser (Transparent)"></button>
+            </div>
             <button id="btn-generate" disabled>Generate (Coming Soon)</button>
         </div>
     </header>
 
     <main class="layout-container">
-        <!-- The grid dynamically scales up to the container's bounds while remaining square -->
         <div id="grid-container" class="grid-container"></div>
     </main>
 
