@@ -104,11 +104,29 @@ function parseColor(val) {
 
 const toHex = (val, bytes = 1) => val.toString(16).padStart(bytes * 2, '0');
 
-function generateLogForIco(name, ico, pngStats, colorCount) {
+const STRATEGY_NAMES = { 0: 'Default', 1: 'Filtered', 2: 'Huffman Only', 3: 'RLE' };
+
+function bestDeflate(data) {
+    let best = null;
+    let bestStrategy = 0;
+
+    for (let strategy = 0; strategy <= 3; strategy++) {
+        const compressed = pako.deflate(data, { level: 9, strategy });
+        if (!best || compressed.length < best.length) {
+            best = compressed;
+            bestStrategy = strategy;
+        }
+    }
+
+    return { data: best, strategy: bestStrategy };
+}
+
+function generateLogForIco(name, ico, pngStats, deflateStats, colorCount) {
     const view = new DataView(ico.buffer);
     const pngSize = ico.length - 22;
     let log = `--- ${name} ---\n`;
-    log += `Total File Size: ${ico.length} bytes\n\n`;
+    log += `Total File Size: ${ico.length} bytes\n`;
+    log += `Winning zlib Strategy: ${deflateStats.strategy} (${STRATEGY_NAMES[deflateStats.strategy]})\n\n`;
 
     log += `[ICO HEADER] (22 Bytes)\n`;
     log += `- ${toHex(ico[0])} ${toHex(ico[1])}: Reserved\n`;
@@ -183,14 +201,15 @@ elements.btnGenerate.addEventListener('click', () => {
             }
         }
 
-        const tcCompressed = pako.deflate(truecolorPixels, { level: 9, strategy: 2 });
-        const tcPng = buildPNG(16, 16, 8, 6, tcCompressed, null, null);
+        const tcDeflate = bestDeflate(truecolorPixels);
+        const tcPng = buildPNG(16, 16, 8, 6, tcDeflate.data, null, null);
         const tcIco = assembleICO(tcPng.payload, 0, 32);
 
         // --- PATH B: OPTIMAL INDEXED ---
         let idxIco = null;
         let idxPng = null;
         let bitDepth = 0;
+        let idxDeflate = null;
 
         if (palette.length <= 16) {
             if (palette.length <= 2) bitDepth = 1;
@@ -220,19 +239,19 @@ elements.btnGenerate.addEventListener('click', () => {
                 }
             }
 
-            const idxCompressed = pako.deflate(packedPixels, { level: 9, strategy: 2 });
-            idxPng = buildPNG(16, 16, bitDepth, 3, idxCompressed, palette, transparentIndex === 0 ? palette[0].a : null);
+            idxDeflate = bestDeflate(packedPixels);
+            idxPng = buildPNG(16, 16, bitDepth, 3, idxDeflate.data, palette, transparentIndex === 0 ? palette[0].a : null);
             idxIco = assembleICO(idxPng.payload, palette.length, bitDepth);
         }
 
         // --- RENDER LOG ---
         if (idxIco) {
-            mainLog += generateLogForIco(`OPTIMAL INDEXED (${bitDepth}-bit)`, idxIco, idxPng.stats, palette.length);
+            mainLog += generateLogForIco(`OPTIMAL INDEXED (${bitDepth}-bit)`, idxIco, idxPng.stats, idxDeflate, palette.length);
         } else {
             mainLog += `--- OPTIMAL INDEXED ---\nSkipped: Image has more than 16 colors.\n\n`;
         }
 
-        mainLog += generateLogForIco(`TRUECOLOR (32-bit RGBA)`, tcIco, tcPng.stats, 0);
+        mainLog += generateLogForIco(`TRUECOLOR (32-bit RGBA)`, tcIco, tcPng.stats, tcDeflate, 0);
 
         const winner = (idxIco && idxIco.length < tcIco.length) ? `Indexed (${bitDepth}-bit)` : 'Truecolor (32-bit)';
         mainLog += `=================================\n`;
