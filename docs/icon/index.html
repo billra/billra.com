@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>16x16 ICO Editor</title>
+    <meta name="author" content="Bill Ola Rasmussen">
+    <meta name="version" content="1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="icon.css">
+    <script type="module" src="icon.js"></script>
+</head>
+<body>
+
+    <header class="header">
+        <h1><span id="page-title"></span> <span id="version"></span></h1>
+        <p>Select a color and drag across the grid to paint.</p>
+
+        <div class="toolbar">
+            <input type="color" id="colorPicker" value="#ff0000" title="Choose Color">
+            <button id="btn-generate" disabled>Generate (Coming Soon)</button>
+        </div>
+    </header>
+
+    <main class="layout-container">
+        <!-- The grid dynamically scales up to the container's bounds while remaining square -->
+        <div id="grid-container" class="grid-container"></div>
+    </main>
+
+</body>
+</html>

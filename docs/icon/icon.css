@@ -1,0 +1,101 @@
+/* --- Modern Reset --- */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+:root {
+    --text-primary: #eee;
+    --text-secondary: #888;
+    --grid-border: rgba(255, 255, 255, 0.1);
+    --bg-main: #111;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.header {
+    margin-block-start: 30px;
+    text-align: center;
+}
+
+h1 {
+    margin: 0 0 10px 0;
+    font-size: 1.5rem;
+    font-weight: 400;
+}
+
+#version {
+    font-size: 0.5em;
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+p {
+    margin: 0 0 15px 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+
+#colorPicker {
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    background: none;
+}
+
+.layout-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 600px; /* Limits the grid size on large screens */
+    flex: 1;
+    min-height: 0;
+    padding: 20px;
+}
+
+/* --- Editor Grid --- */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    grid-template-rows: repeat(16, 1fr);
+    width: 100%;
+    aspect-ratio: 1; /* Keeps the grid perfectly square regardless of viewport */
+    border: 1px solid var(--text-secondary);
+
+    /* Checkerboard background for transparent pixels */
+    background-color: #222;
+    background-image: conic-gradient(#333 90deg, transparent 90deg 180deg, #333 180deg 270deg, transparent 270deg);
+    background-size: 8% 8%; /* Scales visually with the grid */
+
+    touch-action: none; /* Prevents mobile scrolling while drawing */
+}
+
+.pixel {
+    border-right: 1px solid var(--grid-border);
+    border-bottom: 1px solid var(--grid-border);
+    user-select: none; /* Prevents text selection cursor while dragging */
+    background-color: transparent; /* Empty state allows checkerboard to show */
+}
+
+.pixel:nth-child(16n) { border-right: none; }
+.pixel:nth-last-child(-n+16) { border-bottom: none; }
