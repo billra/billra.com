@@ -138,3 +138,29 @@ p {
 
 .pixel:nth-child(16n) { border-right: none; }
 .pixel:nth-last-child(-n+16) { border-bottom: none; }
+
+/* --- Output Panel --- */
+#output-panel {
+    width: 100%;
+    margin-top: 20px;
+    background: #1a1a1a;
+    border: 1px solid var(--grid-border);
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+#output-panel h3 {
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+#output-log {
+    margin: 0;
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: #0f0;
+    white-space: pre-wrap;
+    line-height: 1.4;
+}

@@ -3,7 +3,7 @@
 <head>
     <title>16x16 ICO Editor</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.2">
+    <meta name="version" content="1.3">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="icon.css">
@@ -20,12 +20,18 @@
                 <input type="color" id="colorPicker" value="#ff0000" title="Choose Color" class="active-tool">
                 <button id="btn-eraser" class="eraser-swatch" title="Eraser (Transparent)"></button>
             </div>
-            <button id="btn-generate" disabled>Generate (Coming Soon)</button>
+            <button id="btn-generate">Generate .ico</button>
         </div>
     </header>
 
     <main class="layout-container">
         <div id="grid-container" class="grid-container"></div>
+
+        <!-- Output Log for the Byte Breakdown -->
+        <div id="output-panel" style="display: none;">
+            <h3>Generation Log</h3>
+            <pre id="output-log"></pre>
+        </div>
     </main>
 
 </body>
