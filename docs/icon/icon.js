@@ -94,7 +94,6 @@ window.addEventListener('pointerup', () => state.isDrawing = false);
 
 // --- Generation Logic ---
 
-// Helper to convert hex string "#ff0000" or null to RGBA
 function parseColor(val) {
     if (val === null) return { r: 0, g: 0, b: 0, a: 0 };
     const r = parseInt(val.substr(1, 2), 16);
@@ -103,28 +102,50 @@ function parseColor(val) {
     return { r, g, b, a: 255 };
 }
 
-// Helper to format bytes for the log
 const toHex = (val, bytes = 1) => val.toString(16).padStart(bytes * 2, '0');
+
+function generateLogForIco(name, ico, pngStats, colorCount) {
+    const view = new DataView(ico.buffer);
+    const pngSize = ico.length - 22;
+    let log = `--- ${name} ---\n`;
+    log += `Total File Size: ${ico.length} bytes\n\n`;
+
+    log += `[ICO HEADER] (22 Bytes)\n`;
+    log += `- ${toHex(ico[0])} ${toHex(ico[1])}: Reserved\n`;
+    log += `- ${toHex(ico[2])} ${toHex(ico[3])}: Type = 1 (icon)\n`;
+    log += `- ${toHex(ico[4])} ${toHex(ico[5])}: Image count = 1\n`;
+    log += `- ${toHex(ico[6])}: Width = 16\n`;
+    log += `- ${toHex(ico[7])}: Height = 16\n`;
+    log += `- ${toHex(ico[8])}: Color count = ${colorCount >= 256 ? 0 : colorCount}\n`;
+    log += `- ${toHex(ico[9])}: Reserved\n`;
+    log += `- ${toHex(ico[10])} ${toHex(ico[11])}: Planes = 1\n`;
+    log += `- ${toHex(ico[12])} ${toHex(ico[13])}: Bit count = ${view.getUint16(12, true)}\n`;
+    log += `- ${toHex(view.getUint32(14, true), 4)}: Image data size = 0x${toHex(pngSize, 4)} = ${pngSize} bytes\n`;
+    log += `- ${toHex(view.getUint32(18, true), 4)}: Offset to image = 0x16 = 22 bytes\n\n`;
+
+    log += `[PNG PAYLOAD] (${pngSize} Bytes)\n`;
+    log += `- Signature: 8 bytes\n`;
+    log += `- IHDR Chunk: ${pngStats.ihdr} bytes\n`;
+    if (pngStats.plte) log += `- PLTE Chunk: ${pngStats.plte} bytes\n`;
+    if (pngStats.trns) log += `- tRNS Chunk: ${pngStats.trns} bytes\n`;
+    log += `- IDAT Chunk: ${pngStats.idat} bytes (Compressed Data)\n`;
+    log += `- IEND Chunk: ${pngStats.iend} bytes\n\n`;
+
+    return log;
+}
 
 elements.btnGenerate.addEventListener('click', () => {
     try {
+        const colors = state.pixels.map(parseColor);
         const palette = [];
         let transparentIndex = -1;
 
         const findColor = (r, g, b, a) => palette.findIndex(c => c.r === r && c.g === g && c.b === b && c.a === a);
 
-        // 1. Build Palette directly from State Array
-        for (let i = 0; i < CONFIG.totalPixels; i++) {
-            const { r, g, b, a } = parseColor(state.pixels[i]);
-            let idx = findColor(r, g, b, a);
-
-            if (idx === -1) {
-                if (palette.length >= 16) {
-                    alert("Error: 16x16 4-bit ICOs support a maximum of 16 colors. Please reduce your palette.");
-                    return;
-                }
-
-                if (a < 255 && transparentIndex === -1) {
+        // 1. Extract Palette
+        for (const { r, g, b, a } of colors) {
+            if (findColor(r, g, b, a) === -1) {
+                if (a < 255 && transparentIndex === -1 && palette.length < 16) {
                     palette.unshift({ r, g, b, a });
                     transparentIndex = 0;
                 } else {
@@ -133,128 +154,93 @@ elements.btnGenerate.addEventListener('click', () => {
             }
         }
 
-        // Handle empty canvas edge case (force at least 1 transparent color)
+        // Handle empty canvas
         if (palette.length === 0) {
             palette.push({ r: 0, g: 0, b: 0, a: 0 });
             transparentIndex = 0;
         }
 
-        // 2. Pack 4-bit Pixels
-        const packedPixels = new Uint8Array(16 * 9);
-        let writePos = 0;
-
-        for (let y = 0; y < 16; y++) {
-            packedPixels[writePos++] = 0; // PNG Filter: None
-            for (let x = 0; x < 16; x += 2) {
-                const p1 = parseColor(state.pixels[y * 16 + x]);
-                const p2 = parseColor(state.pixels[y * 16 + (x + 1)]);
-
-                const p1Idx = findColor(p1.r, p1.g, p1.b, p1.a);
-                const p2Idx = findColor(p2.r, p2.g, p2.b, p2.a);
-
-                packedPixels[writePos++] = (p1Idx << 4) | p2Idx;
-            }
-        }
-
-        // 3. Compress
-        const compressedData = pako.deflate(packedPixels, { level: 9, strategy: 2 });
-
-        // 4. Build PNG Chunks
-        const pngSignature = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
-
-        const ihdrData = new Uint8Array(13);
-        const ihdrView = new DataView(ihdrData.buffer);
-        ihdrView.setUint32(0, 16, false);
-        ihdrView.setUint32(4, 16, false);
-        ihdrData[8] = 4; // 4-bit depth
-        ihdrData[9] = 3; // Indexed color
-        const ihdrChunk = createChunk('IHDR', ihdrData);
-
-        const plteData = new Uint8Array(palette.length * 3);
-        palette.forEach((c, i) => {
-            plteData[i*3] = c.r; plteData[i*3+1] = c.g; plteData[i*3+2] = c.b;
-        });
-        const plteChunk = createChunk('PLTE', plteData);
-
-        let trnsChunk = new Uint8Array(0);
-        if (transparentIndex === 0) {
-            trnsChunk = createChunk('tRNS', new Uint8Array([palette[0].a]));
-        }
-
-        const idatChunk = createChunk('IDAT', compressedData);
-        const iendChunk = createChunk('IEND', new Uint8Array(0));
-
-        // 5. Assemble PNG
-        const chunks = [pngSignature, ihdrChunk, plteChunk, trnsChunk, idatChunk, iendChunk];
-        const pngPayloadSize = chunks.reduce((sum, c) => sum + c.length, 0);
-        const pngPayload = new Uint8Array(pngPayloadSize);
-        let offset = 0;
-        chunks.forEach(c => {
-            pngPayload.set(c, offset);
-            offset += c.length;
-        });
-
-        // 6. Assemble ICO File
-        const finalIco = new Uint8Array(22 + pngPayloadSize);
-        const icoView = new DataView(finalIco.buffer);
-
-        icoView.setUint16(0, 0, true);
-        icoView.setUint16(2, 1, true);
-        icoView.setUint16(4, 1, true);
-        finalIco[6] = 16;
-        finalIco[7] = 16;
-        finalIco[8] = palette.length;
-        finalIco[9] = 0;
-        icoView.setUint16(10, 1, true);
-        icoView.setUint16(12, 4, true);
-        icoView.setUint32(14, pngPayloadSize, true);
-        icoView.setUint32(18, 22, true);
-
-        finalIco.set(pngPayload, 22);
-
-        // 7. Output Breakdown Log
-        let log = `File Size: ${finalIco.length} bytes\n`;
-
-        // --- Detailed Palette Logging ---
-        log += `Colors Used: ${palette.length}/16\n`;
+        let mainLog = `=== PALETTE EXTRACTED ===\n`;
+        mainLog += `Colors Used: ${palette.length}\n`;
         palette.forEach((c, i) => {
             const hex = `#${toHex(c.r)}${toHex(c.g)}${toHex(c.b)}`;
             const isTransparent = (i === 0 && transparentIndex === 0) ? " <-- tRNS (Transparent)" : "";
-            log += `  [${i}] ${hex}${isTransparent}\n`;
+            mainLog += `  [${i}] ${hex}${isTransparent}\n`;
         });
-        log += `\n`;
-        // -------------------------------------
+        mainLog += `\n`;
 
-        log += `--- ICO HEADER (22 Bytes) ---\n`;
-        log += `- ${toHex(finalIco[0])} ${toHex(finalIco[1])}: Reserved\n`;
-        log += `- ${toHex(finalIco[2])} ${toHex(finalIco[3])}: Type = 1 (icon)\n`;
-        log += `- ${toHex(finalIco[4])} ${toHex(finalIco[5])}: Image count = 1\n`;
-        log += `- ${toHex(finalIco[6])}: Width = 16\n`;
-        log += `- ${toHex(finalIco[7])}: Height = 16\n`;
-        log += `- ${toHex(finalIco[8])}: Color count = ${palette.length}\n`;
-        log += `- ${toHex(finalIco[9])}: Reserved\n`;
-        log += `- ${toHex(finalIco[10])} ${toHex(finalIco[11])}: Planes = 1\n`;
-        log += `- ${toHex(finalIco[12])} ${toHex(finalIco[13])}: Bit count = 4\n`;
-        log += `- ${toHex(icoView.getUint32(14, true), 4)}: Image data size = 0x${toHex(pngPayloadSize, 4)} = ${pngPayloadSize} bytes\n`;
-        log += `- ${toHex(icoView.getUint32(18, true), 4)}: Offset to image = 0x16 = 22 bytes\n\n`;
+        // --- PATH A: TRUECOLOR (32-bit RGBA) ---
+        const truecolorPixels = new Uint8Array(16 * (1 + 16 * 4));
+        let tcWritePos = 0;
+        for (let y = 0; y < 16; y++) {
+            truecolorPixels[tcWritePos++] = 0; // Filter 0
+            for (let x = 0; x < 16; x++) {
+                const c = colors[y * 16 + x];
+                truecolorPixels[tcWritePos++] = c.r;
+                truecolorPixels[tcWritePos++] = c.g;
+                truecolorPixels[tcWritePos++] = c.b;
+                truecolorPixels[tcWritePos++] = c.a;
+            }
+        }
 
-        log += `--- PNG PAYLOAD (${pngPayloadSize} Bytes) ---\n`;
-        log += `- Signature: 8 bytes\n`;
-        log += `- IHDR Chunk: ${ihdrChunk.length} bytes\n`;
-        log += `- PLTE Chunk: ${plteChunk.length} bytes\n`;
-        if (trnsChunk.length > 0) log += `- tRNS Chunk: ${trnsChunk.length} bytes\n`;
-        log += `- IDAT Chunk: ${idatChunk.length} bytes (Compressed Data)\n`;
-        log += `- IEND Chunk: ${iendChunk.length} bytes\n`;
+        const tcCompressed = pako.deflate(truecolorPixels, { level: 9, strategy: 2 });
+        const tcPng = buildPNG(16, 16, 8, 6, tcCompressed, null, null);
+        const tcIco = assembleICO(tcPng.payload, 0, 32);
 
-        elements.outputLog.textContent = log;
+        // --- PATH B: OPTIMAL INDEXED ---
+        let idxIco = null;
+        let idxPng = null;
+        let bitDepth = 0;
+
+        if (palette.length <= 16) {
+            if (palette.length <= 2) bitDepth = 1;
+            else if (palette.length <= 4) bitDepth = 2;
+            else bitDepth = 4;
+
+            const pixelsPerByte = 8 / bitDepth;
+            const bytesPerRow = Math.ceil(16 / pixelsPerByte);
+            const packedPixels = new Uint8Array(16 * (1 + bytesPerRow));
+
+            let idxWritePos = 0;
+            for (let y = 0; y < 16; y++) {
+                packedPixels[idxWritePos++] = 0; // Filter 0
+
+                let currentByte = 0;
+                for (let x = 0; x < 16; x++) {
+                    const c = colors[y * 16 + x];
+                    const pIdx = findColor(c.r, c.g, c.b, c.a);
+
+                    const bitOffset = 8 - bitDepth - ((x % pixelsPerByte) * bitDepth);
+                    currentByte |= (pIdx << bitOffset);
+
+                    if ((x + 1) % pixelsPerByte === 0 || x === 15) {
+                        packedPixels[idxWritePos++] = currentByte;
+                        currentByte = 0;
+                    }
+                }
+            }
+
+            const idxCompressed = pako.deflate(packedPixels, { level: 9, strategy: 2 });
+            idxPng = buildPNG(16, 16, bitDepth, 3, idxCompressed, palette, transparentIndex === 0 ? palette[0].a : null);
+            idxIco = assembleICO(idxPng.payload, palette.length, bitDepth);
+        }
+
+        // --- RENDER LOG ---
+        if (idxIco) {
+            mainLog += generateLogForIco(`OPTIMAL INDEXED (${bitDepth}-bit)`, idxIco, idxPng.stats, palette.length);
+        } else {
+            mainLog += `--- OPTIMAL INDEXED ---\nSkipped: Image has more than 16 colors.\n\n`;
+        }
+
+        mainLog += generateLogForIco(`TRUECOLOR (32-bit RGBA)`, tcIco, tcPng.stats, 0);
+
+        const winner = (idxIco && idxIco.length < tcIco.length) ? `Indexed (${bitDepth}-bit)` : 'Truecolor (32-bit)';
+        mainLog += `=================================\n`;
+        mainLog += `WINNING COMPRESSION: ${winner}\n`;
+        mainLog += `=================================\n`;
+
+        elements.outputLog.textContent = mainLog;
         elements.outputPanel.style.display = 'block';
-
-        // 8. Trigger Download
-        const blob = new Blob([finalIco], { type: 'image/x-icon' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'icon.ico';
-        a.click();
 
     } catch (err) {
         console.error(err);
@@ -262,7 +248,73 @@ elements.btnGenerate.addEventListener('click', () => {
     }
 });
 
-// --- Utilities ---
+// --- PNG & ICO Assemblers ---
+
+function buildPNG(w, h, bitDepth, colorType, compressedIdat, palette, transparentAlpha) {
+    const pngSignature = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+
+    const ihdrData = new Uint8Array(13);
+    const ihdrView = new DataView(ihdrData.buffer);
+    ihdrView.setUint32(0, w, false);
+    ihdrView.setUint32(4, h, false);
+    ihdrData[8] = bitDepth;
+    ihdrData[9] = colorType;
+    const ihdrChunk = createChunk('IHDR', ihdrData);
+
+    let plteChunk = null;
+    let trnsChunk = null;
+
+    if (colorType === 3 && palette) {
+        const plteData = new Uint8Array(palette.length * 3);
+        palette.forEach((c, i) => {
+            plteData[i*3] = c.r; plteData[i*3+1] = c.g; plteData[i*3+2] = c.b;
+        });
+        plteChunk = createChunk('PLTE', plteData);
+
+        if (transparentAlpha !== null) {
+            trnsChunk = createChunk('tRNS', new Uint8Array([transparentAlpha]));
+        }
+    }
+
+    const idatChunk = createChunk('IDAT', compressedIdat);
+    const iendChunk = createChunk('IEND', new Uint8Array(0));
+
+    const chunks = [pngSignature, ihdrChunk, plteChunk, trnsChunk, idatChunk, iendChunk].filter(Boolean);
+    const size = chunks.reduce((sum, c) => sum + c.length, 0);
+    const payload = new Uint8Array(size);
+    let offset = 0;
+    chunks.forEach(c => { payload.set(c, offset); offset += c.length; });
+
+    return {
+        payload,
+        stats: {
+            ihdr: ihdrChunk.length,
+            plte: plteChunk ? plteChunk.length : 0,
+            trns: trnsChunk ? trnsChunk.length : 0,
+            idat: idatChunk.length,
+            iend: iendChunk.length
+        }
+    };
+}
+
+function assembleICO(pngPayload, colorCount, bitDepth) {
+    const ico = new Uint8Array(22 + pngPayload.length);
+    const view = new DataView(ico.buffer);
+    view.setUint16(0, 0, true);
+    view.setUint16(2, 1, true);
+    view.setUint16(4, 1, true);
+    ico[6] = 16;
+    ico[7] = 16;
+    ico[8] = colorCount;
+    ico[9] = 0;
+    view.setUint16(10, 1, true);
+    view.setUint16(12, bitDepth, true);
+    view.setUint32(14, pngPayload.length, true);
+    view.setUint32(18, 22, true);
+    ico.set(pngPayload, 22);
+    return ico;
+}
+
 function createChunk(type, data) {
     const chunk = new Uint8Array(4 + 4 + data.length + 4);
     const view = new DataView(chunk.buffer);

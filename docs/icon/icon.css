@@ -145,15 +145,17 @@ p {
     margin-top: 20px;
     background: #1a1a1a;
     border: 1px solid var(--grid-border);
-    border-radius: 8px;
+    border-radius: 4px; /* Flatter radius */
     padding: 15px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    /* Removed the box-shadow so it doesn't look like a floating modal */
 }
 
 #output-panel h3 {
     margin: 0 0 10px 0;
     font-size: 1rem;
     color: var(--text-secondary);
+    border-bottom: 1px solid var(--grid-border);
+    padding-bottom: 8px;
 }
 
 #output-log {
@@ -163,4 +165,5 @@ p {
     color: #0f0;
     white-space: pre-wrap;
     line-height: 1.4;
+    overflow-x: auto;
 }
