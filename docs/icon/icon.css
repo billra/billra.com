@@ -6,7 +6,7 @@
 :root {
     --text-primary: #eee;
     --text-secondary: #888;
-    --grid-border: rgba(255, 255, 255, 0.1);
+    --grid-border: #555;
     --bg-main: #111;
 }
 
@@ -115,15 +115,18 @@ p {
     grid-template-columns: repeat(16, 1fr);
     grid-template-rows: repeat(16, 1fr);
     width: 100%;
-    aspect-ratio: 1; /* Keeps the grid perfectly square regardless of viewport */
-    border: 1px solid var(--text-secondary);
+    aspect-ratio: 1;
+    border: 1px solid var(--grid-border); /* Match the outer border to the inner grid lines */
 
     /* Checkerboard background for transparent pixels */
     background-color: #222;
     background-image: conic-gradient(#333 90deg, transparent 90deg 180deg, #333 180deg 270deg, transparent 270deg);
-    background-size: 8% 8%; /* Scales visually with the grid */
 
-    touch-action: none; /* Prevents mobile scrolling while drawing */
+    /* Maps exactly 1 background tile to 1 pixel in the 16x16 grid */
+    background-size: calc(100% / 16) calc(100% / 16);
+    background-position: left top;
+
+    touch-action: none;
 }
 
 .pixel {
