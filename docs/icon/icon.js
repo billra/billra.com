@@ -214,7 +214,17 @@ elements.btnGenerate.addEventListener('click', () => {
 
         // 7. Output Breakdown Log
         let log = `File Size: ${finalIco.length} bytes\n`;
-        log += `Colors Used: ${palette.length}/16\n\n`;
+
+        // --- Detailed Palette Logging ---
+        log += `Colors Used: ${palette.length}/16\n`;
+        palette.forEach((c, i) => {
+            const hex = `#${toHex(c.r)}${toHex(c.g)}${toHex(c.b)}`;
+            const isTransparent = (i === 0 && transparentIndex === 0) ? " <-- tRNS (Transparent)" : "";
+            log += `  [${i}] ${hex}${isTransparent}\n`;
+        });
+        log += `\n`;
+        // -------------------------------------
+
         log += `--- ICO HEADER (22 Bytes) ---\n`;
         log += `- ${toHex(finalIco[0])} ${toHex(finalIco[1])}: Reserved\n`;
         log += `- ${toHex(finalIco[2])} ${toHex(finalIco[3])}: Type = 1 (icon)\n`;
