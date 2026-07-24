@@ -15,6 +15,8 @@ const elements = {
     outputPanel: document.getElementById('output-panel'),
     logIndexed: document.getElementById('log-indexed'),
     logTruecolor: document.getElementById('log-truecolor'),
+    titleIndexed: document.getElementById('title-indexed'),
+    titleTruecolor: document.getElementById('title-truecolor'),
     pixels: []
 };
 
@@ -122,12 +124,15 @@ function bestDeflate(data) {
     return { data: best, strategy: bestStrategy };
 }
 
-function generateLogForIco(name, ico, pngStats, deflateStats, colorCount) {
+function generateLogForIco(ico, pngStats, deflateStats, colorCount) {
     const view = new DataView(ico.buffer);
     const pngSize = ico.length - 22;
-    let log = `--- ${name} ---\n`;
-    log += `Total File Size: ${ico.length} bytes\n`;
-    log += `Winning zlib Strategy: ${deflateStats.strategy} (${STRATEGY_NAMES[deflateStats.strategy]})\n\n`;
+
+    // Split the 8-character hex strings into chunks of 2 separated by spaces
+    const sizeHex = toHex(view.getUint32(14, true), 4).match(/.{2}/g).join(' ');
+    const offsetHex = toHex(view.getUint32(18, true), 4).match(/.{2}/g).join(' ');
+
+    let log = `Winning zlib Strategy: ${deflateStats.strategy} (${STRATEGY_NAMES[deflateStats.strategy]})\n\n`;
 
     log += `[ICO HEADER] (22 Bytes)\n`;
     log += `- ${toHex(ico[0])} ${toHex(ico[1])}: Reserved\n`;
@@ -139,8 +144,8 @@ function generateLogForIco(name, ico, pngStats, deflateStats, colorCount) {
     log += `- ${toHex(ico[9])}: Reserved\n`;
     log += `- ${toHex(ico[10])} ${toHex(ico[11])}: Planes = 1\n`;
     log += `- ${toHex(ico[12])} ${toHex(ico[13])}: Bit count = ${view.getUint16(12, true)}\n`;
-    log += `- ${toHex(view.getUint32(14, true), 4)}: Image data size = 0x${toHex(pngSize, 4)} = ${pngSize} bytes\n`;
-    log += `- ${toHex(view.getUint32(18, true), 4)}: Offset to image = 0x16 = 22 bytes\n\n`;
+    log += `- ${sizeHex}: Image data size = ${pngSize}\n`;
+    log += `- ${offsetHex}: Offset to image = 22\n\n`;
 
     log += `[PNG PAYLOAD] (${pngSize} Bytes)\n`;
     log += `- Signature: 8 bytes\n`;
@@ -148,7 +153,7 @@ function generateLogForIco(name, ico, pngStats, deflateStats, colorCount) {
     if (pngStats.plte) log += `- PLTE Chunk: ${pngStats.plte} bytes\n`;
     if (pngStats.trns) log += `- tRNS Chunk: ${pngStats.trns} bytes\n`;
     log += `- IDAT Chunk: ${pngStats.idat} bytes (Compressed)\n`;
-    log += `- IEND Chunk: ${pngStats.iend} bytes\n\n`;
+    log += `- IEND Chunk: ${pngStats.iend} bytes\n`;
 
     return log;
 }
@@ -179,14 +184,13 @@ elements.btnGenerate.addEventListener('click', () => {
             transparentIndex = 0;
         }
 
-        let paletteLog = `=== PALETTE EXTRACTED ===\n`;
+        let paletteLog = `\n=== PALETTE DETAILS ===\n`;
         paletteLog += `Colors Used: ${palette.length}\n`;
         palette.forEach((c, i) => {
             const hex = `#${toHex(c.r)}${toHex(c.g)}${toHex(c.b)}`;
             const isTransparent = (i === 0 && transparentIndex === 0) ? " <-- tRNS (Transparent)" : "";
             paletteLog += `  [${i}] ${hex}${isTransparent}\n`;
         });
-        paletteLog += `\n`;
 
         // --- PATH A: TRUECOLOR (32-bit RGBA) ---
         const truecolorPixels = new Uint8Array(16 * (1 + 16 * 4));
@@ -247,23 +251,22 @@ elements.btnGenerate.addEventListener('click', () => {
 
         // --- RENDER LOG ---
         let idxLogContent = "";
-        let tcLogContent = generateLogForIco(`TRUECOLOR (32-bit RGBA)`, tcIco, tcPng.stats, tcDeflate, 0);
+        const tcLogContent = generateLogForIco(tcIco, tcPng.stats, tcDeflate, 0);
+
+        elements.titleTruecolor.textContent = `Truecolor RGBA: ${tcIco.length} bytes`;
 
         if (idxIco) {
-            idxLogContent = paletteLog + generateLogForIco(`OPTIMAL INDEXED (${bitDepth}-bit)`, idxIco, idxPng.stats, idxDeflate, palette.length);
-            if (idxIco.length < tcIco.length) {
-                idxLogContent += `=================================\n🏆 WINNING COMPRESSION\n=================================\n`;
-            } else {
-                tcLogContent += `=================================\n🏆 WINNING COMPRESSION\n=================================\n`;
-            }
+            elements.titleIndexed.textContent = `Optimized Indexed (${bitDepth}-bit): ${idxIco.length} bytes`;
+            // Appending the palette details to the bottom
+            idxLogContent = generateLogForIco(idxIco, idxPng.stats, idxDeflate, palette.length) + "\n" + paletteLog;
         } else {
-            idxLogContent = `--- OPTIMAL INDEXED ---\nSkipped: Image has more than 16 colors.\n\n`;
-            tcLogContent += `=================================\n🏆 WINNING COMPRESSION\n=================================\n`;
+            elements.titleIndexed.textContent = `Optimized Indexed: N/A`;
+            idxLogContent = `Skipped: Image has more than 16 colors.`;
         }
 
         elements.logIndexed.textContent = idxLogContent;
         elements.logTruecolor.textContent = tcLogContent;
-        elements.outputPanel.style.display = 'grid'; // Activates the two-column layout
+        elements.outputPanel.style.display = 'grid';
 
     } catch (err) {
         console.error(err);
