@@ -171,3 +171,30 @@ p {
     overflow-x: auto;
     flex: 1;
 }
+
+/* --- Preview Containers --- */
+.preview-container {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--grid-border);
+}
+
+.preview-box {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--grid-border);
+}
+
+.preview-box img {
+    image-rendering: pixelated; /* Keeps it sharp just in case */
+}
+
+.bg-white { background-color: #ffffff; }
+.bg-grey  { background-color: #888888; }
+.bg-black { background-color: #000000; }

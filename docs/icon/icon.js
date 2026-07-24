@@ -17,8 +17,13 @@ const elements = {
     logTruecolor: document.getElementById('log-truecolor'),
     titleIndexed: document.getElementById('title-indexed'),
     titleTruecolor: document.getElementById('title-truecolor'),
+    previewIndexed: document.getElementById('preview-indexed'),
+    previewTruecolor: document.getElementById('preview-truecolor'),
     pixels: []
 };
+
+// Keeps track of active object URLs so we don't leak memory on regeneration
+let activeObjectUrls = [];
 
 // --- Inject Metadata ---
 document.getElementById('page-title').textContent = document.title;
@@ -188,8 +193,32 @@ function generateLogForIco(ico, pngStats, deflateStats, colorCount, palette = nu
     return log;
 }
 
+function renderPreviews(icoBytes, container) {
+    container.innerHTML = '';
+    if (!icoBytes) return;
+
+    const blob = new Blob([icoBytes], { type: 'image/x-icon' });
+    const url = URL.createObjectURL(blob);
+    activeObjectUrls.push(url);
+
+    ['bg-white', 'bg-grey', 'bg-black'].forEach(bgClass => {
+        const box = document.createElement('div');
+        box.className = `preview-box ${bgClass}`;
+
+        const img = document.createElement('img');
+        img.src = url;
+
+        box.appendChild(img);
+        container.appendChild(box);
+    });
+}
+
 elements.btnGenerate.addEventListener('click', () => {
     try {
+        // Clear old URLs
+        activeObjectUrls.forEach(url => URL.revokeObjectURL(url));
+        activeObjectUrls = [];
+
         const colors = state.pixels.map(parseColor);
         const palette = [];
         let transparentIndex = -1;
@@ -271,18 +300,21 @@ elements.btnGenerate.addEventListener('click', () => {
             idxIco = assembleICO(idxPng.payload, palette.length, bitDepth);
         }
 
-        // --- RENDER LOG ---
+        // --- RENDER LOG & PREVIEWS ---
         let idxLogContent = "";
         const tcLogContent = generateLogForIco(tcIco, tcPng.stats, tcDeflate, 0);
 
         elements.titleTruecolor.textContent = `Truecolor RGBA: ${tcIco.length} bytes`;
+        renderPreviews(tcIco, elements.previewTruecolor);
 
         if (idxIco) {
             elements.titleIndexed.textContent = `Optimized Indexed (${bitDepth}-bit): ${idxIco.length} bytes`;
             idxLogContent = generateLogForIco(idxIco, idxPng.stats, idxDeflate, palette.length, palette);
+            renderPreviews(idxIco, elements.previewIndexed);
         } else {
             elements.titleIndexed.textContent = `Optimized Indexed: N/A`;
             idxLogContent = `Skipped: Image has more than 16 colors.`;
+            renderPreviews(null, elements.previewIndexed);
         }
 
         elements.logIndexed.textContent = idxLogContent;
