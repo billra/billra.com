@@ -1,6 +1,6 @@
 import pako from 'https://esm.sh/pako@2.2.0';
 
-/// --- Configuration & Constants ---
+// --- Configuration & Constants ---
 const CONFIG = {
     gridSize: 16
 };
@@ -13,7 +13,8 @@ const elements = {
     btnEraser: document.getElementById('btn-eraser'),
     btnGenerate: document.getElementById('btn-generate'),
     outputPanel: document.getElementById('output-panel'),
-    outputLog: document.getElementById('output-log'),
+    logIndexed: document.getElementById('log-indexed'),
+    logTruecolor: document.getElementById('log-truecolor'),
     pixels: []
 };
 
@@ -146,7 +147,7 @@ function generateLogForIco(name, ico, pngStats, deflateStats, colorCount) {
     log += `- IHDR Chunk: ${pngStats.ihdr} bytes\n`;
     if (pngStats.plte) log += `- PLTE Chunk: ${pngStats.plte} bytes\n`;
     if (pngStats.trns) log += `- tRNS Chunk: ${pngStats.trns} bytes\n`;
-    log += `- IDAT Chunk: ${pngStats.idat} bytes (Compressed Data)\n`;
+    log += `- IDAT Chunk: ${pngStats.idat} bytes (Compressed)\n`;
     log += `- IEND Chunk: ${pngStats.iend} bytes\n\n`;
 
     return log;
@@ -178,14 +179,14 @@ elements.btnGenerate.addEventListener('click', () => {
             transparentIndex = 0;
         }
 
-        let mainLog = `=== PALETTE EXTRACTED ===\n`;
-        mainLog += `Colors Used: ${palette.length}\n`;
+        let paletteLog = `=== PALETTE EXTRACTED ===\n`;
+        paletteLog += `Colors Used: ${palette.length}\n`;
         palette.forEach((c, i) => {
             const hex = `#${toHex(c.r)}${toHex(c.g)}${toHex(c.b)}`;
             const isTransparent = (i === 0 && transparentIndex === 0) ? " <-- tRNS (Transparent)" : "";
-            mainLog += `  [${i}] ${hex}${isTransparent}\n`;
+            paletteLog += `  [${i}] ${hex}${isTransparent}\n`;
         });
-        mainLog += `\n`;
+        paletteLog += `\n`;
 
         // --- PATH A: TRUECOLOR (32-bit RGBA) ---
         const truecolorPixels = new Uint8Array(16 * (1 + 16 * 4));
@@ -245,21 +246,24 @@ elements.btnGenerate.addEventListener('click', () => {
         }
 
         // --- RENDER LOG ---
+        let idxLogContent = "";
+        let tcLogContent = generateLogForIco(`TRUECOLOR (32-bit RGBA)`, tcIco, tcPng.stats, tcDeflate, 0);
+
         if (idxIco) {
-            mainLog += generateLogForIco(`OPTIMAL INDEXED (${bitDepth}-bit)`, idxIco, idxPng.stats, idxDeflate, palette.length);
+            idxLogContent = paletteLog + generateLogForIco(`OPTIMAL INDEXED (${bitDepth}-bit)`, idxIco, idxPng.stats, idxDeflate, palette.length);
+            if (idxIco.length < tcIco.length) {
+                idxLogContent += `=================================\n🏆 WINNING COMPRESSION\n=================================\n`;
+            } else {
+                tcLogContent += `=================================\n🏆 WINNING COMPRESSION\n=================================\n`;
+            }
         } else {
-            mainLog += `--- OPTIMAL INDEXED ---\nSkipped: Image has more than 16 colors.\n\n`;
+            idxLogContent = `--- OPTIMAL INDEXED ---\nSkipped: Image has more than 16 colors.\n\n`;
+            tcLogContent += `=================================\n🏆 WINNING COMPRESSION\n=================================\n`;
         }
 
-        mainLog += generateLogForIco(`TRUECOLOR (32-bit RGBA)`, tcIco, tcPng.stats, tcDeflate, 0);
-
-        const winner = (idxIco && idxIco.length < tcIco.length) ? `Indexed (${bitDepth}-bit)` : 'Truecolor (32-bit)';
-        mainLog += `=================================\n`;
-        mainLog += `WINNING COMPRESSION: ${winner}\n`;
-        mainLog += `=================================\n`;
-
-        elements.outputLog.textContent = mainLog;
-        elements.outputPanel.style.display = 'block';
+        elements.logIndexed.textContent = idxLogContent;
+        elements.logTruecolor.textContent = tcLogContent;
+        elements.outputPanel.style.display = 'grid'; // Activates the two-column layout
 
     } catch (err) {
         console.error(err);

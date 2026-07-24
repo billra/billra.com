@@ -3,7 +3,7 @@
 <head>
     <title>16x16 ICO Editor</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.6">
+    <meta name="version" content="1.7">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="icon.css">
@@ -26,13 +26,19 @@
 
     <main class="layout-container">
         <div id="grid-container" class="grid-container"></div>
-
-        <!-- Output Log for the Byte Breakdown -->
-        <div id="output-panel" style="display: none;">
-            <h3>Generation Log</h3>
-            <pre id="output-log"></pre>
-        </div>
     </main>
+
+    <!-- Output Log for the Byte Breakdown -->
+    <div id="output-panel" style="display: none;">
+        <div class="log-column">
+            <h3>Optimized Indexed</h3>
+            <pre id="log-indexed" class="log-content"></pre>
+        </div>
+        <div class="log-column">
+            <h3>Truecolor RGBA</h3>
+            <pre id="log-truecolor" class="log-content"></pre>
+        </div>
+    </div>
 
 </body>
 </html>
