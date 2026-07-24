@@ -213,114 +213,150 @@ function renderPreviews(icoBytes, container) {
     });
 }
 
+/**
+ * Extracts a unique palette from the given pixels.
+ * Prioritizes placing the first transparent color at index 0 for optimal PNG tRNS chunk encoding.
+ */
+function extractPalette(colors) {
+    const palette = [];
+    let transparentIndex = -1;
+    const findColor = (r, g, b, a) => palette.findIndex(c => c.r === r && c.g === g && c.b === b && c.a === a);
+
+    for (const { r, g, b, a } of colors) {
+        if (findColor(r, g, b, a) === -1) {
+            if (a < 255 && transparentIndex === -1 && palette.length < 16) {
+                palette.unshift({ r, g, b, a });
+                transparentIndex = 0;
+            } else {
+                palette.push({ r, g, b, a });
+            }
+        }
+    }
+
+    if (palette.length === 0) {
+        palette.push({ r: 0, g: 0, b: 0, a: 0 });
+        transparentIndex = 0;
+    }
+
+    return { palette, transparentIndex };
+}
+
+/**
+ * Generates a 32-bit Truecolor (RGBA) ICO payload.
+ * Guarantees high fidelity for images exceeding indexed color limits.
+ */
+function generateTruecolor(colors) {
+    const truecolorPixels = new Uint8Array(16 * (1 + 16 * 4));
+    let tcWritePos = 0;
+    for (let y = 0; y < 16; y++) {
+        truecolorPixels[tcWritePos++] = 0; // Filter 0 (None)
+        for (let x = 0; x < 16; x++) {
+            const c = colors[y * 16 + x];
+            truecolorPixels[tcWritePos++] = c.r;
+            truecolorPixels[tcWritePos++] = c.g;
+            truecolorPixels[tcWritePos++] = c.b;
+            truecolorPixels[tcWritePos++] = c.a;
+        }
+    }
+
+    const deflateStats = bestDeflate(truecolorPixels);
+    const png = buildPNG(16, 16, 8, 6, deflateStats.data, null, null);
+    const ico = assembleICO(png.payload, 0, 32);
+
+    return { ico, png, deflateStats };
+}
+
+/**
+ * Generates an optimized 1, 2, or 4-bit Indexed ICO payload.
+ * Returns null if the palette exceeds the 16-color limit.
+ */
+function generateIndexed(colors, palette, transparentIndex) {
+    if (palette.length > 16) return null;
+
+    let bitDepth = 0;
+    if (palette.length <= 2) bitDepth = 1;
+    else if (palette.length <= 4) bitDepth = 2;
+    else bitDepth = 4;
+
+    const pixelsPerByte = 8 / bitDepth;
+    const bytesPerRow = Math.ceil(16 / pixelsPerByte);
+    const packedPixels = new Uint8Array(16 * (1 + bytesPerRow));
+    const findColor = (r, g, b, a) => palette.findIndex(c => c.r === r && c.g === g && c.b === b && c.a === a);
+
+    let idxWritePos = 0;
+    for (let y = 0; y < 16; y++) {
+        packedPixels[idxWritePos++] = 0; // Filter 0 (None)
+
+        let currentByte = 0;
+        for (let x = 0; x < 16; x++) {
+            const c = colors[y * 16 + x];
+            const pIdx = findColor(c.r, c.g, c.b, c.a);
+
+            const bitOffset = 8 - bitDepth - ((x % pixelsPerByte) * bitDepth);
+            currentByte |= (pIdx << bitOffset);
+
+            if ((x + 1) % pixelsPerByte === 0 || x === 15) {
+                packedPixels[idxWritePos++] = currentByte;
+                currentByte = 0;
+            }
+        }
+    }
+
+    const deflateStats = bestDeflate(packedPixels);
+    const tAlpha = transparentIndex === 0 ? palette[0].a : null;
+    const png = buildPNG(16, 16, bitDepth, 3, deflateStats.data, palette, tAlpha);
+    const ico = assembleICO(png.payload, palette.length, bitDepth);
+
+    return { ico, png, deflateStats, bitDepth };
+}
+
+/**
+ * Updates the DOM and visualization panels based on generated binary payloads.
+ */
+function updateOutputUI({ truecolorResult, indexedResult, palette }) {
+    // Clear old URLs to prevent memory leaks during rapid regeneration
+    activeObjectUrls.forEach(url => URL.revokeObjectURL(url));
+    activeObjectUrls = [];
+
+    // Update Truecolor UI
+    elements.titleTruecolor.textContent = `Truecolor RGBA: ${truecolorResult.ico.length} bytes`;
+    elements.logTruecolor.textContent = generateLogForIco(
+        truecolorResult.ico,
+        truecolorResult.png.stats,
+        truecolorResult.deflateStats,
+        0
+    );
+    renderPreviews(truecolorResult.ico, elements.previewTruecolor);
+
+    // Update Indexed UI
+    if (indexedResult) {
+        elements.titleIndexed.textContent = `Optimized Indexed (${indexedResult.bitDepth}-bit): ${indexedResult.ico.length} bytes`;
+        elements.logIndexed.textContent = generateLogForIco(
+            indexedResult.ico,
+            indexedResult.png.stats,
+            indexedResult.deflateStats,
+            palette.length,
+            palette
+        );
+        renderPreviews(indexedResult.ico, elements.previewIndexed);
+    } else {
+        elements.titleIndexed.textContent = `Optimized Indexed: N/A`;
+        elements.logIndexed.textContent = `Skipped: Image has more than 16 colors.`;
+        renderPreviews(null, elements.previewIndexed);
+    }
+
+    elements.outputPanel.style.display = 'grid';
+}
+
 elements.btnGenerate.addEventListener('click', () => {
     try {
-        // Clear old URLs
-        activeObjectUrls.forEach(url => URL.revokeObjectURL(url));
-        activeObjectUrls = [];
-
         const colors = state.pixels.map(parseColor);
-        const palette = [];
-        let transparentIndex = -1;
+        const { palette, transparentIndex } = extractPalette(colors);
 
-        const findColor = (r, g, b, a) => palette.findIndex(c => c.r === r && c.g === g && c.b === b && c.a === a);
+        const truecolorResult = generateTruecolor(colors);
+        const indexedResult = generateIndexed(colors, palette, transparentIndex);
 
-        // 1. Extract Palette
-        for (const { r, g, b, a } of colors) {
-            if (findColor(r, g, b, a) === -1) {
-                if (a < 255 && transparentIndex === -1 && palette.length < 16) {
-                    palette.unshift({ r, g, b, a });
-                    transparentIndex = 0;
-                } else {
-                    palette.push({ r, g, b, a });
-                }
-            }
-        }
-
-        // Handle empty canvas
-        if (palette.length === 0) {
-            palette.push({ r: 0, g: 0, b: 0, a: 0 });
-            transparentIndex = 0;
-        }
-
-        // --- PATH A: TRUECOLOR (32-bit RGBA) ---
-        const truecolorPixels = new Uint8Array(16 * (1 + 16 * 4));
-        let tcWritePos = 0;
-        for (let y = 0; y < 16; y++) {
-            truecolorPixels[tcWritePos++] = 0; // Filter 0
-            for (let x = 0; x < 16; x++) {
-                const c = colors[y * 16 + x];
-                truecolorPixels[tcWritePos++] = c.r;
-                truecolorPixels[tcWritePos++] = c.g;
-                truecolorPixels[tcWritePos++] = c.b;
-                truecolorPixels[tcWritePos++] = c.a;
-            }
-        }
-
-        const tcDeflate = bestDeflate(truecolorPixels);
-        const tcPng = buildPNG(16, 16, 8, 6, tcDeflate.data, null, null);
-        const tcIco = assembleICO(tcPng.payload, 0, 32);
-
-        // --- PATH B: OPTIMAL INDEXED ---
-        let idxIco = null;
-        let idxPng = null;
-        let bitDepth = 0;
-        let idxDeflate = null;
-
-        if (palette.length <= 16) {
-            if (palette.length <= 2) bitDepth = 1;
-            else if (palette.length <= 4) bitDepth = 2;
-            else bitDepth = 4;
-
-            const pixelsPerByte = 8 / bitDepth;
-            const bytesPerRow = Math.ceil(16 / pixelsPerByte);
-            const packedPixels = new Uint8Array(16 * (1 + bytesPerRow));
-
-            let idxWritePos = 0;
-            for (let y = 0; y < 16; y++) {
-                packedPixels[idxWritePos++] = 0; // Filter 0
-
-                let currentByte = 0;
-                for (let x = 0; x < 16; x++) {
-                    const c = colors[y * 16 + x];
-                    const pIdx = findColor(c.r, c.g, c.b, c.a);
-
-                    const bitOffset = 8 - bitDepth - ((x % pixelsPerByte) * bitDepth);
-                    currentByte |= (pIdx << bitOffset);
-
-                    if ((x + 1) % pixelsPerByte === 0 || x === 15) {
-                        packedPixels[idxWritePos++] = currentByte;
-                        currentByte = 0;
-                    }
-                }
-            }
-
-            idxDeflate = bestDeflate(packedPixels);
-            idxPng = buildPNG(16, 16, bitDepth, 3, idxDeflate.data, palette, transparentIndex === 0 ? palette[0].a : null);
-            idxIco = assembleICO(idxPng.payload, palette.length, bitDepth);
-        }
-
-        // --- RENDER LOG & PREVIEWS ---
-        let idxLogContent = "";
-        const tcLogContent = generateLogForIco(tcIco, tcPng.stats, tcDeflate, 0);
-
-        elements.titleTruecolor.textContent = `Truecolor RGBA: ${tcIco.length} bytes`;
-        renderPreviews(tcIco, elements.previewTruecolor);
-
-        if (idxIco) {
-            elements.titleIndexed.textContent = `Optimized Indexed (${bitDepth}-bit): ${idxIco.length} bytes`;
-            idxLogContent = generateLogForIco(idxIco, idxPng.stats, idxDeflate, palette.length, palette);
-            renderPreviews(idxIco, elements.previewIndexed);
-        } else {
-            elements.titleIndexed.textContent = `Optimized Indexed: N/A`;
-            idxLogContent = `Skipped: Image has more than 16 colors.`;
-            renderPreviews(null, elements.previewIndexed);
-        }
-
-        elements.logIndexed.textContent = idxLogContent;
-        elements.logTruecolor.textContent = tcLogContent;
-        elements.outputPanel.style.display = 'grid';
-
+        updateOutputUI({ truecolorResult, indexedResult, palette });
     } catch (err) {
         console.error(err);
         alert("An error occurred during generation.");
