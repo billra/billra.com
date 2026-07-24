@@ -22,13 +22,46 @@ const elements = {
     pixels: []
 };
 
-// Keeps track of active object URLs so we don't leak memory on regeneration
-let activeObjectUrls = [];
+/**
+ * Safely manages Blob Object URLs to prevent memory leaks during rapid regeneration.
+ */
+const objectUrlManager = (() => {
+    const urls = new Set();
+    return {
+        create(blob) {
+            const url = URL.createObjectURL(blob);
+            urls.add(url);
+            return url;
+        },
+        revokeAll() {
+            urls.forEach(url => URL.revokeObjectURL(url));
+            urls.clear();
+        }
+    };
+})();
 
 // --- Inject Metadata ---
 document.getElementById('page-title').textContent = document.title;
 const versionMeta = document.querySelector('meta[name="version"]');
 if (versionMeta) document.getElementById('version').textContent = `v${versionMeta.content}`;
+
+// --- UI Updaters ---
+function updatePixelUI(index, color) {
+    if (elements.pixels[index]) {
+        elements.pixels[index].style.backgroundColor = color || 'transparent';
+    }
+}
+
+function updateToolUI(color) {
+    if (color === null) {
+        elements.colorPicker.classList.remove('active-tool');
+        elements.btnEraser.classList.add('active-tool');
+    } else {
+        elements.btnEraser.classList.remove('active-tool');
+        elements.colorPicker.classList.add('active-tool');
+        elements.colorPicker.value = color;
+    }
+}
 
 // --- State Management ---
 const pixelsProxy = new Proxy(new Array(CONFIG.totalPixels).fill(null), {
@@ -37,9 +70,8 @@ const pixelsProxy = new Proxy(new Array(CONFIG.totalPixels).fill(null), {
         target[index] = value;
 
         const numIndex = parseInt(index, 10);
-        if (!isNaN(numIndex) && elements.pixels[numIndex]) {
-            elements.pixels[numIndex].style.backgroundColor = value || 'transparent';
-        }
+        if (!isNaN(numIndex)) updatePixelUI(numIndex, value);
+
         return true;
     }
 });
@@ -53,16 +85,8 @@ const state = new Proxy({
         if (target[property] === value) return true;
         target[property] = value;
 
-        if (property === 'currentColor') {
-            if (value === null) {
-                elements.colorPicker.classList.remove('active-tool');
-                elements.btnEraser.classList.add('active-tool');
-            } else {
-                elements.btnEraser.classList.remove('active-tool');
-                elements.colorPicker.classList.add('active-tool');
-                elements.colorPicker.value = value;
-            }
-        }
+        if (property === 'currentColor') updateToolUI(value);
+
         return true;
     }
 });
@@ -198,8 +222,7 @@ function renderPreviews(icoBytes, container) {
     if (!icoBytes) return;
 
     const blob = new Blob([icoBytes], { type: 'image/x-icon' });
-    const url = URL.createObjectURL(blob);
-    activeObjectUrls.push(url);
+    const url = objectUrlManager.create(blob);
 
     ['bg-white', 'bg-grey', 'bg-black'].forEach(bgClass => {
         const box = document.createElement('div');
@@ -315,8 +338,7 @@ function generateIndexed(colors, palette, transparentIndex) {
  */
 function updateOutputUI({ truecolorResult, indexedResult, palette }) {
     // Clear old URLs to prevent memory leaks during rapid regeneration
-    activeObjectUrls.forEach(url => URL.revokeObjectURL(url));
-    activeObjectUrls = [];
+    objectUrlManager.revokeAll();
 
     // Update Truecolor UI
     elements.titleTruecolor.textContent = `Truecolor RGBA: ${truecolorResult.ico.length} bytes`;
@@ -440,12 +462,15 @@ function createChunk(type, data) {
     return chunk;
 }
 
-const crcTable = new Uint32Array(256);
-for (let i = 0; i < 256; i++) {
-    let c = i;
-    for (let k = 0; k < 8; k++) c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
-    crcTable[i] = c;
-}
+const crcTable = (() => {
+    const table = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+        let c = i;
+        for (let k = 0; k < 8; k++) c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+        table[i] = c;
+    }
+    return table;
+})();
 
 function crc32(type, data) {
     let crc = 0xFFFFFFFF;
