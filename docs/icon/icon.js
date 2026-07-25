@@ -138,16 +138,52 @@ function processFile(file) {
         return;
     }
 
-    const sizeKB = (file.size / 1024).toFixed(1);
+    // Get exact bytes and format with commas
+    const sizeBytes = file.size.toLocaleString();
 
-    // Load image to read dimensions
+    // Load image to read dimensions and extract pixels
     const img = new Image();
     img.onload = () => {
         elements.dropzoneText.innerHTML = `
             <span style="color: #0f0;">Loaded: ${file.name}</span><br>
-            ${img.width}x${img.height} pixels • ${sizeKB} KB
+            ${img.width}x${img.height} pixels • ${sizeBytes} bytes
         `;
-        // Cleanup the blob URL since we just needed it for dimensional metadata
+
+        // --- Render to 16x16 grid ---
+        const canvas = document.createElement('canvas');
+        canvas.width = 16;
+        canvas.height = 16;
+        const ctx = canvas.getContext('2d');
+
+        // Force Nearest Neighbor scaling to prevent blurring
+        // and protect your Indexed ICO color count
+        ctx.imageSmoothingEnabled = false;
+
+        // Draw the image, automatically scaling it to fit the 16x16 canvas
+        ctx.drawImage(img, 0, 0, 16, 16);
+
+        // Extract the raw RGBA array
+        const imgData = ctx.getImageData(0, 0, 16, 16).data;
+
+        // Map the canvas data into the application state
+        for (let i = 0; i < 256; i++) {
+            const offset = i * 4;
+            const r = imgData[offset];
+            const g = imgData[offset + 1];
+            const b = imgData[offset + 2];
+            const a = imgData[offset + 3];
+
+            // Alpha threshold: If the pixel is more than 50% transparent,
+            // treat it as empty. Otherwise, force it to be 100% solid.
+            if (a < 128) {
+                state.pixels[i] = null;
+            } else {
+                // Convert RGB values into a #RRGGBB hex string
+                state.pixels[i] = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+            }
+        }
+
+        // Cleanup the blob URL
         URL.revokeObjectURL(img.src);
     };
     img.src = URL.createObjectURL(file);
