@@ -138,6 +138,9 @@ function processFile(file) {
         return;
     }
 
+    // Clear the output panel so the user isn't confused by previous generation logs
+    elements.outputPanel.style.display = 'none';
+
     // Get exact bytes and format with commas
     const sizeBytes = file.size.toLocaleString();
 

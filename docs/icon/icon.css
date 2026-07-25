@@ -94,10 +94,10 @@ p {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    justify-content: center;
+    justify-content: flex-start; /* Keep vertical spacing constant */
     align-items: center;
     width: 100%;
-    max-width: 600px; /* Limits the grid size on large screens */
+    max-width: 800px; /* Limits the grid size on large screens */
     flex: 1;
     min-height: 0;
     padding: 20px;
