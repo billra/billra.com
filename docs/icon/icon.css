@@ -234,32 +234,59 @@ p {
     margin-top: 15px;
 }
 
-.save-actions button {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* --- Button System --- */
+.btn {
     padding: 10px 15px;
-    background: #2a2a2a;
     color: var(--text-primary);
-    border: 1px solid var(--grid-border);
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.95rem;
-    transition: background 0.1s ease-in-out;
+    font-family: inherit; /* Forces buttons to inherit the app's clean Arial font */
+    transition: all 0.1s ease-in-out;
 }
 
-.save-actions button:hover:not(:disabled) {
-    background: #3a3a3a;
-}
-
-.save-actions button:disabled {
+.btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.save-actions button span {
+/* Primary Action (Generate) */
+.btn-primary {
+    background: #333;
+    border: 1px solid #888; /* Lighter border to stand out slightly */
+    font-weight: bold;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #444;
+    border-color: #fff; /* Brightens on hover to draw the eye */
+}
+
+/* Secondary Action (Save) */
+.btn-secondary {
+    background: #2a2a2a;
+    border: 1px solid var(--grid-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #3a3a3a;
+}
+
+.btn-secondary span {
     color: var(--text-secondary);
     font-size: 0.85em;
+}
+
+/* Ensure the layout holds the new button spacing */
+.save-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
 }
 
 .usage-section {

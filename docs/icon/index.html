@@ -3,7 +3,7 @@
 <head>
     <title>16x16 ICO Editor</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.16">
+    <meta name="version" content="1.17">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="icon.css">
@@ -20,7 +20,7 @@
                 <input type="color" id="colorPicker" value="#ff0000" title="Choose Color" class="active-tool">
                 <button id="btn-eraser" class="eraser-swatch" title="Eraser (Transparent)"></button>
             </div>
-            <button id="btn-generate">Generate .ico</button>
+            <button id="btn-generate" class="btn btn-primary">Generate .ico</button>
         </div>
     </header>
 
@@ -46,8 +46,8 @@
 
             <!-- Indexed Save Buttons -->
             <div class="save-actions">
-                <button id="btn-save-idx-ico">Save ICO <span id="size-idx-ico"></span></button>
-                <button id="btn-save-idx-png">Save PNG <span id="size-idx-png"></span></button>
+                <button id="btn-save-idx-ico" class="btn btn-secondary">Save ICO <span id="size-idx-ico"></span></button>
+                <button id="btn-save-idx-png" class="btn btn-secondary">Save PNG <span id="size-idx-png"></span></button>
             </div>
         </div>
         <div class="log-column">
@@ -57,8 +57,8 @@
 
             <!-- Truecolor Save Buttons -->
             <div class="save-actions">
-                <button id="btn-save-tc-ico">Save ICO <span id="size-tc-ico"></span></button>
-                <button id="btn-save-tc-png">Save PNG <span id="size-tc-png"></span></button>
+                <button id="btn-save-tc-ico" class="btn btn-secondary">Save ICO <span id="size-tc-ico"></span></button>
+                <button id="btn-save-tc-png" class="btn btn-secondary">Save PNG <span id="size-tc-png"></span></button>
             </div>
         </div>
 
