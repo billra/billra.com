@@ -92,6 +92,8 @@ p {
 
 .layout-container {
     display: flex;
+    flex-direction: column;
+    gap: 20px;
     justify-content: center;
     align-items: center;
     width: 100%;
@@ -99,6 +101,31 @@ p {
     flex: 1;
     min-height: 0;
     padding: 20px;
+}
+
+/* --- Dropzone --- */
+.dropzone {
+    width: 100%;
+    padding: 20px;
+    border: 2px dashed var(--grid-border);
+    border-radius: 8px;
+    background: #1a1a1a;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.dropzone.dragover {
+    border-style: solid;
+    border-color: #fff;
+    background: #2a2a2a;
+}
+
+#dropzone-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    pointer-events: none; /* Prevents text from blocking drag events */
 }
 
 /* --- Editor Grid --- */

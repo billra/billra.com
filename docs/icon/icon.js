@@ -19,6 +19,9 @@ const elements = {
     titleTruecolor: document.getElementById('title-truecolor'),
     previewIndexed: document.getElementById('preview-indexed'),
     previewTruecolor: document.getElementById('preview-truecolor'),
+    dropzone: document.getElementById('dropzone'),
+    dropzoneText: document.getElementById('dropzone-text'),
+    fileInput: document.getElementById('file-input'),
     pixels: []
 };
 
@@ -101,6 +104,53 @@ function initGrid() {
         elements.pixels.push(pixel);
         elements.grid.appendChild(pixel);
     }
+}
+
+// --- File Drag & Drop Handling ---
+
+// Prevent browser's default drag-and-drop navigation globally
+window.addEventListener('dragover', (e) => e.preventDefault());
+window.addEventListener('drop', (e) => e.preventDefault());
+
+elements.dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    elements.dropzone.classList.add('dragover');
+});
+
+elements.dropzone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    elements.dropzone.classList.remove('dragover');
+});
+
+elements.dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    elements.dropzone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
+});
+
+elements.fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length) processFile(e.target.files[0]);
+});
+
+function processFile(file) {
+    if (!file.type.startsWith('image/')) {
+        alert("Please drop an image file.");
+        return;
+    }
+
+    const sizeKB = (file.size / 1024).toFixed(1);
+
+    // Load image to read dimensions
+    const img = new Image();
+    img.onload = () => {
+        elements.dropzoneText.innerHTML = `
+            <span style="color: #0f0;">Loaded: ${file.name}</span><br>
+            ${img.width}x${img.height} pixels • ${sizeKB} KB
+        `;
+        // Cleanup the blob URL since we just needed it for dimensional metadata
+        URL.revokeObjectURL(img.src);
+    };
+    img.src = URL.createObjectURL(file);
 }
 
 // --- Interaction Handlers ---
