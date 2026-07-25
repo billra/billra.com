@@ -317,14 +317,31 @@ function generateLogForIco(ico, pngStats, deflateStats, colorCount, palette = nu
     return log;
 }
 
+// --- Magnifier Initialization ---
+const magnifier = document.createElement('div');
+magnifier.className = 'magnifier';
+const magnifierImg = document.createElement('img');
+magnifier.appendChild(magnifierImg);
+document.body.appendChild(magnifier);
+
+// --- Render Previews ---
 function renderPreviews(icoBytes, container) {
     container.innerHTML = '';
     if (!icoBytes) return;
 
+    // Add the "Samples:" label
+    const label = document.createElement('span');
+    label.className = 'preview-label';
+    label.textContent = '🔍 samples:';
+    container.appendChild(label);
+
     const blob = new Blob([icoBytes], { type: 'image/x-icon' });
     const url = objectUrlManager.create(blob);
 
-    ['bg-white', 'bg-grey', 'bg-black'].forEach(bgClass => {
+    // Expanded array with pure RGB backgrounds
+    const backgrounds = ['bg-white', 'bg-grey', 'bg-black', 'bg-red', 'bg-green', 'bg-blue'];
+
+    backgrounds.forEach(bgClass => {
         const box = document.createElement('div');
         box.className = `preview-box ${bgClass}`;
 
@@ -333,6 +350,23 @@ function renderPreviews(icoBytes, container) {
 
         box.appendChild(img);
         container.appendChild(box);
+
+        // --- Magnifier Interaction ---
+        box.addEventListener('mouseenter', () => {
+            magnifier.style.display = 'block';
+            magnifier.className = `magnifier ${bgClass}`; // Inherit the background color
+            magnifierImg.src = url;
+        });
+
+        box.addEventListener('mousemove', (e) => {
+            // Offset 15px to the right, and 15px above the cursor
+            magnifier.style.left = `${e.clientX + 15}px`;
+            magnifier.style.top = `${e.clientY - 15}px`;
+        });
+
+        box.addEventListener('mouseleave', () => {
+            magnifier.style.display = 'none';
+        });
     });
 }
 
