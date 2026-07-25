@@ -476,7 +476,7 @@ function updateOutputUI({ truecolorResult, indexedResult, palette }) {
         elements.btnSaveIdxPng.disabled = true;
     }
 
-    elements.outputPanel.style.display = 'grid';
+    elements.outputPanel.style.display = 'flex';
 }
 
 elements.btnGenerate.addEventListener('click', () => {

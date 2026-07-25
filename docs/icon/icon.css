@@ -165,7 +165,10 @@ p {
     background: #1a1a1a;
     border-top: 1px solid var(--grid-border);
     padding: 20px;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+
+    /* New Flexbox Layout */
+    display: flex;
+    flex-wrap: wrap;
     gap: 20px;
 }
 
@@ -174,8 +177,13 @@ p {
     border: 1px solid var(--grid-border);
     border-radius: 4px;
     padding: 15px;
+
+    /* Dynamic width based on text length */
     display: flex;
     flex-direction: column;
+    flex-basis: max-content;
+    flex-grow: 1;
+    max-width: 100%; /* Prevents screen overflow on mobile devices */
 }
 
 .log-column h3 {
@@ -290,7 +298,8 @@ p {
 }
 
 .usage-section {
-    grid-column: 1 / -1; /* Spans across all available grid columns */
+    /* Replaces grid-column: 1 / -1; */
+    width: 100%;
     background: #111;
     border: 1px solid var(--grid-border);
     border-radius: 4px;
