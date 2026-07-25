@@ -22,8 +22,19 @@ const elements = {
     dropzone: document.getElementById('dropzone'),
     dropzoneText: document.getElementById('dropzone-text'),
     fileInput: document.getElementById('file-input'),
+    btnSaveIdxIco: document.getElementById('btn-save-idx-ico'),
+    btnSaveIdxPng: document.getElementById('btn-save-idx-png'),
+    btnSaveTcIco: document.getElementById('btn-save-tc-ico'),
+    btnSaveTcPng: document.getElementById('btn-save-tc-png'),
+    sizeIdxIco: document.getElementById('size-idx-ico'),
+    sizeIdxPng: document.getElementById('size-idx-png'),
+    sizeTcIco: document.getElementById('size-tc-ico'),
+    sizeTcPng: document.getElementById('size-tc-png'),
     pixels: []
 };
+
+// State object to hold the raw bytes for downloading
+const currentDownloads = { idxIco: null, idxPng: null, tcIco: null, tcPng: null };
 
 /**
  * Safely manages Blob Object URLs to prevent memory leaks during rapid regeneration.
@@ -426,34 +437,43 @@ function generateIndexed(colors, palette, transparentIndex) {
  * Updates the DOM and visualization panels based on generated binary payloads.
  */
 function updateOutputUI({ truecolorResult, indexedResult, palette }) {
-    // Clear old URLs to prevent memory leaks during rapid regeneration
     objectUrlManager.revokeAll();
 
-    // Update Truecolor UI
+    // Update Truecolor UI & Download State
     elements.titleTruecolor.textContent = `Truecolor RGBA: ${truecolorResult.ico.length} bytes`;
-    elements.logTruecolor.textContent = generateLogForIco(
-        truecolorResult.ico,
-        truecolorResult.png.stats,
-        truecolorResult.deflateStats,
-        0
-    );
+    elements.logTruecolor.textContent = generateLogForIco(truecolorResult.ico, truecolorResult.png.stats, truecolorResult.deflateStats, 0);
     renderPreviews(truecolorResult.ico, elements.previewTruecolor);
 
-    // Update Indexed UI
+    currentDownloads.tcIco = truecolorResult.ico;
+    currentDownloads.tcPng = truecolorResult.png.payload;
+    elements.sizeTcIco.textContent = `${truecolorResult.ico.length.toLocaleString()} bytes`;
+    elements.sizeTcPng.textContent = `${truecolorResult.png.payload.length.toLocaleString()} bytes`;
+
+    // Update Indexed UI & Download State
     if (indexedResult) {
         elements.titleIndexed.textContent = `Optimized Indexed (${indexedResult.bitDepth}-bit): ${indexedResult.ico.length} bytes`;
-        elements.logIndexed.textContent = generateLogForIco(
-            indexedResult.ico,
-            indexedResult.png.stats,
-            indexedResult.deflateStats,
-            palette.length,
-            palette
-        );
+        elements.logIndexed.textContent = generateLogForIco(indexedResult.ico, indexedResult.png.stats, indexedResult.deflateStats, palette.length, palette);
         renderPreviews(indexedResult.ico, elements.previewIndexed);
+
+        currentDownloads.idxIco = indexedResult.ico;
+        currentDownloads.idxPng = indexedResult.png.payload;
+        elements.sizeIdxIco.textContent = `${indexedResult.ico.length.toLocaleString()} bytes`;
+        elements.sizeIdxPng.textContent = `${indexedResult.png.payload.length.toLocaleString()} bytes`;
+
+        elements.btnSaveIdxIco.disabled = false;
+        elements.btnSaveIdxPng.disabled = false;
     } else {
         elements.titleIndexed.textContent = `Optimized Indexed: N/A`;
         elements.logIndexed.textContent = `Skipped: Image has more than 16 colors.`;
         renderPreviews(null, elements.previewIndexed);
+
+        currentDownloads.idxIco = null;
+        currentDownloads.idxPng = null;
+        elements.sizeIdxIco.textContent = `N/A`;
+        elements.sizeIdxPng.textContent = `N/A`;
+
+        elements.btnSaveIdxIco.disabled = true;
+        elements.btnSaveIdxPng.disabled = true;
     }
 
     elements.outputPanel.style.display = 'grid';
@@ -473,6 +493,25 @@ elements.btnGenerate.addEventListener('click', () => {
         alert("An error occurred during generation.");
     }
 });
+
+// --- Save & Download Logic ---
+function triggerDownload(data, filename, type) {
+    if (!data) return;
+    const blob = new Blob([data], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+elements.btnSaveIdxIco.addEventListener('click', () => triggerDownload(currentDownloads.idxIco, 'favicon-indexed.ico', 'image/x-icon'));
+elements.btnSaveIdxPng.addEventListener('click', () => triggerDownload(currentDownloads.idxPng, 'favicon-indexed.png', 'image/png'));
+elements.btnSaveTcIco.addEventListener('click', () => triggerDownload(currentDownloads.tcIco, 'favicon-truecolor.ico', 'image/x-icon'));
+elements.btnSaveTcPng.addEventListener('click', () => triggerDownload(currentDownloads.tcPng, 'favicon-truecolor.png', 'image/png'));
 
 // --- PNG & ICO Assemblers ---
 

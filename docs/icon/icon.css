@@ -225,3 +225,65 @@ p {
 .bg-white { background-color: #ffffff; }
 .bg-grey  { background-color: #888888; }
 .bg-black { background-color: #000000; }
+
+/* --- Save Actions & Usage --- */
+.save-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.save-actions button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: #2a2a2a;
+    color: var(--text-primary);
+    border: 1px solid var(--grid-border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background 0.1s ease-in-out;
+}
+
+.save-actions button:hover:not(:disabled) {
+    background: #3a3a3a;
+}
+
+.save-actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.save-actions button span {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+}
+
+.usage-section {
+    grid-column: 1 / -1; /* Spans across all available grid columns */
+    background: #111;
+    border: 1px solid var(--grid-border);
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.usage-section h3 {
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--grid-border);
+    padding-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.usage-section code {
+    display: block;
+    color: #0f0;
+    margin-top: 8px;
+    font-family: monospace;
+    font-size: 0.9rem;
+}

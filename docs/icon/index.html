@@ -3,7 +3,7 @@
 <head>
     <title>16x16 ICO Editor</title>
     <meta name="author" content="Bill Ola Rasmussen">
-    <meta name="version" content="1.15">
+    <meta name="version" content="1.16">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="icon.css">
@@ -25,7 +25,7 @@
     </header>
 
     <main class="layout-container">
-        <!-- New Dropzone UI -->
+        <!-- Dropzone UI -->
         <label id="dropzone" class="dropzone">
             <input type="file" id="file-input" accept="image/*" hidden>
             <div id="dropzone-text">
@@ -43,11 +43,30 @@
             <h3 id="title-indexed">Optimized Indexed</h3>
             <pre id="log-indexed" class="log-content"></pre>
             <div id="preview-indexed" class="preview-container"></div>
+
+            <!-- Indexed Save Buttons -->
+            <div class="save-actions">
+                <button id="btn-save-idx-ico">Save ICO <span id="size-idx-ico"></span></button>
+                <button id="btn-save-idx-png">Save PNG <span id="size-idx-png"></span></button>
+            </div>
         </div>
         <div class="log-column">
             <h3 id="title-truecolor">Truecolor RGBA</h3>
             <pre id="log-truecolor" class="log-content"></pre>
             <div id="preview-truecolor" class="preview-container"></div>
+
+            <!-- Truecolor Save Buttons -->
+            <div class="save-actions">
+                <button id="btn-save-tc-ico">Save ICO <span id="size-tc-ico"></span></button>
+                <button id="btn-save-tc-png">Save PNG <span id="size-tc-png"></span></button>
+            </div>
+        </div>
+
+        <!-- Recommended Usage Section -->
+        <div class="usage-section">
+            <h3>Recommended Usage</h3>
+            <code>&lt;link rel="icon" type="image/x-icon" href="favicon.ico"&gt;</code>
+            <code>&lt;link rel="icon" type="image/png" href="favicon.png"&gt;</code>
         </div>
     </div>
 
