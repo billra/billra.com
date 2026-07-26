@@ -7,10 +7,10 @@ const CONFIG = {
 };
 CONFIG.totalPixels = CONFIG.gridSize * CONFIG.gridSize;
 
-// --- State Variables ---
-const pixels = [];
-
-// State object to hold the raw bytes for downloading
+// --- State Variables: The Single Source of Truth ---
+// 1024 bytes: [R, G, B, A,  R, G, B, A, ...]
+const pixelBuffer = new Uint8ClampedArray(CONFIG.totalPixels * 4);
+const pixels = []; // DOM cache for the grid cells
 const currentDownloads = { idxIco: null, idxPng: null, tcIco: null, tcPng: null };
 
 /**
@@ -32,7 +32,6 @@ const objectUrlManager = (() => {
 })();
 
 // --- Inject Metadata ---
-
 if (elm.pageTitle) elm.pageTitle.textContent = document.title;
 const versionMeta = document.querySelector('meta[name="version"]');
 if (versionMeta && elm.version) elm.version.textContent = `v${versionMeta.content}`;
@@ -55,35 +54,34 @@ function updateToolUI(color) {
     }
 }
 
-// --- State Management ---
-const pixelsProxy = new Proxy(new Array(CONFIG.totalPixels).fill(null), {
-    set(target, index, value) {
-        if (target[index] === value) return true;
-        target[index] = value;
-
-        const numIndex = parseInt(index, 10);
-        if (!isNaN(numIndex)) updatePixelUI(numIndex, value);
-
-        return true;
-    }
-});
+// Helper to translate the UI color picker (#RRGGBB) to an RGBA array
+function hexToRGBA(hex) {
+    if (!hex) return [0, 0, 0, 0]; // Eraser / transparent
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return [r, g, b, 255];
+}
 
 const state = new Proxy({
     currentColor: elm.colorPicker.value,
-    isDrawing: false,
-    pixels: pixelsProxy
+    currentRGBA: hexToRGBA(elm.colorPicker.value), // Cache the byte values
+    isDrawing: false
 }, {
     set(target, property, value) {
         if (target[property] === value) return true;
         target[property] = value;
 
-        if (property === 'currentColor') updateToolUI(value);
+        if (property === 'currentColor') {
+            target.currentRGBA = hexToRGBA(value);
+            updateToolUI(value);
+        }
 
         return true;
     }
 });
 
-/// --- Initialization ---
+// --- Initialization ---
 function initGrid() {
     for (let i = 0; i < CONFIG.totalPixels; i++) {
         const pixel = document.createElement('div');
@@ -95,9 +93,32 @@ function initGrid() {
     }
 }
 
-// --- File Drag & Drop Handling ---
+// --- Painting Logic ---
+function setPixel(pixelIndex, rgba) {
+    const offset = pixelIndex * 4;
 
-// Prevent browser's default drag-and-drop navigation globally
+    // 1. Bail early if the color isn't actually changing (saves DOM repaints)
+    if (
+        pixelBuffer[offset] === rgba[0] &&
+        pixelBuffer[offset + 1] === rgba[1] &&
+        pixelBuffer[offset + 2] === rgba[2] &&
+        pixelBuffer[offset + 3] === rgba[3]
+    ) return;
+
+    // 2. Update the Source of Truth
+    pixelBuffer[offset] = rgba[0];
+    pixelBuffer[offset + 1] = rgba[1];
+    pixelBuffer[offset + 2] = rgba[2];
+    pixelBuffer[offset + 3] = rgba[3];
+
+    // 3. Update the UI
+    const hexColor = rgba[3] === 0 ? 'transparent' :
+        `#${((1 << 24) + (rgba[0] << 16) + (rgba[1] << 8) + rgba[2]).toString(16).slice(1)}`;
+
+    updatePixelUI(pixelIndex, hexColor);
+}
+
+// --- File Drag & Drop Handling ---
 window.addEventListener('dragover', (e) => e.preventDefault());
 window.addEventListener('drop', (e) => e.preventDefault());
 
@@ -127,13 +148,9 @@ function processFile(file) {
         return;
     }
 
-    // Clear the output panel so the user isn't confused by previous generation logs
     elm.outputPanel.style.display = 'none';
-
-    // Get exact bytes and format with commas
     const sizeBytes = file.size.toLocaleString();
 
-    // Load image to read dimensions and extract pixels
     const img = new Image();
     img.onload = () => {
         elm.dropzoneText.innerHTML = `
@@ -141,41 +158,29 @@ function processFile(file) {
             ${img.width}x${img.height} pixels • ${sizeBytes} bytes
         `;
 
-        // --- Render to 16x16 grid ---
         const canvas = document.createElement('canvas');
         canvas.width = 16;
         canvas.height = 16;
         const ctx = canvas.getContext('2d');
-
-        // Force Nearest Neighbor scaling to prevent blurring
-        // and protect your Indexed ICO color count
         ctx.imageSmoothingEnabled = false;
-
-        // Draw the image, automatically scaling it to fit the 16x16 canvas
         ctx.drawImage(img, 0, 0, 16, 16);
 
-        // Extract the raw RGBA array
+        // Extract the raw RGBA array from the canvas
         const imgData = ctx.getImageData(0, 0, 16, 16).data;
 
-        // Map the canvas data into the application state
-        for (let i = 0; i < 256; i++) {
+        for (let i = 0; i < CONFIG.totalPixels; i++) {
             const offset = i * 4;
-            const r = imgData[offset];
-            const g = imgData[offset + 1];
-            const b = imgData[offset + 2];
             const a = imgData[offset + 3];
 
-            // Alpha threshold: If the pixel is more than 50% transparent,
-            // treat it as empty. Otherwise, force it to be 100% solid.
             if (a < 128) {
-                state.pixels[i] = null;
+                // Transparent threshold
+                setPixel(i, [0, 0, 0, 0]);
             } else {
-                // Convert RGB values into a #RRGGBB hex string
-                state.pixels[i] = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+                // Solid pixel: grab RGB from the canvas data, force Alpha to 255
+                setPixel(i, [imgData[offset], imgData[offset + 1], imgData[offset + 2], 255]);
             }
         }
 
-        // Cleanup the blob URL
         URL.revokeObjectURL(img.src);
     };
     img.src = URL.createObjectURL(file);
@@ -187,7 +192,7 @@ const handlePaint = (e) => {
     const target = e.target.closest('.pixel');
     if (target) {
         const index = parseInt(target.dataset.index, 10);
-        state.pixels[index] = state.currentColor;
+        setPixel(index, state.currentRGBA);
     }
 };
 
@@ -203,17 +208,7 @@ elm.gridContainer.addEventListener('pointerover', handlePaint);
 window.addEventListener('pointerup', () => state.isDrawing = false);
 
 // --- Generation Logic ---
-
-function parseColor(val) {
-    if (val === null) return { r: 0, g: 0, b: 0, a: 0 };
-    const r = parseInt(val.substr(1, 2), 16);
-    const g = parseInt(val.substr(3, 2), 16);
-    const b = parseInt(val.substr(5, 2), 16);
-    return { r, g, b, a: 255 };
-}
-
 const toHex = (val, bytes = 1) => val.toString(16).padStart(bytes * 2, '0');
-
 const STRATEGY_NAMES = { 0: 'Default', 1: 'Filtered', 2: 'Huffman Only', 3: 'RLE' };
 
 function bestDeflate(data) {
@@ -278,7 +273,6 @@ function generateLogForIco(ico, pngStats, deflateStats, colorCount, palette = nu
         const plteCrc = crc32("PLTE", plteData);
         log += `- ${toHex(plteCrc, 4).match(/.{2}/g).join(' ')}: CRC32\n`;
 
-        // If the transparent color exists (and our logic assigns it to Index 0)
         if (palette.length > 0 && palette[0].a < 255) {
             const tAlpha = palette[0].a;
             log += `\n[tRNS CHUNK] (13 Bytes)\n`;
@@ -307,7 +301,6 @@ function renderPreviews(icoBytes, container) {
     container.innerHTML = '';
     if (!icoBytes) return;
 
-    // Add the "Samples:" label
     const label = document.createElement('span');
     label.className = 'preview-label';
     label.textContent = '🔍 samples:';
@@ -315,8 +308,6 @@ function renderPreviews(icoBytes, container) {
 
     const blob = new Blob([icoBytes], { type: 'image/x-icon' });
     const url = objectUrlManager.create(blob);
-
-    // Expanded array with pure RGB backgrounds
     const backgrounds = ['bg-white', 'bg-grey', 'bg-black', 'bg-red', 'bg-green', 'bg-blue'];
 
     backgrounds.forEach(bgClass => {
@@ -329,15 +320,13 @@ function renderPreviews(icoBytes, container) {
         box.appendChild(img);
         container.appendChild(box);
 
-        // --- Magnifier Interaction ---
         box.addEventListener('mouseenter', () => {
             magnifier.style.display = 'block';
-            magnifier.className = `magnifier ${bgClass}`; // Inherit the background color
+            magnifier.className = `magnifier ${bgClass}`;
             magnifierImg.src = url;
         });
 
         box.addEventListener('mousemove', (e) => {
-            // Offset 15px to the right, and 15px above the cursor
             magnifier.style.left = `${e.clientX + 15}px`;
             magnifier.style.top = `${e.clientY - 15}px`;
         });
@@ -348,10 +337,6 @@ function renderPreviews(icoBytes, container) {
     });
 }
 
-/**
- * Extracts a unique palette from the given pixels.
- * Prioritizes placing the first transparent color at index 0 for optimal PNG tRNS chunk encoding.
- */
 function extractPalette(colors) {
     const palette = [];
     let transparentIndex = -1;
@@ -376,15 +361,11 @@ function extractPalette(colors) {
     return { palette, transparentIndex };
 }
 
-/**
- * Generates a 32-bit Truecolor (RGBA) ICO payload.
- * Guarantees high fidelity for images exceeding indexed color limits.
- */
 function generateTruecolor(colors) {
     const truecolorPixels = new Uint8Array(16 * (1 + 16 * 4));
     let tcWritePos = 0;
     for (let y = 0; y < 16; y++) {
-        truecolorPixels[tcWritePos++] = 0; // Filter 0 (None)
+        truecolorPixels[tcWritePos++] = 0;
         for (let x = 0; x < 16; x++) {
             const c = colors[y * 16 + x];
             truecolorPixels[tcWritePos++] = c.r;
@@ -401,10 +382,6 @@ function generateTruecolor(colors) {
     return { ico, png, deflateStats };
 }
 
-/**
- * Generates an optimized 1, 2, or 4-bit Indexed ICO payload.
- * Returns null if the palette exceeds the 16-color limit.
- */
 function generateIndexed(colors, palette, transparentIndex) {
     if (palette.length > 16) return null;
 
@@ -420,7 +397,7 @@ function generateIndexed(colors, palette, transparentIndex) {
 
     let idxWritePos = 0;
     for (let y = 0; y < 16; y++) {
-        packedPixels[idxWritePos++] = 0; // Filter 0 (None)
+        packedPixels[idxWritePos++] = 0;
 
         let currentByte = 0;
         for (let x = 0; x < 16; x++) {
@@ -445,13 +422,9 @@ function generateIndexed(colors, palette, transparentIndex) {
     return { ico, png, deflateStats, bitDepth };
 }
 
-/**
- * Updates the DOM and visualization panels based on generated binary payloads.
- */
 function updateOutputUI({ truecolorResult, indexedResult, palette }) {
     objectUrlManager.revokeAll();
 
-    // Update Truecolor UI & Download State
     elm.titleTruecolor.textContent = `Truecolor RGBA: ${truecolorResult.ico.length} bytes`;
     elm.logTruecolor.textContent = generateLogForIco(truecolorResult.ico, truecolorResult.png.stats, truecolorResult.deflateStats, 0);
     renderPreviews(truecolorResult.ico, elm.previewTruecolor);
@@ -461,7 +434,6 @@ function updateOutputUI({ truecolorResult, indexedResult, palette }) {
     elm.sizeTcIco.textContent = `${truecolorResult.ico.length.toLocaleString()} bytes`;
     elm.sizeTcPng.textContent = `${truecolorResult.png.payload.length.toLocaleString()} bytes`;
 
-    // Update Indexed UI & Download State
     if (indexedResult) {
         elm.titleIndexed.textContent = `Optimized Indexed (${indexedResult.bitDepth}-bit): ${indexedResult.ico.length} bytes`;
         elm.logIndexed.textContent = generateLogForIco(indexedResult.ico, indexedResult.png.stats, indexedResult.deflateStats, palette.length, palette);
@@ -493,9 +465,18 @@ function updateOutputUI({ truecolorResult, indexedResult, palette }) {
 
 elm.btnGenerate.addEventListener('click', () => {
     try {
-        const colors = state.pixels.map(parseColor);
-        const { palette, transparentIndex } = extractPalette(colors);
+        const colors = [];
+        for (let i = 0; i < CONFIG.totalPixels; i++) {
+            const offset = i * 4;
+            colors.push({
+                r: pixelBuffer[offset],
+                g: pixelBuffer[offset + 1],
+                b: pixelBuffer[offset + 2],
+                a: pixelBuffer[offset + 3]
+            });
+        }
 
+        const { palette, transparentIndex } = extractPalette(colors);
         const truecolorResult = generateTruecolor(colors);
         const indexedResult = generateIndexed(colors, palette, transparentIndex);
 
@@ -526,7 +507,6 @@ elm.btnSaveTcIco.addEventListener('click', () => triggerDownload(currentDownload
 elm.btnSaveTcPng.addEventListener('click', () => triggerDownload(currentDownloads.tcPng, 'favicon-truecolor.png', 'image/png'));
 
 // --- PNG & ICO Assemblers ---
-
 function buildPNG(w, h, bitDepth, colorType, compressedIdat, palette, transparentAlpha) {
     const pngSignature = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
