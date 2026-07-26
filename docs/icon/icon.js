@@ -10,6 +10,8 @@ CONFIG.totalPixels = CONFIG.gridSize * CONFIG.gridSize;
 // --- State Variables: The Single Source of Truth ---
 // 1024 bytes: [R, G, B, A,  R, G, B, A, ...]
 const pixelBuffer = new Uint8ClampedArray(CONFIG.totalPixels * 4);
+const pixelView = new DataView(pixelBuffer.buffer); // 32-bit accessor for the buffer
+
 const pixels = []; // DOM cache for the grid cells
 const currentDownloads = { idxIco: null, idxPng: null, tcIco: null, tcPng: null };
 
@@ -54,18 +56,17 @@ function updateToolUI(color) {
     }
 }
 
-// Helper to translate the UI color picker (#RRGGBB) to an RGBA array
-function hexToRGBA(hex) {
-    if (!hex) return [0, 0, 0, 0]; // Eraser / transparent
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return [r, g, b, 255];
+// Convert #RRGGBB to a single 32-bit unsigned integer: 0xRRGGBBAA
+function hexToColor32(hex) {
+    if (!hex) return 0x00000000; // Eraser / transparent
+    const rgb = parseInt(hex.slice(1), 16);
+    // Shift RGB left by 8 bits to make room for 0xFF Alpha, force unsigned
+    return ((rgb << 8) | 0xFF) >>> 0;
 }
 
 const state = new Proxy({
     currentColor: elm.colorPicker.value,
-    currentRGBA: hexToRGBA(elm.colorPicker.value), // Cache the byte values
+    currentColor32: hexToColor32(elm.colorPicker.value), // Cache the 32-bit integer
     isDrawing: false
 }, {
     set(target, property, value) {
@@ -73,7 +74,7 @@ const state = new Proxy({
         target[property] = value;
 
         if (property === 'currentColor') {
-            target.currentRGBA = hexToRGBA(value);
+            target.currentColor32 = hexToColor32(value);
             updateToolUI(value);
         }
 
@@ -94,26 +95,18 @@ function initGrid() {
 }
 
 // --- Painting Logic ---
-function setPixel(pixelIndex, rgba) {
-    const offset = pixelIndex * 4;
+function setPixel(pixelIndex, color32) {
+    const byteOffset = pixelIndex * 4;
 
-    // 1. Bail early if the color isn't actually changing (saves DOM repaints)
-    if (
-        pixelBuffer[offset] === rgba[0] &&
-        pixelBuffer[offset + 1] === rgba[1] &&
-        pixelBuffer[offset + 2] === rgba[2] &&
-        pixelBuffer[offset + 3] === rgba[3]
-    ) return;
+    // 1. One fast 32-bit equality check!
+    if (pixelView.getUint32(byteOffset) === color32) return;
 
-    // 2. Update the Source of Truth
-    pixelBuffer[offset] = rgba[0];
-    pixelBuffer[offset + 1] = rgba[1];
-    pixelBuffer[offset + 2] = rgba[2];
-    pixelBuffer[offset + 3] = rgba[3];
+    // 2. One fast 32-bit assignment!
+    pixelView.setUint32(byteOffset, color32);
 
     // 3. Update the UI
-    const hexColor = rgba[3] === 0 ? 'transparent' :
-        `#${((1 << 24) + (rgba[0] << 16) + (rgba[1] << 8) + rgba[2]).toString(16).slice(1)}`;
+    const hexColor = color32 === 0 ? 'transparent' :
+        `#${(color32 >>> 8).toString(16).padStart(6, '0')}`;
 
     updatePixelUI(pixelIndex, hexColor);
 }
@@ -174,10 +167,15 @@ function processFile(file) {
 
             if (a < 128) {
                 // Transparent threshold
-                setPixel(i, [0, 0, 0, 0]);
+                setPixel(i, 0);
             } else {
-                // Solid pixel: grab RGB from the canvas data, force Alpha to 255
-                setPixel(i, [imgData[offset], imgData[offset + 1], imgData[offset + 2], 255]);
+                const r = imgData[offset];
+                const g = imgData[offset + 1];
+                const b = imgData[offset + 2];
+
+                // Solid pixel: Shift R, G, B into their respective 32-bit slots, add 0xFF for Alpha, force unsigned
+                const color32 = ((r << 24) | (g << 16) | (b << 8) | 0xFF) >>> 0;
+                setPixel(i, color32);
             }
         }
 
@@ -192,7 +190,7 @@ const handlePaint = (e) => {
     const target = e.target.closest('.pixel');
     if (target) {
         const index = parseInt(target.dataset.index, 10);
-        setPixel(index, state.currentRGBA);
+        setPixel(index, state.currentColor32);
     }
 };
 
