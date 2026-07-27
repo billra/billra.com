@@ -1,0 +1,131 @@
+const crcTable = (() => {
+    const table = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+        let c = i;
+        for (let k = 0; k < 8; k++) c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+        table[i] = c;
+    }
+    return table;
+})();
+
+function crc32(type, data) {
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < 4; i++) crc = crcTable[(crc ^ type.charCodeAt(i)) & 0xFF] ^ (crc >>> 8);
+    for (let i = 0; i < data.length; i++) crc = crcTable[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+function createChunk(type, data) {
+    const chunk = new Uint8Array(4 + 4 + data.length + 4);
+    const view = new DataView(chunk.buffer);
+    view.setUint32(0, data.length, false);
+    for (let i = 0; i < 4; i++) chunk[4 + i] = type.charCodeAt(i);
+    chunk.set(data, 8);
+    view.setUint32(8 + data.length, crc32(type, data), false);
+    return chunk;
+}
+
+// Helper for hex formatting in the logger
+const toHex = (val, bytes = 1) => val.toString(16).padStart(bytes * 2, '0');
+
+// PUBLIC API
+
+/**
+ * Builds a valid PNG binary from raw configuration and deflated IDAT data.
+ */
+export function buildPNG({ width, height, bitDepth, colorType, idatData, palette = null, transparentAlpha = null }) {
+    const pngSignature = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+
+    const ihdrData = new Uint8Array(13);
+    const ihdrView = new DataView(ihdrData.buffer);
+    ihdrView.setUint32(0, width, false);
+    ihdrView.setUint32(4, height, false);
+    ihdrData[8] = bitDepth;
+    ihdrData[9] = colorType;
+    const ihdrChunk = createChunk('IHDR', ihdrData);
+
+    let plteChunk = null;
+    let trnsChunk = null;
+
+    if (colorType === 3 && palette) {
+        const plteData = new Uint8Array(palette.length * 3);
+        palette.forEach((c, i) => {
+            plteData[i*3] = c.r; plteData[i*3+1] = c.g; plteData[i*3+2] = c.b;
+        });
+        plteChunk = createChunk('PLTE', plteData);
+
+        if (transparentAlpha !== null) {
+            trnsChunk = createChunk('tRNS', new Uint8Array([transparentAlpha]));
+        }
+    }
+
+    const idatChunk = createChunk('IDAT', idatData);
+    const iendChunk = createChunk('IEND', new Uint8Array(0));
+
+    const chunks = [pngSignature, ihdrChunk, plteChunk, trnsChunk, idatChunk, iendChunk].filter(Boolean);
+    const size = chunks.reduce((sum, c) => sum + c.length, 0);
+    const payload = new Uint8Array(size);
+
+    let offset = 0;
+    chunks.forEach(c => { payload.set(c, offset); offset += c.length; });
+
+    return payload;
+}
+
+/**
+ * Parses a PNG buffer and returns a formatted audit log of its chunks.
+ */
+export function formatPNGLog(pngBuffer) {
+    const view = new DataView(pngBuffer.buffer, pngBuffer.byteOffset, pngBuffer.byteLength);
+
+    const readHex = (start, len) => {
+        let res = [];
+        for (let i = 0; i < len; i++) res.push(toHex(view.getUint8(start + i)));
+        return res.join(' ');
+    };
+    const readAscii = (start, len) => {
+        let res = '';
+        for (let i = 0; i < len; i++) res += String.fromCharCode(view.getUint8(start + i));
+        return res;
+    };
+
+    let log = `[PNG PAYLOAD] (${pngBuffer.length} Bytes)\n`;
+    log += `- ${readHex(0, 8)}: PNG Signature\n`;
+
+    let offset = 8;
+    while (offset < pngBuffer.length) {
+        const chunkLen = view.getUint32(offset, false);
+        const chunkType = readAscii(offset + 4, 4);
+
+        const chunkLenHex = toHex(chunkLen, 4).match(/.{2}/g).join(' ');
+        const chunkTypeHex = readHex(offset + 4, 4);
+        const crcHex = readHex(offset + 8 + chunkLen, 4);
+
+        log += `\n[${chunkType} CHUNK] (${chunkLen + 12} Bytes)\n`;
+        log += `- ${chunkLenHex}: Chunk Length = ${chunkLen}\n`;
+        log += `- ${chunkTypeHex}: Chunk Type = "${chunkType}"\n`;
+
+        if (chunkType === 'PLTE') {
+            for (let i = 0; i < chunkLen; i += 3) {
+                const hexCode = readHex(offset + 8 + i, 3).replace(/ /g, '');
+                log += `- ${readHex(offset + 8 + i, 3)}: Index ${i / 3} (#${hexCode})\n`;
+            }
+        } else if (chunkType === 'tRNS') {
+            for (let i = 0; i < chunkLen; i++) {
+                const alpha = view.getUint8(offset + 8 + i);
+                log += `- ${readHex(offset + 8 + i, 1)}: Alpha for Index ${i} = ${alpha}\n`;
+            }
+        } else if (chunkType === 'IHDR') {
+            log += `- ... ${chunkLen} bytes of image headers ...\n`;
+        } else if (chunkType === 'IDAT') {
+            log += `- ... ${chunkLen} bytes of compressed image data ...\n`;
+        }
+
+        log += `- ${crcHex}: CRC32\n`;
+
+        offset += 12 + chunkLen;
+        if (chunkType === 'IEND') break;
+    }
+
+    return log;
+}

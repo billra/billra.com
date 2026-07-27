@@ -1,5 +1,6 @@
 import pako from 'https://esm.sh/pako@2.2.0';
 import elm from './elements.mjs';
+import { buildPNG, formatPNGLog } from './png.mjs';
 
 // --- Configuration & Constants ---
 const CONFIG = {
@@ -225,18 +226,13 @@ function bestDeflate(data) {
 }
 
 function generateLogForIco(ico, deflateStats) {
-    const view = new DataView(ico.buffer);
+    const view = new DataView(ico.buffer, ico.byteOffset, ico.byteLength);
 
-    // Utilities to safely read bytes from the binary and convert to hex/ascii
+    // Utilities to safely read bytes from the binary and convert to hex
     const readHex = (start, len) => {
         let res = [];
         for (let i = 0; i < len; i++) res.push(toHex(view.getUint8(start + i)));
         return res.join(' ');
-    };
-    const readAscii = (start, len) => {
-        let res = '';
-        for (let i = 0; i < len; i++) res += String.fromCharCode(view.getUint8(start + i));
-        return res;
     };
 
     // --- Parse ICO Header (Little Endian) ---
@@ -259,46 +255,9 @@ function generateLogForIco(ico, deflateStats) {
 
     log += `Optimal zlib Strategy: ${deflateStats.strategy} (${STRATEGY_NAMES[deflateStats.strategy]})\n\n`;
 
-    // --- Parse PNG Payload (Big Endian) ---
-    log += `[PNG PAYLOAD] (${pngSize} Bytes)\n`;
-    log += `- ${readHex(22, 8)}: PNG Signature\n`;
-
-    let offset = 30; // End of PNG signature, start of first chunk
-    while (offset < ico.length) {
-        // Read length (Big Endian for PNG)
-        const chunkLen = view.getUint32(offset, false);
-        const chunkType = readAscii(offset + 4, 4);
-
-        const chunkLenHex = toHex(chunkLen, 4).match(/.{2}/g).join(' ');
-        const chunkTypeHex = readHex(offset + 4, 4);
-        const crcHex = readHex(offset + 8 + chunkLen, 4);
-
-        log += `\n[${chunkType} CHUNK] (${chunkLen + 12} Bytes)\n`;
-        log += `- ${chunkLenHex}: Chunk Length = ${chunkLen}\n`;
-        log += `- ${chunkTypeHex}: Chunk Type = "${chunkType}"\n`;
-
-        // Drill down into specific chunk types
-        if (chunkType === 'PLTE') {
-            for (let i = 0; i < chunkLen; i += 3) {
-                const hexCode = readHex(offset + 8 + i, 3).replace(/ /g, '');
-                log += `- ${readHex(offset + 8 + i, 3)}: Index ${i / 3} (#${hexCode})\n`;
-            }
-        } else if (chunkType === 'tRNS') {
-            for (let i = 0; i < chunkLen; i++) {
-                const alpha = view.getUint8(offset + 8 + i);
-                log += `- ${readHex(offset + 8 + i, 1)}: Alpha for Index ${i} = ${alpha}\n`;
-            }
-        } else if (chunkType === 'IHDR') {
-            log += `- ... ${chunkLen} bytes of image headers ...\n`;
-        } else if (chunkType === 'IDAT') {
-            log += `- ... ${chunkLen} bytes of compressed image data ...\n`;
-        }
-
-        log += `- ${crcHex}: CRC32\n`;
-
-        offset += 12 + chunkLen; // Jump to next chunk
-        if (chunkType === 'IEND') break;
-    }
+    // Delegate PNG parsing to png.mjs (Zero-copy subarray)
+    const pngSlice = ico.subarray(22);
+    log += formatPNGLog(pngSlice);
 
     return log;
 }
@@ -390,10 +349,17 @@ function generateTruecolor(colors) {
     }
 
     const deflateStats = bestDeflate(truecolorPixels);
-    const png = buildPNG(16, 16, 8, 6, deflateStats.data, null, null);
-    const ico = assembleICO(png.payload, 0, 32);
+    const pngPayload = buildPNG({
+        width: 16,
+        height: 16,
+        bitDepth: 8,
+        colorType: 6,
+        idatData: deflateStats.data
+    });
 
-    return { ico, png, deflateStats };
+    const ico = assembleICO(pngPayload, 0, 32);
+
+    return { ico, pngPayload, deflateStats };
 }
 
 function generateIndexed(colors, palette, transparentIndex) {
@@ -430,33 +396,43 @@ function generateIndexed(colors, palette, transparentIndex) {
 
     const deflateStats = bestDeflate(packedPixels);
     const tAlpha = transparentIndex === 0 ? palette[0].a : null;
-    const png = buildPNG(16, 16, bitDepth, 3, deflateStats.data, palette, tAlpha);
-    const ico = assembleICO(png.payload, palette.length, bitDepth);
 
-    return { ico, png, deflateStats, bitDepth };
+    const pngPayload = buildPNG({
+        width: 16,
+        height: 16,
+        bitDepth: bitDepth,
+        colorType: 3,
+        idatData: deflateStats.data,
+        palette: palette,
+        transparentAlpha: tAlpha
+    });
+
+    const ico = assembleICO(pngPayload, palette.length, bitDepth);
+
+    return { ico, pngPayload, deflateStats, bitDepth };
 }
 
-function updateOutputUI({ truecolorResult, indexedResult, palette }) {
+function updateOutputUI({ truecolorResult, indexedResult }) {
     objectUrlManager.revokeAll();
 
     elm.titleTruecolor.textContent = `Truecolor RGBA: ${truecolorResult.ico.length} bytes`;
-    elm.logTruecolor.textContent = elm.logTruecolor.textContent = generateLogForIco(truecolorResult.ico, truecolorResult.deflateStats);
+    elm.logTruecolor.textContent = generateLogForIco(truecolorResult.ico, truecolorResult.deflateStats);
     renderPreviews(truecolorResult.ico, elm.previewTruecolor);
 
     currentDownloads.tcIco = truecolorResult.ico;
-    currentDownloads.tcPng = truecolorResult.png.payload;
+    currentDownloads.tcPng = truecolorResult.pngPayload;
     elm.sizeTcIco.textContent = `${truecolorResult.ico.length.toLocaleString()} bytes`;
-    elm.sizeTcPng.textContent = `${truecolorResult.png.payload.length.toLocaleString()} bytes`;
+    elm.sizeTcPng.textContent = `${truecolorResult.pngPayload.length.toLocaleString()} bytes`;
 
     if (indexedResult) {
         elm.titleIndexed.textContent = `Optimized Indexed (${indexedResult.bitDepth}-bit): ${indexedResult.ico.length} bytes`;
-        elm.logIndexed.textContent = elm.logIndexed.textContent = generateLogForIco(indexedResult.ico, indexedResult.deflateStats);
+        elm.logIndexed.textContent = generateLogForIco(indexedResult.ico, indexedResult.deflateStats);
         renderPreviews(indexedResult.ico, elm.previewIndexed);
 
         currentDownloads.idxIco = indexedResult.ico;
-        currentDownloads.idxPng = indexedResult.png.payload;
+        currentDownloads.idxPng = indexedResult.pngPayload;
         elm.sizeIdxIco.textContent = `${indexedResult.ico.length.toLocaleString()} bytes`;
-        elm.sizeIdxPng.textContent = `${indexedResult.png.payload.length.toLocaleString()} bytes`;
+        elm.sizeIdxPng.textContent = `${indexedResult.pngPayload.length.toLocaleString()} bytes`;
 
         elm.btnSaveIdxIco.disabled = false;
         elm.btnSaveIdxPng.disabled = false;
@@ -494,7 +470,7 @@ elm.btnGenerate.addEventListener('click', () => {
         const truecolorResult = generateTruecolor(colors);
         const indexedResult = generateIndexed(colors, palette, transparentIndex);
 
-        updateOutputUI({ truecolorResult, indexedResult, palette });
+        updateOutputUI({ truecolorResult, indexedResult });
     } catch (err) {
         console.error(err);
         alert("An error occurred during generation.");
@@ -520,54 +496,7 @@ elm.btnSaveIdxPng.addEventListener('click', () => triggerDownload(currentDownloa
 elm.btnSaveTcIco.addEventListener('click', () => triggerDownload(currentDownloads.tcIco, 'favicon-truecolor.ico', 'image/x-icon'));
 elm.btnSaveTcPng.addEventListener('click', () => triggerDownload(currentDownloads.tcPng, 'favicon-truecolor.png', 'image/png'));
 
-// --- PNG & ICO Assemblers ---
-function buildPNG(w, h, bitDepth, colorType, compressedIdat, palette, transparentAlpha) {
-    const pngSignature = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
-
-    const ihdrData = new Uint8Array(13);
-    const ihdrView = new DataView(ihdrData.buffer);
-    ihdrView.setUint32(0, w, false);
-    ihdrView.setUint32(4, h, false);
-    ihdrData[8] = bitDepth;
-    ihdrData[9] = colorType;
-    const ihdrChunk = createChunk('IHDR', ihdrData);
-
-    let plteChunk = null;
-    let trnsChunk = null;
-
-    if (colorType === 3 && palette) {
-        const plteData = new Uint8Array(palette.length * 3);
-        palette.forEach((c, i) => {
-            plteData[i*3] = c.r; plteData[i*3+1] = c.g; plteData[i*3+2] = c.b;
-        });
-        plteChunk = createChunk('PLTE', plteData);
-
-        if (transparentAlpha !== null) {
-            trnsChunk = createChunk('tRNS', new Uint8Array([transparentAlpha]));
-        }
-    }
-
-    const idatChunk = createChunk('IDAT', compressedIdat);
-    const iendChunk = createChunk('IEND', new Uint8Array(0));
-
-    const chunks = [pngSignature, ihdrChunk, plteChunk, trnsChunk, idatChunk, iendChunk].filter(Boolean);
-    const size = chunks.reduce((sum, c) => sum + c.length, 0);
-    const payload = new Uint8Array(size);
-    let offset = 0;
-    chunks.forEach(c => { payload.set(c, offset); offset += c.length; });
-
-    return {
-        payload,
-        stats: {
-            ihdr: ihdrChunk.length,
-            plte: plteChunk ? plteChunk.length : 0,
-            trns: trnsChunk ? trnsChunk.length : 0,
-            idat: idatChunk.length,
-            iend: iendChunk.length
-        }
-    };
-}
-
+// --- ICO Assembler ---
 function assembleICO(pngPayload, colorCount, bitDepth) {
     const ico = new Uint8Array(22 + pngPayload.length);
     const view = new DataView(ico.buffer);
@@ -584,33 +513,6 @@ function assembleICO(pngPayload, colorCount, bitDepth) {
     view.setUint32(18, 22, true);
     ico.set(pngPayload, 22);
     return ico;
-}
-
-function createChunk(type, data) {
-    const chunk = new Uint8Array(4 + 4 + data.length + 4);
-    const view = new DataView(chunk.buffer);
-    view.setUint32(0, data.length, false);
-    for (let i = 0; i < 4; i++) chunk[4 + i] = type.charCodeAt(i);
-    chunk.set(data, 8);
-    view.setUint32(8 + data.length, crc32(type, data), false);
-    return chunk;
-}
-
-const crcTable = (() => {
-    const table = new Uint32Array(256);
-    for (let i = 0; i < 256; i++) {
-        let c = i;
-        for (let k = 0; k < 8; k++) c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
-        table[i] = c;
-    }
-    return table;
-})();
-
-function crc32(type, data) {
-    let crc = 0xFFFFFFFF;
-    for (let i = 0; i < 4; i++) crc = crcTable[(crc ^ type.charCodeAt(i)) & 0xFF] ^ (crc >>> 8);
-    for (let i = 0; i < data.length; i++) crc = crcTable[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
-    return (crc ^ 0xFFFFFFFF) >>> 0;
 }
 
 // --- Boot ---
