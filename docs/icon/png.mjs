@@ -1,3 +1,11 @@
+import pako from 'https://esm.sh/pako@2.2.0';
+
+// ==========================================
+// PRIVATE INTERNALS (Not Exported)
+// ==========================================
+
+const STRATEGY_NAMES = { 0: 'Default', 1: 'Filtered', 2: 'Huffman Only', 3: 'RLE' };
+
 const crcTable = (() => {
     const table = new Uint32Array(256);
     for (let i = 0; i < 256; i++) {
@@ -25,15 +33,33 @@ function createChunk(type, data) {
     return chunk;
 }
 
+function bestDeflate(data) {
+    let best = null;
+    let bestStrategy = 0;
+
+    for (let strategy = 0; strategy <= 3; strategy++) {
+        const compressed = pako.deflate(data, { level: 9, strategy });
+        if (!best || compressed.length < best.length) {
+            best = compressed;
+            bestStrategy = strategy;
+        }
+    }
+
+    return { data: best, strategy: bestStrategy };
+}
+
 // Helper for hex formatting in the logger
 const toHex = (val, bytes = 1) => val.toString(16).padStart(bytes * 2, '0');
 
+// ==========================================
 // PUBLIC API
+// ==========================================
 
 /**
- * Builds a valid PNG binary from raw configuration and deflated IDAT data.
+ * Builds a valid PNG binary from uncompressed pixel data and raw configuration.
+ * Automatically handles zlib compression and strategy optimization.
  */
-export function buildPNG({ width, height, bitDepth, colorType, idatData, palette = null, transparentAlpha = null }) {
+export function buildPNG({ width, height, bitDepth, colorType, uncompressedPixels, palette = null, transparentAlpha = null }) {
     const pngSignature = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
     const ihdrData = new Uint8Array(13);
@@ -59,7 +85,10 @@ export function buildPNG({ width, height, bitDepth, colorType, idatData, palette
         }
     }
 
-    const idatChunk = createChunk('IDAT', idatData);
+    // Handle compression natively inside the PNG module
+    const { data: compressedIdat, strategy } = bestDeflate(uncompressedPixels);
+    const idatChunk = createChunk('IDAT', compressedIdat);
+
     const iendChunk = createChunk('IEND', new Uint8Array(0));
 
     const chunks = [pngSignature, ihdrChunk, plteChunk, trnsChunk, idatChunk, iendChunk].filter(Boolean);
@@ -69,7 +98,13 @@ export function buildPNG({ width, height, bitDepth, colorType, idatData, palette
     let offset = 0;
     chunks.forEach(c => { payload.set(c, offset); offset += c.length; });
 
-    return payload;
+    return {
+        payload,
+        deflateStats: {
+            strategy,
+            strategyName: STRATEGY_NAMES[strategy]
+        }
+    };
 }
 
 /**

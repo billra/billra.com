@@ -1,4 +1,3 @@
-import pako from 'https://esm.sh/pako@2.2.0';
 import elm from './elements.mjs';
 import { buildPNG, formatPNGLog } from './png.mjs';
 
@@ -208,22 +207,6 @@ window.addEventListener('pointerup', () => state.isDrawing = false);
 
 // --- Generation Logic ---
 const toHex = (val, bytes = 1) => val.toString(16).padStart(bytes * 2, '0');
-const STRATEGY_NAMES = { 0: 'Default', 1: 'Filtered', 2: 'Huffman Only', 3: 'RLE' };
-
-function bestDeflate(data) {
-    let best = null;
-    let bestStrategy = 0;
-
-    for (let strategy = 0; strategy <= 3; strategy++) {
-        const compressed = pako.deflate(data, { level: 9, strategy });
-        if (!best || compressed.length < best.length) {
-            best = compressed;
-            bestStrategy = strategy;
-        }
-    }
-
-    return { data: best, strategy: bestStrategy };
-}
 
 function generateLogForIco(ico, deflateStats) {
     const view = new DataView(ico.buffer, ico.byteOffset, ico.byteLength);
@@ -253,7 +236,7 @@ function generateLogForIco(ico, deflateStats) {
     log += `- ${sizeHex}: Image data size = ${pngSize}\n`;
     log += `- ${offsetHex}: Offset to image = ${view.getUint32(18, true)}\n\n`;
 
-    log += `Optimal zlib Strategy: ${deflateStats.strategy} (${STRATEGY_NAMES[deflateStats.strategy]})\n\n`;
+    log += `Optimal zlib Strategy: ${deflateStats.strategy} (${deflateStats.strategyName})\n\n`;
 
     // Delegate PNG parsing to png.mjs (Zero-copy subarray)
     const pngSlice = ico.subarray(22);
@@ -348,13 +331,12 @@ function generateTruecolor(colors) {
         }
     }
 
-    const deflateStats = bestDeflate(truecolorPixels);
-    const pngPayload = buildPNG({
+    const { payload: pngPayload, deflateStats } = buildPNG({
         width: 16,
         height: 16,
         bitDepth: 8,
         colorType: 6,
-        idatData: deflateStats.data
+        uncompressedPixels: truecolorPixels
     });
 
     const ico = assembleICO(pngPayload, 0, 32);
@@ -394,15 +376,14 @@ function generateIndexed(colors, palette, transparentIndex) {
         }
     }
 
-    const deflateStats = bestDeflate(packedPixels);
     const tAlpha = transparentIndex === 0 ? palette[0].a : null;
 
-    const pngPayload = buildPNG({
+    const { payload: pngPayload, deflateStats } = buildPNG({
         width: 16,
         height: 16,
         bitDepth: bitDepth,
         colorType: 3,
-        idatData: deflateStats.data,
+        uncompressedPixels: packedPixels,
         palette: palette,
         transparentAlpha: tAlpha
     });
