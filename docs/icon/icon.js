@@ -224,64 +224,80 @@ function bestDeflate(data) {
     return { data: best, strategy: bestStrategy };
 }
 
-function generateLogForIco(ico, pngStats, deflateStats, colorCount, palette = null) {
+function generateLogForIco(ico, deflateStats) {
     const view = new DataView(ico.buffer);
-    const pngSize = ico.length - 22;
 
-    const sizeHex = toHex(view.getUint32(14, true), 4).match(/.{2}/g).join(' ');
+    // Utilities to safely read bytes from the binary and convert to hex/ascii
+    const readHex = (start, len) => {
+        let res = [];
+        for (let i = 0; i < len; i++) res.push(toHex(view.getUint8(start + i)));
+        return res.join(' ');
+    };
+    const readAscii = (start, len) => {
+        let res = '';
+        for (let i = 0; i < len; i++) res += String.fromCharCode(view.getUint8(start + i));
+        return res;
+    };
+
+    // --- Parse ICO Header (Little Endian) ---
+    const pngSize = view.getUint32(14, true);
     const offsetHex = toHex(view.getUint32(18, true), 4).match(/.{2}/g).join(' ');
+    const sizeHex = toHex(pngSize, 4).match(/.{2}/g).join(' ');
 
     let log = `[ICO HEADER] (22 Bytes)\n`;
-    log += `- ${toHex(ico[0])} ${toHex(ico[1])}: Reserved\n`;
-    log += `- ${toHex(ico[2])} ${toHex(ico[3])}: Type = 1 (icon)\n`;
-    log += `- ${toHex(ico[4])} ${toHex(ico[5])}: Image count = 1\n`;
-    log += `- ${toHex(ico[6])}: Width = 16\n`;
-    log += `- ${toHex(ico[7])}: Height = 16\n`;
-    log += `- ${toHex(ico[8])}: Color count = ${colorCount >= 256 ? 0 : colorCount}\n`;
-    log += `- ${toHex(ico[9])}: Reserved\n`;
-    log += `- ${toHex(ico[10])} ${toHex(ico[11])}: Planes = 1\n`;
-    log += `- ${toHex(ico[12])} ${toHex(ico[13])}: Bit count = ${view.getUint16(12, true)}\n`;
+    log += `- ${readHex(0, 2)}: Reserved\n`;
+    log += `- ${readHex(2, 2)}: Type = ${view.getUint16(2, true)} (icon)\n`;
+    log += `- ${readHex(4, 2)}: Image count = ${view.getUint16(4, true)}\n`;
+    log += `- ${readHex(6, 1)}: Width = ${view.getUint8(6) || 256}\n`;
+    log += `- ${readHex(7, 1)}: Height = ${view.getUint8(7) || 256}\n`;
+    log += `- ${readHex(8, 1)}: Color count = ${view.getUint8(8)}\n`;
+    log += `- ${readHex(9, 1)}: Reserved\n`;
+    log += `- ${readHex(10, 2)}: Planes = ${view.getUint16(10, true)}\n`;
+    log += `- ${readHex(12, 2)}: Bit count = ${view.getUint16(12, true)}\n`;
     log += `- ${sizeHex}: Image data size = ${pngSize}\n`;
-    log += `- ${offsetHex}: Offset to image = 22\n\n`;
+    log += `- ${offsetHex}: Offset to image = ${view.getUint32(18, true)}\n\n`;
 
     log += `Optimal zlib Strategy: ${deflateStats.strategy} (${STRATEGY_NAMES[deflateStats.strategy]})\n\n`;
 
-    log += `[PNG PAYLOAD SUMMARY] (${pngSize} Bytes)\n`;
-    log += `- Signature: 8 bytes\n`;
-    log += `- IHDR Chunk: ${pngStats.ihdr} bytes\n`;
-    if (pngStats.plte) log += `- PLTE Chunk: ${pngStats.plte} bytes\n`;
-    if (pngStats.trns) log += `- tRNS Chunk: ${pngStats.trns} bytes\n`;
-    log += `- IDAT Chunk: ${pngStats.idat} bytes (Compressed)\n`;
-    log += `- IEND Chunk: ${pngStats.iend} bytes\n`;
+    // --- Parse PNG Payload (Big Endian) ---
+    log += `[PNG PAYLOAD] (${pngSize} Bytes)\n`;
+    log += `- ${readHex(22, 8)}: PNG Signature\n`;
 
-    if (palette) {
-        const plteDataLen = palette.length * 3;
-        const plteTotalLen = plteDataLen + 12;
-        const plteData = new Uint8Array(plteDataLen);
+    let offset = 30; // End of PNG signature, start of first chunk
+    while (offset < ico.length) {
+        // Read length (Big Endian for PNG)
+        const chunkLen = view.getUint32(offset, false);
+        const chunkType = readAscii(offset + 4, 4);
 
-        log += `\n[PLTE CHUNK] (${plteTotalLen} Bytes)\n`;
-        log += `- ${toHex(plteDataLen, 4).match(/.{2}/g).join(' ')}: Chunk Length = ${plteDataLen}\n`;
-        log += `- 50 4C 54 45: Chunk Type = "PLTE"\n`;
+        const chunkLenHex = toHex(chunkLen, 4).match(/.{2}/g).join(' ');
+        const chunkTypeHex = readHex(offset + 4, 4);
+        const crcHex = readHex(offset + 8 + chunkLen, 4);
 
-        palette.forEach((c, i) => {
-            plteData[i*3] = c.r; plteData[i*3+1] = c.g; plteData[i*3+2] = c.b;
-            log += `- ${toHex(c.r)} ${toHex(c.g)} ${toHex(c.b)}: Index ${i} (#${toHex(c.r)}${toHex(c.g)}${toHex(c.b)})\n`;
-        });
+        log += `\n[${chunkType} CHUNK] (${chunkLen + 12} Bytes)\n`;
+        log += `- ${chunkLenHex}: Chunk Length = ${chunkLen}\n`;
+        log += `- ${chunkTypeHex}: Chunk Type = "${chunkType}"\n`;
 
-        const plteCrc = crc32("PLTE", plteData);
-        log += `- ${toHex(plteCrc, 4).match(/.{2}/g).join(' ')}: CRC32\n`;
-
-        if (palette.length > 0 && palette[0].a < 255) {
-            const tAlpha = palette[0].a;
-            log += `\n[tRNS CHUNK] (13 Bytes)\n`;
-            log += `- 00 00 00 01: Chunk Length = 1\n`;
-            log += `- 74 52 4E 53: Chunk Type = "tRNS"\n`;
-            log += `- ${toHex(tAlpha)}: Alpha for Index 0\n`;
-
-            const trnsData = new Uint8Array([tAlpha]);
-            const trnsCrc = crc32("tRNS", trnsData);
-            log += `- ${toHex(trnsCrc, 4).match(/.{2}/g).join(' ')}: CRC32\n`;
+        // Drill down into specific chunk types
+        if (chunkType === 'PLTE') {
+            for (let i = 0; i < chunkLen; i += 3) {
+                const hexCode = readHex(offset + 8 + i, 3).replace(/ /g, '');
+                log += `- ${readHex(offset + 8 + i, 3)}: Index ${i / 3} (#${hexCode})\n`;
+            }
+        } else if (chunkType === 'tRNS') {
+            for (let i = 0; i < chunkLen; i++) {
+                const alpha = view.getUint8(offset + 8 + i);
+                log += `- ${readHex(offset + 8 + i, 1)}: Alpha for Index ${i} = ${alpha}\n`;
+            }
+        } else if (chunkType === 'IHDR') {
+            log += `- ... ${chunkLen} bytes of image headers ...\n`;
+        } else if (chunkType === 'IDAT') {
+            log += `- ... ${chunkLen} bytes of compressed image data ...\n`;
         }
+
+        log += `- ${crcHex}: CRC32\n`;
+
+        offset += 12 + chunkLen; // Jump to next chunk
+        if (chunkType === 'IEND') break;
     }
 
     return log;
@@ -424,7 +440,7 @@ function updateOutputUI({ truecolorResult, indexedResult, palette }) {
     objectUrlManager.revokeAll();
 
     elm.titleTruecolor.textContent = `Truecolor RGBA: ${truecolorResult.ico.length} bytes`;
-    elm.logTruecolor.textContent = generateLogForIco(truecolorResult.ico, truecolorResult.png.stats, truecolorResult.deflateStats, 0);
+    elm.logTruecolor.textContent = elm.logTruecolor.textContent = generateLogForIco(truecolorResult.ico, truecolorResult.deflateStats);
     renderPreviews(truecolorResult.ico, elm.previewTruecolor);
 
     currentDownloads.tcIco = truecolorResult.ico;
@@ -434,7 +450,7 @@ function updateOutputUI({ truecolorResult, indexedResult, palette }) {
 
     if (indexedResult) {
         elm.titleIndexed.textContent = `Optimized Indexed (${indexedResult.bitDepth}-bit): ${indexedResult.ico.length} bytes`;
-        elm.logIndexed.textContent = generateLogForIco(indexedResult.ico, indexedResult.png.stats, indexedResult.deflateStats, palette.length, palette);
+        elm.logIndexed.textContent = elm.logIndexed.textContent = generateLogForIco(indexedResult.ico, indexedResult.deflateStats);
         renderPreviews(indexedResult.ico, elm.previewIndexed);
 
         currentDownloads.idxIco = indexedResult.ico;
