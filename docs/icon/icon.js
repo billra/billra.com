@@ -1,5 +1,5 @@
 import elm from './elements.mjs';
-import { buildPNG, formatPNGLog } from './png.mjs';
+import { generateIcons } from './ico.mjs';
 
 // --- Configuration & Constants ---
 const CONFIG = {
@@ -205,46 +205,6 @@ elm.gridContainer.addEventListener('pointerdown', (e) => {
 elm.gridContainer.addEventListener('pointerover', handlePaint);
 window.addEventListener('pointerup', () => state.isDrawing = false);
 
-// --- Generation Logic ---
-const toHex = (val, bytes = 1) => val.toString(16).padStart(bytes * 2, '0');
-
-function generateLogForIco(ico, deflateStats) {
-    const view = new DataView(ico.buffer, ico.byteOffset, ico.byteLength);
-
-    // Utilities to safely read bytes from the binary and convert to hex
-    const readHex = (start, len) => {
-        let res = [];
-        for (let i = 0; i < len; i++) res.push(toHex(view.getUint8(start + i)));
-        return res.join(' ');
-    };
-
-    // --- Parse ICO Header (Little Endian) ---
-    const pngSize = view.getUint32(14, true);
-    const offsetHex = toHex(view.getUint32(18, true), 4).match(/.{2}/g).join(' ');
-    const sizeHex = toHex(pngSize, 4).match(/.{2}/g).join(' ');
-
-    let log = `[ICO HEADER] (22 Bytes)\n`;
-    log += `- ${readHex(0, 2)}: Reserved\n`;
-    log += `- ${readHex(2, 2)}: Type = ${view.getUint16(2, true)} (icon)\n`;
-    log += `- ${readHex(4, 2)}: Image count = ${view.getUint16(4, true)}\n`;
-    log += `- ${readHex(6, 1)}: Width = ${view.getUint8(6) || 256}\n`;
-    log += `- ${readHex(7, 1)}: Height = ${view.getUint8(7) || 256}\n`;
-    log += `- ${readHex(8, 1)}: Color count = ${view.getUint8(8)}\n`;
-    log += `- ${readHex(9, 1)}: Reserved\n`;
-    log += `- ${readHex(10, 2)}: Planes = ${view.getUint16(10, true)}\n`;
-    log += `- ${readHex(12, 2)}: Bit count = ${view.getUint16(12, true)}\n`;
-    log += `- ${sizeHex}: Image data size = ${pngSize}\n`;
-    log += `- ${offsetHex}: Offset to image = ${view.getUint32(18, true)}\n\n`;
-
-    log += `Optimal zlib Strategy: ${deflateStats.strategy} (${deflateStats.strategyName})\n\n`;
-
-    // Delegate PNG parsing to png.mjs (Zero-copy subarray)
-    const pngSlice = ico.subarray(22);
-    log += formatPNGLog(pngSlice);
-
-    return log;
-}
-
 // --- Magnifier Initialization ---
 const magnifier = document.createElement('div');
 magnifier.className = 'magnifier';
@@ -293,111 +253,11 @@ function renderPreviews(icoBytes, container) {
     });
 }
 
-function extractPalette(colors) {
-    const palette = [];
-    let transparentIndex = -1;
-    const findColor = (r, g, b, a) => palette.findIndex(c => c.r === r && c.g === g && c.b === b && c.a === a);
-
-    for (const { r, g, b, a } of colors) {
-        if (findColor(r, g, b, a) === -1) {
-            if (a < 255 && transparentIndex === -1 && palette.length < 16) {
-                palette.unshift({ r, g, b, a });
-                transparentIndex = 0;
-            } else {
-                palette.push({ r, g, b, a });
-            }
-        }
-    }
-
-    if (palette.length === 0) {
-        palette.push({ r: 0, g: 0, b: 0, a: 0 });
-        transparentIndex = 0;
-    }
-
-    return { palette, transparentIndex };
-}
-
-function generateTruecolor(colors) {
-    const truecolorPixels = new Uint8Array(16 * (1 + 16 * 4));
-    let tcWritePos = 0;
-    for (let y = 0; y < 16; y++) {
-        truecolorPixels[tcWritePos++] = 0;
-        for (let x = 0; x < 16; x++) {
-            const c = colors[y * 16 + x];
-            truecolorPixels[tcWritePos++] = c.r;
-            truecolorPixels[tcWritePos++] = c.g;
-            truecolorPixels[tcWritePos++] = c.b;
-            truecolorPixels[tcWritePos++] = c.a;
-        }
-    }
-
-    const { payload: pngPayload, deflateStats } = buildPNG({
-        width: 16,
-        height: 16,
-        bitDepth: 8,
-        colorType: 6,
-        uncompressedPixels: truecolorPixels
-    });
-
-    const ico = assembleICO(pngPayload, 0, 32);
-
-    return { ico, pngPayload, deflateStats };
-}
-
-function generateIndexed(colors, palette, transparentIndex) {
-    if (palette.length > 16) return null;
-
-    let bitDepth = 0;
-    if (palette.length <= 2) bitDepth = 1;
-    else if (palette.length <= 4) bitDepth = 2;
-    else bitDepth = 4;
-
-    const pixelsPerByte = 8 / bitDepth;
-    const bytesPerRow = Math.ceil(16 / pixelsPerByte);
-    const packedPixels = new Uint8Array(16 * (1 + bytesPerRow));
-    const findColor = (r, g, b, a) => palette.findIndex(c => c.r === r && c.g === g && c.b === b && c.a === a);
-
-    let idxWritePos = 0;
-    for (let y = 0; y < 16; y++) {
-        packedPixels[idxWritePos++] = 0;
-
-        let currentByte = 0;
-        for (let x = 0; x < 16; x++) {
-            const c = colors[y * 16 + x];
-            const pIdx = findColor(c.r, c.g, c.b, c.a);
-
-            const bitOffset = 8 - bitDepth - ((x % pixelsPerByte) * bitDepth);
-            currentByte |= (pIdx << bitOffset);
-
-            if ((x + 1) % pixelsPerByte === 0 || x === 15) {
-                packedPixels[idxWritePos++] = currentByte;
-                currentByte = 0;
-            }
-        }
-    }
-
-    const tAlpha = transparentIndex === 0 ? palette[0].a : null;
-
-    const { payload: pngPayload, deflateStats } = buildPNG({
-        width: 16,
-        height: 16,
-        bitDepth: bitDepth,
-        colorType: 3,
-        uncompressedPixels: packedPixels,
-        palette: palette,
-        transparentAlpha: tAlpha
-    });
-
-    const ico = assembleICO(pngPayload, palette.length, bitDepth);
-
-    return { ico, pngPayload, deflateStats, bitDepth };
-}
-
 function updateOutputUI({ truecolorResult, indexedResult }) {
     objectUrlManager.revokeAll();
 
     elm.titleTruecolor.textContent = `Truecolor RGBA: ${truecolorResult.ico.length} bytes`;
-    elm.logTruecolor.textContent = generateLogForIco(truecolorResult.ico, truecolorResult.deflateStats);
+    elm.logTruecolor.textContent = truecolorResult.log;
     renderPreviews(truecolorResult.ico, elm.previewTruecolor);
 
     currentDownloads.tcIco = truecolorResult.ico;
@@ -407,7 +267,7 @@ function updateOutputUI({ truecolorResult, indexedResult }) {
 
     if (indexedResult) {
         elm.titleIndexed.textContent = `Optimized Indexed (${indexedResult.bitDepth}-bit): ${indexedResult.ico.length} bytes`;
-        elm.logIndexed.textContent = generateLogForIco(indexedResult.ico, indexedResult.deflateStats);
+        elm.logIndexed.textContent = indexedResult.log;
         renderPreviews(indexedResult.ico, elm.previewIndexed);
 
         currentDownloads.idxIco = indexedResult.ico;
@@ -447,11 +307,10 @@ elm.btnGenerate.addEventListener('click', () => {
             });
         }
 
-        const { palette, transparentIndex } = extractPalette(colors);
-        const truecolorResult = generateTruecolor(colors);
-        const indexedResult = generateIndexed(colors, palette, transparentIndex);
+        // The generator now handles everything and gives back the ready-to-display logs and binaries!
+        const results = generateIcons(colors);
+        updateOutputUI(results);
 
-        updateOutputUI({ truecolorResult, indexedResult });
     } catch (err) {
         console.error(err);
         alert("An error occurred during generation.");
@@ -476,25 +335,6 @@ elm.btnSaveIdxIco.addEventListener('click', () => triggerDownload(currentDownloa
 elm.btnSaveIdxPng.addEventListener('click', () => triggerDownload(currentDownloads.idxPng, 'favicon-indexed.png', 'image/png'));
 elm.btnSaveTcIco.addEventListener('click', () => triggerDownload(currentDownloads.tcIco, 'favicon-truecolor.ico', 'image/x-icon'));
 elm.btnSaveTcPng.addEventListener('click', () => triggerDownload(currentDownloads.tcPng, 'favicon-truecolor.png', 'image/png'));
-
-// --- ICO Assembler ---
-function assembleICO(pngPayload, colorCount, bitDepth) {
-    const ico = new Uint8Array(22 + pngPayload.length);
-    const view = new DataView(ico.buffer);
-    view.setUint16(0, 0, true);
-    view.setUint16(2, 1, true);
-    view.setUint16(4, 1, true);
-    ico[6] = 16;
-    ico[7] = 16;
-    ico[8] = colorCount;
-    ico[9] = 0;
-    view.setUint16(10, 1, true);
-    view.setUint16(12, bitDepth, true);
-    view.setUint32(14, pngPayload.length, true);
-    view.setUint32(18, 22, true);
-    ico.set(pngPayload, 22);
-    return ico;
-}
 
 // --- Boot ---
 initGrid();
