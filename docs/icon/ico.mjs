@@ -6,13 +6,15 @@ import { buildPNG, formatPNGLog } from './png.mjs';
 
 const toHex = (value, byteLength = 1) => value.toString(16).padStart(byteLength * 2, '0');
 
+const findColorIndex = (palette, r, g, b, a) =>
+    palette.findIndex(c => c.r === r && c.g === g && c.b === b && c.a === a);
+
 function extractPalette(rgbaPixels) {
     const palette = [];
     let transparentIndex = -1;
-    const findColorIndex = (r, g, b, a) => palette.findIndex(c => c.r === r && c.g === g && c.b === b && c.a === a);
 
     for (const { r, g, b, a } of rgbaPixels) {
-        if (findColorIndex(r, g, b, a) === -1) {
+        if (findColorIndex(palette, r, g, b, a) === -1) {
             if (a < 255 && transparentIndex === -1 && palette.length < 16) {
                 palette.unshift({ r, g, b, a });
                 transparentIndex = 0;
@@ -87,7 +89,6 @@ function generateIndexed(rgbaPixels, palette, transparentIndex) {
     const pixelsPerByte = 8 / bitDepth;
     const bytesPerRow = Math.ceil(16 / pixelsPerByte);
     const packedPixels = new Uint8Array(16 * (1 + bytesPerRow));
-    const findColorIndex = (r, g, b, a) => palette.findIndex(c => c.r === r && c.g === g && c.b === b && c.a === a);
 
     let writeOffset = 0;
     for (let y = 0; y < 16; y++) {
@@ -96,7 +97,7 @@ function generateIndexed(rgbaPixels, palette, transparentIndex) {
         let currentByte = 0;
         for (let x = 0; x < 16; x++) {
             const rgbaObject = rgbaPixels[y * 16 + x];
-            const paletteIndex = findColorIndex(rgbaObject.r, rgbaObject.g, rgbaObject.b, rgbaObject.a);
+            const paletteIndex = findColorIndex(palette, rgbaObject.r, rgbaObject.g, rgbaObject.b, rgbaObject.a);
 
             const bitOffset = 8 - bitDepth - ((x % pixelsPerByte) * bitDepth);
             currentByte |= (paletteIndex << bitOffset);
