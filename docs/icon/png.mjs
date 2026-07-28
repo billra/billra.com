@@ -49,7 +49,7 @@ function bestDeflate(data) {
 }
 
 // Helper for hex formatting in the logger
-const toHex = (val, bytes = 1) => val.toString(16).padStart(bytes * 2, '0');
+const toHex = (value, byteLength = 1) => value.toString(16).padStart(byteLength * 2, '0');
 
 // ==========================================
 // PUBLIC API
@@ -114,9 +114,9 @@ export function formatPNGLog(pngBuffer) {
     const view = new DataView(pngBuffer.buffer, pngBuffer.byteOffset, pngBuffer.byteLength);
 
     const readHex = (start, len) => {
-        let res = [];
-        for (let i = 0; i < len; i++) res.push(toHex(view.getUint8(start + i)));
-        return res.join(' ');
+        let hexBytes = [];
+        for (let i = 0; i < len; i++) hexBytes.push(toHex(view.getUint8(start + i)));
+        return hexBytes.join(' ');
     };
     const readAscii = (start, len) => {
         let res = '';

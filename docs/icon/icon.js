@@ -1,4 +1,4 @@
-import elm from './elements.mjs';
+import dom from './elements.mjs';
 import { generateIcons } from './ico.mjs';
 
 // --- Configuration & Constants ---
@@ -12,8 +12,8 @@ CONFIG.totalPixels = CONFIG.gridSize * CONFIG.gridSize;
 const pixelBuffer = new Uint8ClampedArray(CONFIG.totalPixels * 4);
 const pixelView = new DataView(pixelBuffer.buffer); // 32-bit accessor for the buffer
 
-const pixels = []; // DOM cache for the grid cells
-const currentDownloads = { idxIco: null, idxPng: null, tcIco: null, tcPng: null };
+const gridCells = []; // DOM cache for the grid cells
+const currentDownloads = { indexedIco: null, indexedPng: null, truecolorIco: null, truecolorPng: null };
 
 /**
  * Safely manages Blob Object URLs to prevent memory leaks during rapid regeneration.
@@ -34,25 +34,25 @@ const objectUrlManager = (() => {
 })();
 
 // --- Inject Metadata ---
-if (elm.pageTitle) elm.pageTitle.textContent = document.title;
+if (dom.pageTitle) dom.pageTitle.textContent = document.title;
 const versionMeta = document.querySelector('meta[name="version"]');
-if (versionMeta && elm.version) elm.version.textContent = `v${versionMeta.content}`;
+if (versionMeta && dom.version) dom.version.textContent = `v${versionMeta.content}`;
 
 // --- UI Updaters ---
-function updatePixelUI(index, color) {
-    if (pixels[index]) {
-        pixels[index].style.backgroundColor = color || 'transparent';
+function updatePixelUI(pixelIndex, hexColor) {
+    if (gridCells[pixelIndex]) {
+        gridCells[pixelIndex].style.backgroundColor = hexColor || 'transparent';
     }
 }
 
-function updateToolUI(color) {
-    if (color === null) {
-        elm.colorPicker.classList.remove('active-tool');
-        elm.btnEraser.classList.add('active-tool');
+function updateToolUI(hexColor) {
+    if (hexColor === null) {
+        dom.colorPicker.classList.remove('active-tool');
+        dom.btnEraser.classList.add('active-tool');
     } else {
-        elm.btnEraser.classList.remove('active-tool');
-        elm.colorPicker.classList.add('active-tool');
-        elm.colorPicker.value = color;
+        dom.btnEraser.classList.remove('active-tool');
+        dom.colorPicker.classList.add('active-tool');
+        dom.colorPicker.value = hexColor;
     }
 }
 
@@ -65,8 +65,8 @@ function hexToColor32(hex) {
 }
 
 const state = new Proxy({
-    currentColor: elm.colorPicker.value,
-    currentColor32: hexToColor32(elm.colorPicker.value), // Cache the 32-bit integer
+    currentColor: dom.colorPicker.value,
+    currentColor32: hexToColor32(dom.colorPicker.value), // Cache the 32-bit integer
     isDrawing: false
 }, {
     set(target, property, value) {
@@ -74,8 +74,9 @@ const state = new Proxy({
         target[property] = value;
 
         if (property === 'currentColor') {
-            target.currentColor32 = hexToColor32(value);
-            updateToolUI(value);
+            const hexColor = value;
+            target.currentColor32 = hexToColor32(hexColor);
+            updateToolUI(hexColor);
         }
 
         return true;
@@ -89,8 +90,8 @@ function initGrid() {
         pixel.className = 'pixel';
         pixel.dataset.index = i;
 
-        pixels.push(pixel);
-        elm.gridContainer.appendChild(pixel);
+        gridCells.push(pixel);
+        dom.gridContainer.appendChild(pixel);
     }
 }
 
@@ -115,23 +116,23 @@ function setPixel(pixelIndex, color32) {
 window.addEventListener('dragover', (e) => e.preventDefault());
 window.addEventListener('drop', (e) => e.preventDefault());
 
-elm.dropzone.addEventListener('dragover', (e) => {
+dom.dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
-    elm.dropzone.classList.add('dragover');
+    dom.dropzone.classList.add('dragover');
 });
 
-elm.dropzone.addEventListener('dragleave', (e) => {
+dom.dropzone.addEventListener('dragleave', (e) => {
     e.preventDefault();
-    elm.dropzone.classList.remove('dragover');
+    dom.dropzone.classList.remove('dragover');
 });
 
-elm.dropzone.addEventListener('drop', (e) => {
+dom.dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
-    elm.dropzone.classList.remove('dragover');
+    dom.dropzone.classList.remove('dragover');
     if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
 });
 
-elm.fileInput.addEventListener('change', (e) => {
+dom.fileInput.addEventListener('change', (e) => {
     if (e.target.files.length) processFile(e.target.files[0]);
 });
 
@@ -141,12 +142,12 @@ function processFile(file) {
         return;
     }
 
-    elm.outputPanel.style.display = 'none';
+    dom.outputPanel.style.display = 'none';
     const sizeBytes = file.size.toLocaleString();
 
     const img = new Image();
     img.onload = () => {
-        elm.dropzoneText.innerHTML = `
+        dom.dropzoneText.innerHTML = `
             <span style="color: #0f0;">Loaded: ${file.name}</span><br>
             ${img.width}x${img.height} pixels • ${sizeBytes} bytes
         `;
@@ -161,13 +162,13 @@ function processFile(file) {
         // Extract the raw RGBA array from the canvas
         const imgData = ctx.getImageData(0, 0, 16, 16).data;
 
-        for (let i = 0; i < CONFIG.totalPixels; i++) {
-            const offset = i * 4;
+        for (let pixelIndex = 0; pixelIndex < CONFIG.totalPixels; pixelIndex++) {
+            const offset = pixelIndex * 4;
             const a = imgData[offset + 3];
 
             if (a < 128) {
                 // Transparent threshold
-                setPixel(i, 0);
+                setPixel(pixelIndex, 0);
             } else {
                 const r = imgData[offset];
                 const g = imgData[offset + 1];
@@ -175,7 +176,7 @@ function processFile(file) {
 
                 // Solid pixel: Shift R, G, B into their respective 32-bit slots, add 0xFF for Alpha, force unsigned
                 const color32 = ((r << 24) | (g << 16) | (b << 8) | 0xFF) >>> 0;
-                setPixel(i, color32);
+                setPixel(pixelIndex, color32);
             }
         }
 
@@ -189,20 +190,20 @@ const handlePaint = (e) => {
     if (!state.isDrawing) return;
     const target = e.target.closest('.pixel');
     if (target) {
-        const index = parseInt(target.dataset.index, 10);
-        setPixel(index, state.currentColor32);
+        const pixelIndex = parseInt(target.dataset.index, 10);
+        setPixel(pixelIndex, state.currentColor32);
     }
 };
 
-elm.colorPicker.addEventListener('input', (e) => state.currentColor = e.target.value);
-elm.colorPicker.addEventListener('click', (e) => state.currentColor = e.target.value);
-elm.btnEraser.addEventListener('click', () => state.currentColor = null);
+dom.colorPicker.addEventListener('input', (e) => state.currentColor = e.target.value);
+dom.colorPicker.addEventListener('click', (e) => state.currentColor = e.target.value);
+dom.btnEraser.addEventListener('click', () => state.currentColor = null);
 
-elm.gridContainer.addEventListener('pointerdown', (e) => {
+dom.gridContainer.addEventListener('pointerdown', (e) => {
     state.isDrawing = true;
     handlePaint(e);
 });
-elm.gridContainer.addEventListener('pointerover', handlePaint);
+dom.gridContainer.addEventListener('pointerover', handlePaint);
 window.addEventListener('pointerup', () => state.isDrawing = false);
 
 // --- Magnifier Initialization ---
@@ -213,16 +214,16 @@ magnifier.appendChild(magnifierImg);
 document.body.appendChild(magnifier);
 
 // --- Render Previews ---
-function renderPreviews(icoBytes, container) {
-    container.innerHTML = '';
-    if (!icoBytes) return;
+function renderPreviews(icoBuffer, containerElement) {
+    containerElement.innerHTML = '';
+    if (!icoBuffer) return;
 
     const label = document.createElement('span');
     label.className = 'preview-label';
     label.textContent = '🔍 samples:';
-    container.appendChild(label);
+    containerElement.appendChild(label);
 
-    const blob = new Blob([icoBytes], { type: 'image/x-icon' });
+    const blob = new Blob([icoBuffer], { type: 'image/x-icon' });
     const url = objectUrlManager.create(blob);
     const backgrounds = ['bg-white', 'bg-grey', 'bg-black', 'bg-red', 'bg-green', 'bg-blue'];
 
@@ -234,7 +235,7 @@ function renderPreviews(icoBytes, container) {
         img.src = url;
 
         box.appendChild(img);
-        container.appendChild(box);
+        containerElement.appendChild(box);
 
         box.addEventListener('mouseenter', () => {
             magnifier.style.display = 'block';
@@ -256,50 +257,50 @@ function renderPreviews(icoBytes, container) {
 function updateOutputUI({ truecolorResult, indexedResult }) {
     objectUrlManager.revokeAll();
 
-    elm.titleTruecolor.textContent = `Truecolor RGBA: ${truecolorResult.ico.length} bytes`;
-    elm.logTruecolor.textContent = truecolorResult.log;
-    renderPreviews(truecolorResult.ico, elm.previewTruecolor);
+    dom.titleTruecolor.textContent = `Truecolor RGBA: ${truecolorResult.icoBuffer.length} bytes`;
+    dom.logTruecolor.textContent = truecolorResult.log;
+    renderPreviews(truecolorResult.icoBuffer, dom.previewTruecolor);
 
-    currentDownloads.tcIco = truecolorResult.ico;
-    currentDownloads.tcPng = truecolorResult.pngPayload;
-    elm.sizeTcIco.textContent = `${truecolorResult.ico.length.toLocaleString()} bytes`;
-    elm.sizeTcPng.textContent = `${truecolorResult.pngPayload.length.toLocaleString()} bytes`;
+    currentDownloads.truecolorIco = truecolorResult.icoBuffer;
+    currentDownloads.truecolorPng = truecolorResult.pngPayload;
+    dom.sizeTcIco.textContent = `${truecolorResult.icoBuffer.length.toLocaleString()} bytes`;
+    dom.sizeTcPng.textContent = `${truecolorResult.pngPayload.length.toLocaleString()} bytes`;
 
     if (indexedResult) {
-        elm.titleIndexed.textContent = `Optimized Indexed (${indexedResult.bitDepth}-bit): ${indexedResult.ico.length} bytes`;
-        elm.logIndexed.textContent = indexedResult.log;
-        renderPreviews(indexedResult.ico, elm.previewIndexed);
+        dom.titleIndexed.textContent = `Optimized Indexed (${indexedResult.bitDepth}-bit): ${indexedResult.icoBuffer.length} bytes`;
+        dom.logIndexed.textContent = indexedResult.log;
+        renderPreviews(indexedResult.icoBuffer, dom.previewIndexed);
 
-        currentDownloads.idxIco = indexedResult.ico;
-        currentDownloads.idxPng = indexedResult.pngPayload;
-        elm.sizeIdxIco.textContent = `${indexedResult.ico.length.toLocaleString()} bytes`;
-        elm.sizeIdxPng.textContent = `${indexedResult.pngPayload.length.toLocaleString()} bytes`;
+        currentDownloads.indexedIco = indexedResult.icoBuffer;
+        currentDownloads.indexedPng = indexedResult.pngPayload;
+        dom.sizeIdxIco.textContent = `${indexedResult.icoBuffer.length.toLocaleString()} bytes`;
+        dom.sizeIdxPng.textContent = `${indexedResult.pngPayload.length.toLocaleString()} bytes`;
 
-        elm.btnSaveIdxIco.disabled = false;
-        elm.btnSaveIdxPng.disabled = false;
+        dom.btnSaveIdxIco.disabled = false;
+        dom.btnSaveIdxPng.disabled = false;
     } else {
-        elm.titleIndexed.textContent = `Optimized Indexed: N/A`;
-        elm.logIndexed.textContent = `Skipped: Image has more than 16 colors.`;
-        renderPreviews(null, elm.previewIndexed);
+        dom.titleIndexed.textContent = `Optimized Indexed: N/A`;
+        dom.logIndexed.textContent = `Skipped: Image has more than 16 colors.`;
+        renderPreviews(null, dom.previewIndexed);
 
-        currentDownloads.idxIco = null;
-        currentDownloads.idxPng = null;
-        elm.sizeIdxIco.textContent = `N/A`;
-        elm.sizeIdxPng.textContent = `N/A`;
+        currentDownloads.indexedIco = null;
+        currentDownloads.indexedPng = null;
+        dom.sizeIdxIco.textContent = `N/A`;
+        dom.sizeIdxPng.textContent = `N/A`;
 
-        elm.btnSaveIdxIco.disabled = true;
-        elm.btnSaveIdxPng.disabled = true;
+        dom.btnSaveIdxIco.disabled = true;
+        dom.btnSaveIdxPng.disabled = true;
     }
 
-    elm.outputPanel.style.display = 'flex';
+    dom.outputPanel.style.display = 'flex';
 }
 
-elm.btnGenerate.addEventListener('click', () => {
+dom.btnGenerate.addEventListener('click', () => {
     try {
-        const colors = [];
+        const rgbaPixels = [];
         for (let i = 0; i < CONFIG.totalPixels; i++) {
             const offset = i * 4;
-            colors.push({
+            rgbaPixels.push({
                 r: pixelBuffer[offset],
                 g: pixelBuffer[offset + 1],
                 b: pixelBuffer[offset + 2],
@@ -308,7 +309,7 @@ elm.btnGenerate.addEventListener('click', () => {
         }
 
         // The generator now handles everything and gives back the ready-to-display logs and binaries!
-        const results = generateIcons(colors);
+        const results = generateIcons(rgbaPixels);
         updateOutputUI(results);
 
     } catch (err) {
@@ -331,10 +332,10 @@ function triggerDownload(data, filename, type) {
     URL.revokeObjectURL(url);
 }
 
-elm.btnSaveIdxIco.addEventListener('click', () => triggerDownload(currentDownloads.idxIco, 'favicon-indexed.ico', 'image/x-icon'));
-elm.btnSaveIdxPng.addEventListener('click', () => triggerDownload(currentDownloads.idxPng, 'favicon-indexed.png', 'image/png'));
-elm.btnSaveTcIco.addEventListener('click', () => triggerDownload(currentDownloads.tcIco, 'favicon-truecolor.ico', 'image/x-icon'));
-elm.btnSaveTcPng.addEventListener('click', () => triggerDownload(currentDownloads.tcPng, 'favicon-truecolor.png', 'image/png'));
+dom.btnSaveIdxIco.addEventListener('click', () => triggerDownload(currentDownloads.indexedIco, 'favicon-indexed.ico', 'image/x-icon'));
+dom.btnSaveIdxPng.addEventListener('click', () => triggerDownload(currentDownloads.indexedPng, 'favicon-indexed.png', 'image/png'));
+dom.btnSaveTcIco.addEventListener('click', () => triggerDownload(currentDownloads.truecolorIco, 'favicon-truecolor.ico', 'image/x-icon'));
+dom.btnSaveTcPng.addEventListener('click', () => triggerDownload(currentDownloads.truecolorPng, 'favicon-truecolor.png', 'image/png'));
 
 // --- Boot ---
 initGrid();

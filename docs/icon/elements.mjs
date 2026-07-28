@@ -8,9 +8,9 @@ function kebabToCamel(str) {
 
 // Immediately initialize and cache the element mapping.
 // Assumes DOM is fully loaded when this module is imported.
-const elm = Array.from(document.querySelectorAll('[id]')).reduce((acc, element) => {
+const dom = Array.from(document.querySelectorAll('[id]')).reduce((acc, element) => {
     acc[kebabToCamel(element.id)] = element;
     return acc;
 }, {});
 
-export default elm;
+export default dom;
