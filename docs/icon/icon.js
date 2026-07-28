@@ -13,7 +13,7 @@ const pixelBuffer = new Uint8ClampedArray(CONFIG.totalPixels * 4);
 const pixelView = new DataView(pixelBuffer.buffer); // 32-bit accessor for the buffer
 
 const gridCells = []; // DOM cache for the grid cells
-const currentDownloads = { indexedIco: null, indexedPng: null, truecolorIco: null, truecolorPng: null };
+const generatedAssets = { indexedIco: null, indexedPng: null, truecolorIco: null, truecolorPng: null };
 
 /**
  * Safely manages Blob Object URLs to prevent memory leaks during rapid regeneration.
@@ -143,13 +143,13 @@ function processFile(file) {
     }
 
     dom.outputPanel.style.display = 'none';
-    const sizeBytes = file.size.toLocaleString();
+    const formattedSize = file.size.toLocaleString();
 
     const img = new Image();
     img.onload = () => {
         dom.dropzoneText.innerHTML = `
             <span style="color: #0f0;">Loaded: ${file.name}</span><br>
-            ${img.width}x${img.height} pixels • ${sizeBytes} bytes
+            ${img.width}x${img.height} pixels • ${formattedSize} bytes
         `;
 
         const canvas = document.createElement('canvas');
@@ -160,19 +160,19 @@ function processFile(file) {
         ctx.drawImage(img, 0, 0, 16, 16);
 
         // Extract the raw RGBA array from the canvas
-        const imgData = ctx.getImageData(0, 0, 16, 16).data;
+        const rgbaData = ctx.getImageData(0, 0, 16, 16).data;
 
         for (let pixelIndex = 0; pixelIndex < CONFIG.totalPixels; pixelIndex++) {
             const offset = pixelIndex * 4;
-            const a = imgData[offset + 3];
+            const a = rgbaData[offset + 3];
 
             if (a < 128) {
                 // Transparent threshold
                 setPixel(pixelIndex, 0);
             } else {
-                const r = imgData[offset];
-                const g = imgData[offset + 1];
-                const b = imgData[offset + 2];
+                const r = rgbaData[offset];
+                const g = rgbaData[offset + 1];
+                const b = rgbaData[offset + 2];
 
                 // Solid pixel: Shift R, G, B into their respective 32-bit slots, add 0xFF for Alpha, force unsigned
                 const color32 = ((r << 24) | (g << 16) | (b << 8) | 0xFF) >>> 0;
@@ -193,7 +193,7 @@ const handlePaint = (e) => {
         const pixelIndex = parseInt(target.dataset.index, 10);
         setPixel(pixelIndex, state.currentColor32);
     }
-};
+}
 
 dom.colorPicker.addEventListener('input', (e) => state.currentColor = e.target.value);
 dom.colorPicker.addEventListener('click', (e) => state.currentColor = e.target.value);
@@ -261,20 +261,20 @@ function updateOutputUI({ truecolorResult, indexedResult }) {
     dom.logTruecolor.textContent = truecolorResult.log;
     renderPreviews(truecolorResult.icoBuffer, dom.previewTruecolor);
 
-    currentDownloads.truecolorIco = truecolorResult.icoBuffer;
-    currentDownloads.truecolorPng = truecolorResult.pngPayload;
+    generatedAssets.truecolorIco = truecolorResult.icoBuffer;
+    generatedAssets.truecolorPng = truecolorResult.pngBuffer;
     dom.sizeTcIco.textContent = `${truecolorResult.icoBuffer.length.toLocaleString()} bytes`;
-    dom.sizeTcPng.textContent = `${truecolorResult.pngPayload.length.toLocaleString()} bytes`;
+    dom.sizeTcPng.textContent = `${truecolorResult.pngBuffer.length.toLocaleString()} bytes`;
 
     if (indexedResult) {
         dom.titleIndexed.textContent = `Optimized Indexed (${indexedResult.bitDepth}-bit): ${indexedResult.icoBuffer.length} bytes`;
         dom.logIndexed.textContent = indexedResult.log;
         renderPreviews(indexedResult.icoBuffer, dom.previewIndexed);
 
-        currentDownloads.indexedIco = indexedResult.icoBuffer;
-        currentDownloads.indexedPng = indexedResult.pngPayload;
+        generatedAssets.indexedIco = indexedResult.icoBuffer;
+        generatedAssets.indexedPng = indexedResult.pngBuffer;
         dom.sizeIdxIco.textContent = `${indexedResult.icoBuffer.length.toLocaleString()} bytes`;
-        dom.sizeIdxPng.textContent = `${indexedResult.pngPayload.length.toLocaleString()} bytes`;
+        dom.sizeIdxPng.textContent = `${indexedResult.pngBuffer.length.toLocaleString()} bytes`;
 
         dom.btnSaveIdxIco.disabled = false;
         dom.btnSaveIdxPng.disabled = false;
@@ -283,8 +283,8 @@ function updateOutputUI({ truecolorResult, indexedResult }) {
         dom.logIndexed.textContent = `Skipped: Image has more than 16 colors.`;
         renderPreviews(null, dom.previewIndexed);
 
-        currentDownloads.indexedIco = null;
-        currentDownloads.indexedPng = null;
+        generatedAssets.indexedIco = null;
+        generatedAssets.indexedPng = null;
         dom.sizeIdxIco.textContent = `N/A`;
         dom.sizeIdxPng.textContent = `N/A`;
 
@@ -332,10 +332,10 @@ function triggerDownload(data, filename, type) {
     URL.revokeObjectURL(url);
 }
 
-dom.btnSaveIdxIco.addEventListener('click', () => triggerDownload(currentDownloads.indexedIco, 'favicon-indexed.ico', 'image/x-icon'));
-dom.btnSaveIdxPng.addEventListener('click', () => triggerDownload(currentDownloads.indexedPng, 'favicon-indexed.png', 'image/png'));
-dom.btnSaveTcIco.addEventListener('click', () => triggerDownload(currentDownloads.truecolorIco, 'favicon-truecolor.ico', 'image/x-icon'));
-dom.btnSaveTcPng.addEventListener('click', () => triggerDownload(currentDownloads.truecolorPng, 'favicon-truecolor.png', 'image/png'));
+dom.btnSaveIdxIco.addEventListener('click', () => triggerDownload(generatedAssets.indexedIco, 'favicon-indexed.ico', 'image/x-icon'));
+dom.btnSaveIdxPng.addEventListener('click', () => triggerDownload(generatedAssets.indexedPng, 'favicon-indexed.png', 'image/png'));
+dom.btnSaveTcIco.addEventListener('click', () => triggerDownload(generatedAssets.truecolorIco, 'favicon-truecolor.ico', 'image/x-icon'));
+dom.btnSaveTcPng.addEventListener('click', () => triggerDownload(generatedAssets.truecolorPng, 'favicon-truecolor.png', 'image/png'));
 
 // --- Boot ---
 initGrid();

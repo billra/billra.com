@@ -9,10 +9,10 @@ const toHex = (value, byteLength = 1) => value.toString(16).padStart(byteLength 
 function extractPalette(rgbaPixels) {
     const palette = [];
     let transparentIndex = -1;
-    const findColor = (r, g, b, a) => palette.findIndex(c => c.r === r && c.g === g && c.b === b && c.a === a);
+    const findColorIndex = (r, g, b, a) => palette.findIndex(c => c.r === r && c.g === g && c.b === b && c.a === a);
 
     for (const { r, g, b, a } of rgbaPixels) {
-        if (findColor(r, g, b, a) === -1) {
+        if (findColorIndex(r, g, b, a) === -1) {
             if (a < 255 && transparentIndex === -1 && palette.length < 16) {
                 palette.unshift({ r, g, b, a });
                 transparentIndex = 0;
@@ -30,8 +30,8 @@ function extractPalette(rgbaPixels) {
     return { palette, transparentIndex };
 }
 
-function assembleICO(pngPayload, colorCount, bitDepth) {
-    const icoBuffer = new Uint8Array(22 + pngPayload.length);
+function assembleICO(pngBuffer, colorCount, bitDepth) {
+    const icoBuffer = new Uint8Array(22 + pngBuffer.length);
     const view = new DataView(icoBuffer.buffer);
     view.setUint16(0, 0, true);
     view.setUint16(2, 1, true);
@@ -42,9 +42,9 @@ function assembleICO(pngPayload, colorCount, bitDepth) {
     icoBuffer[9] = 0;
     view.setUint16(10, 1, true);
     view.setUint16(12, bitDepth, true);
-    view.setUint32(14, pngPayload.length, true);
+    view.setUint32(14, pngBuffer.length, true);
     view.setUint32(18, 22, true);
-    icoBuffer.set(pngPayload, 22);
+    icoBuffer.set(pngBuffer, 22);
     return icoBuffer;
 }
 
@@ -54,15 +54,15 @@ function generateTruecolor(rgbaPixels) {
     for (let y = 0; y < 16; y++) {
         truecolorPixels[writeOffset++] = 0;
         for (let x = 0; x < 16; x++) {
-            const pixelColor = rgbaPixels[y * 16 + x];
-            truecolorPixels[writeOffset++] = pixelColor.r;
-            truecolorPixels[writeOffset++] = pixelColor.g;
-            truecolorPixels[writeOffset++] = pixelColor.b;
-            truecolorPixels[writeOffset++] = pixelColor.a;
+            const rgbaObject = rgbaPixels[y * 16 + x];
+            truecolorPixels[writeOffset++] = rgbaObject.r;
+            truecolorPixels[writeOffset++] = rgbaObject.g;
+            truecolorPixels[writeOffset++] = rgbaObject.b;
+            truecolorPixels[writeOffset++] = rgbaObject.a;
         }
     }
 
-    const { payload: pngPayload, deflateStats } = buildPNG({
+    const { pngBuffer, deflateStats } = buildPNG({
         width: 16,
         height: 16,
         bitDepth: 8,
@@ -70,10 +70,10 @@ function generateTruecolor(rgbaPixels) {
         uncompressedPixels: truecolorPixels
     });
 
-    const icoBuffer = assembleICO(pngPayload, 0, 32);
+    const icoBuffer = assembleICO(pngBuffer, 0, 32);
     const log = generateLogForIco(icoBuffer, deflateStats);
 
-    return { icoBuffer, pngPayload, deflateStats, log };
+    return { icoBuffer, pngBuffer, deflateStats, log };
 }
 
 function generateIndexed(rgbaPixels, palette, transparentIndex) {
@@ -87,7 +87,7 @@ function generateIndexed(rgbaPixels, palette, transparentIndex) {
     const pixelsPerByte = 8 / bitDepth;
     const bytesPerRow = Math.ceil(16 / pixelsPerByte);
     const packedPixels = new Uint8Array(16 * (1 + bytesPerRow));
-    const findColor = (r, g, b, a) => palette.findIndex(c => c.r === r && c.g === g && c.b === b && c.a === a);
+    const findColorIndex = (r, g, b, a) => palette.findIndex(c => c.r === r && c.g === g && c.b === b && c.a === a);
 
     let writeOffset = 0;
     for (let y = 0; y < 16; y++) {
@@ -95,8 +95,8 @@ function generateIndexed(rgbaPixels, palette, transparentIndex) {
 
         let currentByte = 0;
         for (let x = 0; x < 16; x++) {
-            const pixelColor = rgbaPixels[y * 16 + x];
-            const paletteIndex = findColor(pixelColor.r, pixelColor.g, pixelColor.b, pixelColor.a);
+            const rgbaObject = rgbaPixels[y * 16 + x];
+            const paletteIndex = findColorIndex(rgbaObject.r, rgbaObject.g, rgbaObject.b, rgbaObject.a);
 
             const bitOffset = 8 - bitDepth - ((x % pixelsPerByte) * bitDepth);
             currentByte |= (paletteIndex << bitOffset);
@@ -110,7 +110,7 @@ function generateIndexed(rgbaPixels, palette, transparentIndex) {
 
     const transparentAlpha = transparentIndex === 0 ? palette[0].a : null;
 
-    const { payload: pngPayload, deflateStats } = buildPNG({
+    const { pngBuffer, deflateStats } = buildPNG({
         width: 16,
         height: 16,
         bitDepth: bitDepth,
@@ -120,10 +120,10 @@ function generateIndexed(rgbaPixels, palette, transparentIndex) {
         transparentAlpha: transparentAlpha
     });
 
-    const icoBuffer = assembleICO(pngPayload, palette.length, bitDepth);
+    const icoBuffer = assembleICO(pngBuffer, palette.length, bitDepth);
     const log = generateLogForIco(icoBuffer, deflateStats);
 
-    return { icoBuffer, pngPayload, deflateStats, bitDepth, log };
+    return { icoBuffer, pngBuffer, deflateStats, bitDepth, log };
 }
 
 // ==========================================

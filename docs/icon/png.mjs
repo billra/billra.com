@@ -33,12 +33,12 @@ function createChunk(type, data) {
     return chunk;
 }
 
-function bestDeflate(data) {
+function bestDeflate(uncompressedData) {
     let best = null;
     let bestStrategy = 0;
 
     for (let strategy = 0; strategy <= 3; strategy++) {
-        const compressed = pako.deflate(data, { level: 9, strategy });
+        const compressed = pako.deflate(uncompressedData, { level: 9, strategy });
         if (!best || compressed.length < best.length) {
             best = compressed;
             bestStrategy = strategy;
@@ -93,13 +93,13 @@ export function buildPNG({ width, height, bitDepth, colorType, uncompressedPixel
 
     const chunks = [pngSignature, ihdrChunk, plteChunk, trnsChunk, idatChunk, iendChunk].filter(Boolean);
     const size = chunks.reduce((sum, c) => sum + c.length, 0);
-    const payload = new Uint8Array(size);
+    const pngBuffer = new Uint8Array(size);
 
     let offset = 0;
-    chunks.forEach(c => { payload.set(c, offset); offset += c.length; });
+    chunks.forEach(c => { pngBuffer.set(c, offset); offset += c.length; });
 
     return {
-        payload,
+        pngBuffer,
         deflateStats: {
             strategy,
             strategyName: STRATEGY_NAMES[strategy]
