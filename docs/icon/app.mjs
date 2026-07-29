@@ -5,10 +5,9 @@ import { updateOutputUI } from './output.mjs';
 
 // --- Configuration Injection ---
 document.documentElement.style.setProperty('--grid-size', CONFIG.gridSize);
-const totalPixels = CONFIG.gridSize * CONFIG.gridSize;
 
 // --- State Variables: The Single Source of Truth ---
-const pixelBuffer = new Uint8ClampedArray(totalPixels * 4);
+const pixelBuffer = new Uint8ClampedArray(CONFIG.pixelCount * 4);
 const pixelView = new DataView(pixelBuffer.buffer);
 
 const gridCells = [];
@@ -65,7 +64,7 @@ const state = new Proxy({
 
 // --- Initialization ---
 function initGrid() {
-    for (let i = 0; i < totalPixels; i++) {
+    for (let i = 0; i < CONFIG.pixelCount; i++) {
         const pixel = document.createElement('div');
         pixel.className = 'pixel';
         pixel.dataset.index = i;
@@ -138,7 +137,7 @@ function processFile(file) {
 
         const rgbaData = ctx.getImageData(0, 0, CONFIG.gridSize, CONFIG.gridSize).data;
 
-        for (let pixelIndex = 0; pixelIndex < totalPixels; pixelIndex++) {
+        for (let pixelIndex = 0; pixelIndex < CONFIG.pixelCount; pixelIndex++) {
             const offset = pixelIndex * 4;
             const a = rgbaData[offset + 3];
 
@@ -183,7 +182,7 @@ window.addEventListener('pointerup', () => state.isDrawing = false);
 dom.btnGenerate.addEventListener('click', () => {
     try {
         const rgbaPixels = [];
-        for (let i = 0; i < totalPixels; i++) {
+        for (let i = 0; i < CONFIG.pixelCount; i++) {
             const offset = i * 4;
             rgbaPixels.push({
                 r: pixelBuffer[offset],
