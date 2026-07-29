@@ -9,6 +9,7 @@
     --grid-border: #555;
     --bg-main: #111;
     --magnifier-scale: 16;
+
 }
 
 body {
@@ -80,12 +81,10 @@ p {
 
 .eraser-swatch {
     background-color: #fff;
-    /* Tighter checkerboard pattern specifically for the small button */
     background-image: conic-gradient(#ccc 90deg, #fff 90deg 180deg, #ccc 180deg 270deg, #fff 270deg);
     background-size: 12px 12px;
 }
 
-/* Visually highlights whichever tool is currently selected */
 .active-tool {
     outline: 2px solid white;
     outline-offset: 2px;
@@ -95,10 +94,10 @@ p {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    justify-content: flex-start; /* Keep vertical spacing constant */
+    justify-content: flex-start;
     align-items: center;
     width: 100%;
-    max-width: 800px; /* Limits the grid size on large screens */
+    max-width: 800px;
     flex: 1;
     min-height: 0;
     padding: 20px;
@@ -126,38 +125,31 @@ p {
     color: var(--text-secondary);
     font-size: 0.9rem;
     line-height: 1.5;
-    pointer-events: none; /* Prevents text from blocking drag events */
+    pointer-events: none;
 }
 
 /* --- Editor Grid --- */
 .grid-container {
     display: grid;
-    grid-template-columns: repeat(16, 1fr);
-    grid-template-rows: repeat(16, 1fr);
+    grid-template-columns: repeat(var(--grid-size), 1fr);
+    grid-template-rows: repeat(var(--grid-size), 1fr);
     width: 100%;
     aspect-ratio: 1;
-    border: 1px solid var(--grid-border);
 
-    /* Checkerboard background for transparent pixels */
-    background-color: #222;
-    background-image: conic-gradient(#333 90deg, transparent 90deg 180deg, #333 180deg 270deg, transparent 270deg);
-
-    /* Maps exactly 1 background tile to 1 pixel in the 16x16 grid */
-    background-size: calc(100% / 16) calc(100% / 16);
-    background-position: left top;
+    /* The Grid-Gap Trick */
+    gap: 1px;
+    background-color: var(--grid-border); /* This draws the inner lines */
+    border: 1px solid var(--grid-border); /* Outer edge */
 
     touch-action: none;
 }
 
 .pixel {
-    border-right: 1px solid var(--grid-border);
-    border-bottom: 1px solid var(--grid-border);
-    user-select: none; /* Prevents text selection cursor while dragging */
-    background-color: transparent; /* Empty state allows checkerboard to show */
+    user-select: none;
+    /* Move checkerboard to the individual pixel */
+    background-image: conic-gradient(#333 90deg, #222 90deg 180deg, #333 180deg 270deg, #222 270deg);
+    background-size: 50% 50%; /* 4 squares perfectly fit the cell regardless of size */
 }
-
-.pixel:nth-child(16n) { border-right: none; }
-.pixel:nth-last-child(-n+16) { border-bottom: none; }
 
 /* --- Output Panel --- */
 #output-panel {
@@ -166,8 +158,6 @@ p {
     background: #1a1a1a;
     border-top: 1px solid var(--grid-border);
     padding: 20px;
-
-    /* New Flexbox Layout */
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
@@ -178,13 +168,11 @@ p {
     border: 1px solid var(--grid-border);
     border-radius: 4px;
     padding: 15px;
-
-    /* Dynamic width based on text length */
     display: flex;
     flex-direction: column;
     flex-basis: max-content;
     flex-grow: 1;
-    max-width: 100%; /* Prevents screen overflow on mobile devices */
+    max-width: 100%;
 }
 
 .log-column h3 {
@@ -212,7 +200,7 @@ p {
 .preview-container {
     display: flex;
     gap: 10px;
-    justify-content: flex-start; /* Left justified */
+    justify-content: flex-start;
     align-items: center;
     margin-top: 15px;
     padding-top: 15px;
@@ -227,22 +215,22 @@ p {
 }
 
 .preview-box {
-    width: 16px;
-    height: 16px;
+    /* Dynamically sized */
+    width: calc(var(--grid-size) * 1px);
+    height: calc(var(--grid-size) * 1px);
     display: flex;
     align-items: center;
     justify-content: center;
     border: 1px solid var(--grid-border);
-    cursor: crosshair; /* Hint to the user that it's inspectable */
+    cursor: crosshair;
 }
 
 .preview-box img {
     image-rendering: pixelated;
-    width: 100%; /* Ensures it fills the 32x32 box */
+    width: 100%;
     height: 100%;
 }
 
-/* Backgrounds */
 .bg-white { background-color: #ffffff; }
 .bg-grey  { background-color: #888888; }
 .bg-black { background-color: #000000; }
@@ -253,14 +241,14 @@ p {
 /* --- Magnifier --- */
 .magnifier {
     position: fixed;
-    width: calc(16px * var(--magnifier-scale));
-    height: calc(16px * var(--magnifier-scale));
+    /* Dynamically sized */
+    width: calc(var(--grid-size) * 1px * var(--magnifier-scale));
+    height: calc(var(--grid-size) * 1px * var(--magnifier-scale));
     pointer-events: none;
     display: none;
     z-index: 9999;
     border: 1px solid var(--text-secondary);
     box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-    /* Shift the box up by 100% of its own height */
     transform: translateY(-100%);
 }
 
@@ -279,14 +267,13 @@ p {
     margin-top: 15px;
 }
 
-/* --- Button System --- */
 .btn {
     padding: 10px 15px;
     color: var(--text-primary);
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.95rem;
-    font-family: inherit; /* Forces buttons to inherit the app's clean Arial font */
+    font-family: inherit;
     transition: all 0.1s ease-in-out;
 }
 
@@ -295,19 +282,17 @@ p {
     cursor: not-allowed;
 }
 
-/* Primary Action (Generate) */
 .btn-primary {
     background: #333;
-    border: 1px solid #888; /* Lighter border to stand out slightly */
+    border: 1px solid #888;
     font-weight: bold;
 }
 
 .btn-primary:hover:not(:disabled) {
     background: #444;
-    border-color: #fff; /* Brightens on hover to draw the eye */
+    border-color: #fff;
 }
 
-/* Secondary Action (Save) */
 .btn-secondary {
     background: #2a2a2a;
     border: 1px solid var(--grid-border);
@@ -326,16 +311,7 @@ p {
     font-size: 0.85em;
 }
 
-/* Ensure the layout holds the new button spacing */
-.save-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 15px;
-}
-
 .usage-section {
-    /* Replaces grid-column: 1 / -1; */
     width: 100%;
     background: #111;
     border: 1px solid var(--grid-border);

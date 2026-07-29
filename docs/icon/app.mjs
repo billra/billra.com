@@ -1,19 +1,17 @@
 import dom from './dom.mjs';
+import { CONFIG } from './config.mjs';
 import { generateIcons } from './ico.mjs';
 import { updateOutputUI } from './output.mjs';
 
-// --- Configuration & Constants ---
-const CONFIG = {
-    gridSize: 16
-};
-CONFIG.totalPixels = CONFIG.gridSize * CONFIG.gridSize;
+// --- Configuration Injection ---
+document.documentElement.style.setProperty('--grid-size', CONFIG.gridSize);
+const totalPixels = CONFIG.gridSize * CONFIG.gridSize;
 
 // --- State Variables: The Single Source of Truth ---
-// 1024 bytes: [R, G, B, A,  R, G, B, A, ...]
-const pixelBuffer = new Uint8ClampedArray(CONFIG.totalPixels * 4);
-const pixelView = new DataView(pixelBuffer.buffer); // 32-bit accessor for the buffer
+const pixelBuffer = new Uint8ClampedArray(totalPixels * 4);
+const pixelView = new DataView(pixelBuffer.buffer);
 
-const gridCells = []; // DOM cache for the grid cells
+const gridCells = [];
 
 // --- Inject Metadata ---
 if (dom.pageTitle) dom.pageTitle.textContent = document.title;
@@ -23,7 +21,9 @@ if (versionMeta && dom.version) dom.version.textContent = `v${versionMeta.conten
 // --- UI Updaters ---
 function updatePixelUI(pixelIndex, hexColor) {
     if (gridCells[pixelIndex]) {
-        gridCells[pixelIndex].style.backgroundColor = hexColor || 'transparent';
+        // Using `background` (shorthand) overwrites the CSS background-image checkerboard.
+        // If it's an empty string, it removes the inline style, instantly restoring the checkerboard!
+        gridCells[pixelIndex].style.background = hexColor || '';
     }
 }
 
@@ -38,17 +38,15 @@ function updateToolUI(hexColor) {
     }
 }
 
-// Convert #RRGGBB to a single 32-bit unsigned integer: 0xRRGGBBAA
 function hexToColor32(hex) {
-    if (!hex) return 0x00000000; // Eraser / transparent
+    if (!hex) return 0x00000000;
     const rgb = parseInt(hex.slice(1), 16);
-    // Shift RGB left by 8 bits to make room for 0xFF Alpha, force unsigned
     return ((rgb << 8) | 0xFF) >>> 0;
 }
 
 const state = new Proxy({
     currentColor: dom.colorPicker.value,
-    currentColor32: hexToColor32(dom.colorPicker.value), // Cache the 32-bit integer
+    currentColor32: hexToColor32(dom.colorPicker.value),
     isDrawing: false
 }, {
     set(target, property, value) {
@@ -67,7 +65,7 @@ const state = new Proxy({
 
 // --- Initialization ---
 function initGrid() {
-    for (let i = 0; i < CONFIG.totalPixels; i++) {
+    for (let i = 0; i < totalPixels; i++) {
         const pixel = document.createElement('div');
         pixel.className = 'pixel';
         pixel.dataset.index = i;
@@ -81,14 +79,11 @@ function initGrid() {
 function setPixel(pixelIndex, color32) {
     const byteOffset = pixelIndex * 4;
 
-    // 1. One fast 32-bit equality check!
     if (pixelView.getUint32(byteOffset) === color32) return;
 
-    // 2. One fast 32-bit assignment!
     pixelView.setUint32(byteOffset, color32);
 
-    // 3. Update the UI
-    const hexColor = color32 === 0 ? 'transparent' :
+    const hexColor = color32 === 0 ? null :
         `#${(color32 >>> 8).toString(16).padStart(6, '0')}`;
 
     updatePixelUI(pixelIndex, hexColor);
@@ -135,28 +130,25 @@ function processFile(file) {
         `;
 
         const canvas = document.createElement('canvas');
-        canvas.width = 16;
-        canvas.height = 16;
+        canvas.width = CONFIG.gridSize;
+        canvas.height = CONFIG.gridSize;
         const ctx = canvas.getContext('2d');
         ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(img, 0, 0, 16, 16);
+        ctx.drawImage(img, 0, 0, CONFIG.gridSize, CONFIG.gridSize);
 
-        // Extract the raw RGBA array from the canvas
-        const rgbaData = ctx.getImageData(0, 0, 16, 16).data;
+        const rgbaData = ctx.getImageData(0, 0, CONFIG.gridSize, CONFIG.gridSize).data;
 
-        for (let pixelIndex = 0; pixelIndex < CONFIG.totalPixels; pixelIndex++) {
+        for (let pixelIndex = 0; pixelIndex < totalPixels; pixelIndex++) {
             const offset = pixelIndex * 4;
             const a = rgbaData[offset + 3];
 
             if (a < 128) {
-                // Transparent threshold
                 setPixel(pixelIndex, 0);
             } else {
                 const r = rgbaData[offset];
                 const g = rgbaData[offset + 1];
                 const b = rgbaData[offset + 2];
 
-                // Solid pixel: Shift R, G, B into their respective 32-bit slots, add 0xFF for Alpha, force unsigned
                 const color32 = ((r << 24) | (g << 16) | (b << 8) | 0xFF) >>> 0;
                 setPixel(pixelIndex, color32);
             }
@@ -191,7 +183,7 @@ window.addEventListener('pointerup', () => state.isDrawing = false);
 dom.btnGenerate.addEventListener('click', () => {
     try {
         const rgbaPixels = [];
-        for (let i = 0; i < CONFIG.totalPixels; i++) {
+        for (let i = 0; i < totalPixels; i++) {
             const offset = i * 4;
             rgbaPixels.push({
                 r: pixelBuffer[offset],
@@ -201,7 +193,7 @@ dom.btnGenerate.addEventListener('click', () => {
             });
         }
 
-        const results = generateIcons(rgbaPixels);
+        const results = generateIcons(rgbaPixels, CONFIG.gridSize);
         updateOutputUI(results);
 
     } catch (err) {
