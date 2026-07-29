@@ -168,7 +168,7 @@ export function generateLogForIco(icoBuffer, deflateStats) {
     return log;
 }
 
-export function generateIcons(rgbaPixels, gridSize = 16) {
+export function generateIcons(rgbaPixels, gridSize) {
     const { palette, transparentIndex } = extractPalette(rgbaPixels);
     const hasTransparency = rgbaPixels.some(p => p.a < 255);
 
