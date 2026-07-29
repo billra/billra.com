@@ -34,18 +34,22 @@ magnifier.appendChild(magnifierImg);
 document.body.appendChild(magnifier);
 
 // --- Render Previews ---
-function renderPreviews(icoBuffer, containerElement) {
+function renderPreviews(icoBuffer, containerElement, hasTransparency) {
     containerElement.innerHTML = '';
     if (!icoBuffer) return;
 
     const label = document.createElement('span');
     label.className = 'preview-label';
-    label.textContent = '🔍 samples:';
+    label.textContent = `🔍 sample${hasTransparency ? 's' : ''}:`;
     containerElement.appendChild(label);
 
     const blob = new Blob([icoBuffer], { type: 'image/x-icon' });
     const url = objectUrlManager.create(blob);
-    const backgrounds = ['bg-white', 'bg-grey', 'bg-black', 'bg-red', 'bg-green', 'bg-blue'];
+
+    // Choose 6 backgrounds if transparency exists, otherwise just output a single standard preview.
+    const backgrounds = hasTransparency
+        ? ['bg-white', 'bg-grey', 'bg-black', 'bg-red', 'bg-green', 'bg-blue']
+        : ['bg-white'];
 
     backgrounds.forEach(bgClass => {
         const box = document.createElement('div');
@@ -75,12 +79,12 @@ function renderPreviews(icoBuffer, containerElement) {
 }
 
 // --- Main Exported UI Updater ---
-export function updateOutputUI({ truecolorResult, indexedResult }) {
+export function updateOutputUI({ truecolorResult, indexedResult, hasTransparency }) {
     objectUrlManager.revokeAll();
 
     dom.titleTruecolor.textContent = `Truecolor RGBA: ${truecolorResult.icoBuffer.length} bytes`;
     dom.logTruecolor.textContent = truecolorResult.log;
-    renderPreviews(truecolorResult.icoBuffer, dom.previewTruecolor);
+    renderPreviews(truecolorResult.icoBuffer, dom.previewTruecolor, hasTransparency);
 
     generatedAssets.truecolorIco = truecolorResult.icoBuffer;
     generatedAssets.truecolorPng = truecolorResult.pngBuffer;
@@ -90,7 +94,7 @@ export function updateOutputUI({ truecolorResult, indexedResult }) {
     if (indexedResult) {
         dom.titleIndexed.textContent = `Optimized Indexed (${indexedResult.bitDepth}-bit): ${indexedResult.icoBuffer.length} bytes`;
         dom.logIndexed.textContent = indexedResult.log;
-        renderPreviews(indexedResult.icoBuffer, dom.previewIndexed);
+        renderPreviews(indexedResult.icoBuffer, dom.previewIndexed, hasTransparency);
 
         generatedAssets.indexedIco = indexedResult.icoBuffer;
         generatedAssets.indexedPng = indexedResult.pngBuffer;
@@ -102,7 +106,7 @@ export function updateOutputUI({ truecolorResult, indexedResult }) {
     } else {
         dom.titleIndexed.textContent = `Optimized Indexed: N/A`;
         dom.logIndexed.textContent = `Skipped: Image has more than 16 colors.`;
-        renderPreviews(null, dom.previewIndexed);
+        renderPreviews(null, dom.previewIndexed, false);
 
         generatedAssets.indexedIco = null;
         generatedAssets.indexedPng = null;

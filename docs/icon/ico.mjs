@@ -170,9 +170,10 @@ export function generateLogForIco(icoBuffer, deflateStats) {
 
 export function generateIcons(rgbaPixels, gridSize = 16) {
     const { palette, transparentIndex } = extractPalette(rgbaPixels);
+    const hasTransparency = rgbaPixels.some(p => p.a < 255);
 
     const truecolorResult = generateTruecolor(rgbaPixels, gridSize);
     const indexedResult = generateIndexed(rgbaPixels, palette, transparentIndex, gridSize);
 
-    return { truecolorResult, indexedResult };
+    return { truecolorResult, indexedResult, hasTransparency };
 }
