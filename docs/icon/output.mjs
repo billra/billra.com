@@ -1,4 +1,4 @@
-import dom from './elements.mjs';
+import dom from './dom.mjs';
 
 // --- Internal State ---
 const generatedAssets = {

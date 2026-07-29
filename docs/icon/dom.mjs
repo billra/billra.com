@@ -1,4 +1,3 @@
-// elements.mjs
 // Central shared module providing access to DOM elements with IDs
 
 // Converts kebab-case IDs to camelCase keys

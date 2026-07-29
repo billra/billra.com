@@ -1,4 +1,4 @@
-import dom from './elements.mjs';
+import dom from './dom.mjs';
 import { generateIcons } from './ico.mjs';
 import { updateOutputUI } from './output.mjs';
 
