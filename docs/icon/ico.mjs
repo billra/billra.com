@@ -15,7 +15,7 @@ function extractPalette(rgbaPixels) {
 
     for (const { r, g, b, a } of rgbaPixels) {
         if (findColorIndex(palette, r, g, b, a) === -1) {
-            if (a < 255 && transparentIndex === -1 && palette.length < 16) {
+            if (a < 0xFF && transparentIndex === -1 && palette.length < 16) {
                 palette.unshift({ r, g, b, a });
                 transparentIndex = 0;
             } else {
@@ -170,7 +170,7 @@ export function generateLogForIco(icoBuffer, deflateStats) {
 
 export function generateIcons(rgbaPixels, gridSize) {
     const { palette, transparentIndex } = extractPalette(rgbaPixels);
-    const hasTransparency = rgbaPixels.some(p => p.a < 255);
+    const hasTransparency = rgbaPixels.some(p => p.a < 0xFF);
 
     const truecolorResult = generateTruecolor(rgbaPixels, gridSize);
     const indexedResult = generateIndexed(rgbaPixels, palette, transparentIndex, gridSize);
