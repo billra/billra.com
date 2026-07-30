@@ -80,6 +80,10 @@ function setPixel(pixelIndex, color32) {
 
     if (pixelView.getUint32(byteOffset) === color32) return;
 
+    // Note: DataView.setUint32 defaults to Big-Endian.
+    // This is intentional: writing our (R << 24 | G << 16 | B << 8 | A) color
+    // in Big-Endian places R at offset+0, G at offset+1, B at offset+2, and A at offset+3,
+    // which matches the byte order for the sequential array reads during PNG generation.
     pixelView.setUint32(byteOffset, color32);
 
     const hexColor = color32 === 0 ? null :
@@ -183,6 +187,7 @@ dom.btnGenerate.addEventListener('click', () => {
     try {
         const rgbaPixels = [];
         for (let i = 0; i < CONFIG.pixelCount; i++) {
+            // Safe to read sequentially because setPixel wrote in Big-Endian
             const offset = i * 4;
             rgbaPixels.push({
                 r: pixelBuffer[offset],
