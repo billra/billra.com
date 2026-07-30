@@ -124,8 +124,9 @@ export function formatPNGLog(pngBuffer) {
         return res;
     };
 
-    let log = `[PNG PAYLOAD] (${pngBuffer.length} Bytes)\n`;
-    log += `- ${readHex(0, 8)}: PNG Signature\n`;
+    let log = `\n--- PNG Payload (${pngBuffer.length} Bytes) ---\n\n`;
+    log += `[SIGNATURE] (8 Bytes)\n`;
+    log += `- ${readHex(0, 8)}: PNG Magic Number\n`;
 
     let offset = 8;
     while (offset < pngBuffer.length) {

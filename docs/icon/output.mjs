@@ -82,7 +82,7 @@ function renderPreviews(icoBuffer, containerElement, hasTransparency) {
 export function updateOutputUI({ truecolorResult, indexedResult, hasTransparency }) {
     objectUrlManager.revokeAll();
 
-    dom.titleTruecolor.textContent = `Truecolor RGBA: ${truecolorResult.icoBuffer.length} bytes`;
+    dom.titleTruecolor.textContent = `Truecolor RGBA`;
     dom.logTruecolor.textContent = truecolorResult.log;
     renderPreviews(truecolorResult.icoBuffer, dom.previewTruecolor, hasTransparency);
 
@@ -92,7 +92,7 @@ export function updateOutputUI({ truecolorResult, indexedResult, hasTransparency
     dom.sizeTcPng.textContent = `${truecolorResult.pngBuffer.length.toLocaleString()} bytes`;
 
     if (indexedResult) {
-        dom.titleIndexed.textContent = `Optimized Indexed (${indexedResult.bitDepth}-bit): ${indexedResult.icoBuffer.length} bytes`;
+        dom.titleIndexed.textContent = `Palette Indexed (${indexedResult.bitDepth}-bit)`;
         dom.logIndexed.textContent = indexedResult.log;
         renderPreviews(indexedResult.icoBuffer, dom.previewIndexed, hasTransparency);
 
@@ -104,7 +104,7 @@ export function updateOutputUI({ truecolorResult, indexedResult, hasTransparency
         dom.btnSaveIdxIco.disabled = false;
         dom.btnSaveIdxPng.disabled = false;
     } else {
-        dom.titleIndexed.textContent = `Optimized Indexed: N/A`;
+        dom.titleIndexed.textContent = `Palette Indexed: N/A`;
         dom.logIndexed.textContent = `Skipped: Image has more than 16 colors.`;
         renderPreviews(null, dom.previewIndexed, false);
 
