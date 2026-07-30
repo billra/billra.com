@@ -137,6 +137,8 @@ function generateIndexed(rgbaPixels, palette, transparentIndex, gridSize) {
 export function generateLogForIco(icoBuffer, deflateStats) {
     const view = new DataView(icoBuffer.buffer, icoBuffer.byteOffset, icoBuffer.byteLength);
 
+    // This helper naturally reads bytes sequentially exactly as they appear on disk.
+    // Because ICO is little-endian, reading sequentially outputs the correct physical representation.
     const readHex = (start, len) => {
         let hexBytes = [];
         for (let i = 0; i < len; i++) hexBytes.push(toHex(view.getUint8(start + i)));
@@ -145,8 +147,6 @@ export function generateLogForIco(icoBuffer, deflateStats) {
 
     const pngSize = view.getUint32(14, true);
     const totalSize = icoBuffer.byteLength;
-    const offsetHex = toHex(view.getUint32(18, true), 4).match(/.{2}/g).join(' ');
-    const sizeHex = toHex(pngSize, 4).match(/.{2}/g).join(' ');
 
     const width = view.getUint8(6) || 256;
     const height = view.getUint8(7) || 256;
@@ -170,8 +170,8 @@ export function generateLogForIco(icoBuffer, deflateStats) {
     log += `- ${readHex(9, 1)}: Reserved\n`;
     log += `- ${readHex(10, 2)}: Planes = ${view.getUint16(10, true)}\n`;
     log += `- ${readHex(12, 2)}: Bit count = ${view.getUint16(12, true)}\n`;
-    log += `- ${sizeHex}: Image data size = ${pngSize}\n`;
-    log += `- ${offsetHex}: Offset to image = ${view.getUint32(18, true)}\n`;
+    log += `- ${readHex(14, 4)}: Image data size = ${pngSize}\n`;
+    log += `- ${readHex(18, 4)}: Offset to image = ${view.getUint32(18, true)}\n`;
 
     const pngBuffer = icoBuffer.subarray(22);
     log += formatPNGLog(pngBuffer);
