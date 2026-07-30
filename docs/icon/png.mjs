@@ -1,10 +1,40 @@
 import pako from 'https://esm.sh/pako@2.2.0';
 
 // ==========================================
-// PRIVATE INTERNALS (Not Exported)
+// COMPRESSION INTERNALS (Pako-Specific)
 // ==========================================
 
-const STRATEGY_NAMES = { 0: 'Default', 1: 'Filtered', 2: 'Huffman Only', 3: 'RLE' };
+const STRATEGY_MAP = {
+    [pako.constants.Z_DEFAULT_STRATEGY]: 'Default',
+    [pako.constants.Z_FILTERED]: 'Filtered',
+    [pako.constants.Z_HUFFMAN_ONLY]: 'Huffman Only',
+    [pako.constants.Z_RLE]: 'RLE',
+    [pako.constants.Z_FIXED]: 'Fixed'
+};
+const STRATEGIES = Object.keys(STRATEGY_MAP).map(Number);
+
+function bestDeflate(uncompressedData) {
+    let best = null;
+    let bestStrategy = null;
+
+    for (const strategy of STRATEGIES) {
+        const compressed = pako.deflate(uncompressedData, {
+            level: pako.constants.Z_BEST_COMPRESSION,
+            strategy
+        });
+
+        if (!best || compressed.length < best.length) {
+            best = compressed;
+            bestStrategy = strategy;
+        }
+    }
+
+    return { data: best, strategy: bestStrategy };
+}
+
+// ==========================================
+// PRIVATE INTERNALS (Not Exported)
+// ==========================================
 
 const crcTable = (() => {
     const table = new Uint32Array(256);
@@ -31,21 +61,6 @@ function createChunk(type, data) {
     chunk.set(data, 8);
     view.setUint32(8 + data.length, crc32(type, data), false);
     return chunk;
-}
-
-function bestDeflate(uncompressedData) {
-    let best = null;
-    let bestStrategy = 0;
-
-    for (let strategy = 0; strategy <= 3; strategy++) {
-        const compressed = pako.deflate(uncompressedData, { level: 9, strategy });
-        if (!best || compressed.length < best.length) {
-            best = compressed;
-            bestStrategy = strategy;
-        }
-    }
-
-    return { data: best, strategy: bestStrategy };
 }
 
 // Helper for hex formatting in the logger
@@ -102,7 +117,7 @@ export function buildPNG({ width, height, bitDepth, colorType, uncompressedPixel
         pngBuffer,
         deflateStats: {
             strategy,
-            strategyName: STRATEGY_NAMES[strategy]
+            strategyName: STRATEGY_MAP[strategy]
         }
     };
 }
