@@ -53,6 +53,19 @@ p {
     font-size: 0.95rem;
 }
 
+.docs-link {
+    display: inline-block;
+    margin-top: 8px;
+    color: #4da6ff; /* Legible blue for dark backgrounds */
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.docs-link:hover {
+    text-decoration: underline;
+    color: #88ccff;
+}
+
 .zoom-control {
     display: flex;
     align-items: center;

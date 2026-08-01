@@ -99,3 +99,7 @@ coordinates, it isolates the *identity* of a color (Hue) from its *purity*
 (Saturation) and its *lighting* (Value). This allows users to intuitively lock
 in the color they want, and smoothly adjust the level selector to find the
 desired brightness without altering the core color.
+
+---
+
+[⬅ Back to the Interactive Color Cube](https://www.billra.com/colorcube/)
