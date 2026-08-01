@@ -5,7 +5,10 @@ const CONFIG = {
     baseEdgeLength: 320,
     layoutOffsetX: 60,
     levels: 16,
-    svgNs: 'http://www.w3.org/2000/svg'
+    svgNs: 'http://www.w3.org/2000/svg',
+    coreBlockSize: 38,
+    coreSpacing: 2,
+    cubeOffsetY: -20
 };
 
 // Computed configuration constants
@@ -215,8 +218,8 @@ function showOverlay(overlay, attributes) {
 }
 
 function updateCoreSample() {
-    const blockSize = 38;
-    const spacing = 2;
+    const blockSize = CONFIG.coreBlockSize;
+    const spacing = CONFIG.coreSpacing;
     const totalHeight = CONFIG.levels * (blockSize + spacing);
     const startX = CONFIG.layoutOffsetX;
     const startY = (CONFIG.viewBoxHeight - totalHeight) / 2;
@@ -259,7 +262,7 @@ function updateCube() {
         : (CONFIG.baseEdgeLength * (steps / CONFIG.levels));
 
     const centerX = (CONFIG.viewBoxWidth / 2) + CONFIG.layoutOffsetX;
-    const centerY = CONFIG.viewBoxHeight / 2 - 20;
+    const centerY = (CONFIG.viewBoxHeight / 2) + CONFIG.cubeOffsetY;
 
     const targetRay = scaleRay(state.baseRay, CONFIG.maxLevel, state.level);
 
@@ -329,14 +332,14 @@ function updateHoverUI(target) {
         return;
     }
 
-    if (target.tagName === 'rect') {
+    if (target.localName === 'rect') {
         showOverlay(elementPool.overlays.hover.rect, {
             x: target.getAttribute('x'),
             y: target.getAttribute('y'),
             width: target.getAttribute('width'),
             height: target.getAttribute('height')
         });
-    } else if (target.tagName === 'polygon') {
+    } else if (target.localName === 'polygon') {
         showOverlay(elementPool.overlays.hover.polygon, {
             points: target.getAttribute('points')
         });
@@ -361,7 +364,7 @@ function refreshHoverState() {
 }
 
 // --- Interactive Events ---
-const INTERACTION_HANDLERS = {
+const interactionHandlers = {
     setLevel: (target) => {
         state.level = parseInt(target.dataset.level, 10);
     },
@@ -383,8 +386,8 @@ window.addEventListener('pointermove', (e) => {
 
 svg.addEventListener('click', (e) => {
     const target = e.target.closest('[data-action]');
-    if (target && INTERACTION_HANDLERS[target.dataset.action]) {
-        INTERACTION_HANDLERS[target.dataset.action](target);
+    if (target && interactionHandlers[target.dataset.action]) {
+        interactionHandlers[target.dataset.action](target);
     }
 });
 
