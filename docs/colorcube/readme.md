@@ -102,4 +102,4 @@ desired brightness without altering the core color.
 
 ---
 
-[⬅ Back to the Interactive Color Cube](https://www.billra.com/colorcube/)
+[Color Cube](https://www.billra.com/colorcube/)
